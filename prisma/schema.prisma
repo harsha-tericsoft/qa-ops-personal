@@ -11,3 +11,137 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum NodeType {
+  FOLDER
+  FILE
+  MODULE
+  FEATURE
+  EPIC
+  STORY
+}
+
+enum SyncDirection {
+  IMPORT_ONLY
+  EXPORT_ONLY
+  BIDIRECTIONAL
+}
+
+enum SyncStatus {
+  NEVER
+  IN_PROGRESS
+  SUCCESS
+  FAILED
+}
+
+model Project {
+  id           String        @id @default(cuid())
+  name         String
+  description  String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  repositories Repository[]
+  testCases    TestCase[]
+  roamConfig   RoamConfig?
+  syncLogs     SyncLog[]
+}
+
+model Repository {
+  id          String           @id @default(cuid())
+  projectId   String
+  project     Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  roamSyncId  String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  nodes       RepositoryNode[]
+
+  @@index([projectId])
+}
+
+model RepositoryNode {
+  id           String           @id @default(cuid())
+  repositoryId String
+  repository   Repository       @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  projectId    String
+  name         String
+  slug         String
+  path         String // "/id1/id2/id3"
+  depth        Int              @default(0)
+  order        Int              @default(0)
+  type         NodeType         @default(FOLDER)
+  description  String?
+  metadata     Json?
+  parentId     String?
+  parent       RepositoryNode?  @relation("NodeTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children     RepositoryNode[] @relation("NodeTree")
+  roamNodeId   String?          @unique
+  roamPageId   String?
+  syncedAt     DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  deletedAt    DateTime?
+  testCases    TestCaseNode[]
+
+  @@index([repositoryId])
+  @@index([projectId])
+  @@index([parentId])
+  @@index([path])
+}
+
+model TestCase {
+  id          String         @id @default(cuid())
+  title       String
+  description String?
+  projectId   String
+  project     Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  nodes       TestCaseNode[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([projectId])
+}
+
+model TestCaseNode {
+  id         String         @id @default(cuid())
+  testCaseId String
+  testCase   TestCase       @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  nodeId     String
+  node       RepositoryNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+
+  @@unique([testCaseId, nodeId])
+  @@index([nodeId])
+}
+
+model RoamConfig {
+  id             String        @id @default(cuid())
+  projectId      String        @unique
+  project        Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  graphName      String
+  graphUrl       String
+  apiKey         String
+  syncEnabled    Boolean       @default(false)
+  syncIntervalMin Int           @default(15)
+  syncDirection  SyncDirection @default(IMPORT_ONLY)
+  lastSyncAt     DateTime?
+  lastSyncStatus SyncStatus    @default(NEVER)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model SyncLog {
+  id           String   @id @default(cuid())
+  projectId    String
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  action       String
+  status       String
+  nodesAdded   Int      @default(0)
+  nodesUpdated Int      @default(0)
+  nodesSkipped Int      @default(0)
+  error        String?
+  durationMs   Int?
+  createdAt    DateTime @default(now())
+
+  @@index([projectId])
+}
