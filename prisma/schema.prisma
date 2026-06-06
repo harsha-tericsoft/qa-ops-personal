@@ -48,6 +48,14 @@ enum RunStatus {
   BLOCKED
 }
 
+enum SuiteCategory {
+  SMOKE
+  REGRESSION
+  SPRINT
+  RELEASE
+  CUSTOM
+}
+
 model Project {
   id               String              @id @default(cuid())
   name             String
@@ -167,20 +175,23 @@ model SyncLog {
 }
 
 model ExecutionCycle {
-  id          String         @id @default(cuid())
-  projectId   String
-  project     Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  name        String
-  description String?
-  startDate   DateTime?
-  endDate     DateTime?
-  status      CycleStatus    @default(PLANNED)
-  createdBy   String?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  testRuns    TestRun[]
+  id             String         @id @default(cuid())
+  projectId      String
+  project        Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name           String
+  description    String?
+  startDate      DateTime?
+  endDate        DateTime?
+  status         CycleStatus    @default(PLANNED)
+  createdBy      String?
+  sourceSuiteId  String?
+  sourceSuite    TestSuite?     @relation("CycleFromSuite", fields: [sourceSuiteId], references: [id], onDelete: SetNull)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  testRuns       TestRun[]
 
   @@index([projectId])
+  @@index([sourceSuiteId])
 }
 
 model TestRun {
@@ -241,16 +252,18 @@ model RunAttachment {
 }
 
 model TestSuite {
-  id                String            @id @default(cuid())
+  id                String              @id @default(cuid())
   projectId         String
-  project           Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project           Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
   name              String
   description       String?
+  category          SuiteCategory       @default(CUSTOM)
   selectionMethod   String
   selectionConfig   Json?
   testCases         SuiteTestCase[]
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  usedInCycles      ExecutionCycle[]    @relation("CycleFromSuite")
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 
   @@index([projectId])
 }
