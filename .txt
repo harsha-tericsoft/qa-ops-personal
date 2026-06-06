@@ -1,0 +1,176 @@
+claude
+!pwd
+!ls
+!open .
+git init
+git add .
+git commit -m "Initial QA Ops Architecture"
+ESC
+Continue
+↑
+/qa-roam-sync
+/release-readiness
+/compact
+/usage
+
+
+
+Build a QA Ops Platform.
+
+Stack:
+- Next.js
+- TypeScript
+- Tailwind
+- ShadCN
+- Prisma
+- Supabase
+
+Requirements:
+
+- Lead & QA roles
+- Projects
+- Repository Tree
+- Test Cases
+- Tags
+- Versions
+- Sprints
+- Execution Cycles
+- Defects
+- Dashboard
+- Release Readiness
+
+Roam Integration:
+- Import Export
+- Live Sync
+
+Design architecture first.
+
+
+
+
+///
+
+
+Build Repository Tree.
+
+Requirements:
+
+- Dynamic hierarchy from Roam
+- Unlimited nesting
+- Store full path
+
+Selecting a node includes all descendant tests.
+
+Design scalable structure.
+
+///
+
+Build Roam Integration.
+
+Support:
+
+1. Import Export File
+
+2. Live Sync
+
+Configuration:
+
+- Graph URL
+- API Key
+- Test Connection
+- Sync Now
+
+Repository remains read only.
+///
+
+Build Execution Cycle Module.
+
+Selection Methods:
+
+- Repository Tree
+- Tags
+- Saved Suites
+- Search
+
+Statuses:
+
+- Pass
+- Fail
+- Blocked
+- Not Executed
+
+Support comments, Jira links and attachments.
+
+///
+
+Build Saved Suites.
+
+Examples:
+
+- Smoke
+- Regression
+- Sprint
+- Release
+
+Allow reuse across cycles.
+///
+
+Create skill: qa-roam-sync
+
+Purpose:
+
+- Import tests
+- Parse hierarchy
+- Parse tags
+- Build repository tree
+
+Triggers:
+
+- Sync tests
+- Import tests
+- Refresh repository
+////
+
+
+Create skill: release-readiness
+
+Metrics:
+
+- Pass Rate
+- Fail Rate
+- Blocked Tests
+- Open Critical Defects
+
+Output:
+
+READY
+AT RISK
+NOT READY
+
+///
+
+Build Dashboard.
+
+Metrics:
+
+- Total Tests
+- Synced Tests
+- Active Cycles
+- Pass Rate
+- Fail Rate
+- Blocked Tests
+- Open Defects
+- Release Readiness
+///
+
+/qa-roam-sync
+
+Sync Authentication Tests
+
+//
+
+/release-readiness
+
+Analyze current release
+
+////
