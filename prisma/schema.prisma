@@ -34,16 +34,33 @@ enum SyncStatus {
   FAILED
 }
 
+enum CycleStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  ABORTED
+}
+
+enum RunStatus {
+  NOT_EXECUTED
+  PASS
+  FAIL
+  BLOCKED
+}
+
 model Project {
-  id           String        @id @default(cuid())
-  name         String
-  description  String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  repositories Repository[]
-  testCases    TestCase[]
-  roamConfig   RoamConfig?
-  syncLogs     SyncLog[]
+  id               String              @id @default(cuid())
+  name             String
+  description      String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  repositories     Repository[]
+  testCases        TestCase[]
+  roamConfig       RoamConfig?
+  syncLogs         SyncLog[]
+  executionCycles  ExecutionCycle[]
+  testSuites       TestSuite[]
+  tags             Tag[]
 }
 
 model Repository {
@@ -91,14 +108,17 @@ model RepositoryNode {
 }
 
 model TestCase {
-  id          String         @id @default(cuid())
+  id          String            @id @default(cuid())
   title       String
   description String?
   projectId   String
-  project     Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project     Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
   nodes       TestCaseNode[]
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  testRuns    TestRun[]
+  suites      SuiteTestCase[]
+  tags        TagTestCase[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 
   @@index([projectId])
 }
@@ -144,4 +164,126 @@ model SyncLog {
   createdAt    DateTime @default(now())
 
   @@index([projectId])
+}
+
+model ExecutionCycle {
+  id          String         @id @default(cuid())
+  projectId   String
+  project     Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  startDate   DateTime?
+  endDate     DateTime?
+  status      CycleStatus    @default(PLANNED)
+  createdBy   String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  testRuns    TestRun[]
+
+  @@index([projectId])
+}
+
+model TestRun {
+  id          String         @id @default(cuid())
+  cycleId     String
+  cycle       ExecutionCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  testCaseId  String
+  testCase    TestCase       @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  status      RunStatus      @default(NOT_EXECUTED)
+  executedBy  String?
+  executedAt  DateTime?
+  durationMs  Int?
+  comments    RunComment[]
+  jiraLinks   JiraLink[]
+  attachments RunAttachment[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([cycleId])
+  @@index([testCaseId])
+}
+
+model RunComment {
+  id        String   @id @default(cuid())
+  runId     String
+  run       TestRun  @relation(fields: [runId], references: [id], onDelete: Cascade)
+  content   String
+  author    String?
+  createdAt DateTime @default(now())
+
+  @@index([runId])
+}
+
+model JiraLink {
+  id        String   @id @default(cuid())
+  runId     String
+  run       TestRun  @relation(fields: [runId], references: [id], onDelete: Cascade)
+  issueKey  String
+  issueUrl  String?
+  issueType String?
+  summary   String?
+  createdAt DateTime @default(now())
+
+  @@index([runId])
+}
+
+model RunAttachment {
+  id        String   @id @default(cuid())
+  runId     String
+  run       TestRun  @relation(fields: [runId], references: [id], onDelete: Cascade)
+  name      String
+  url       String
+  sizeBytes Int?
+  mimeType  String?
+  createdAt DateTime @default(now())
+
+  @@index([runId])
+}
+
+model TestSuite {
+  id                String            @id @default(cuid())
+  projectId         String
+  project           Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name              String
+  description       String?
+  selectionMethod   String
+  selectionConfig   Json?
+  testCases         SuiteTestCase[]
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([projectId])
+}
+
+model SuiteTestCase {
+  id         String    @id @default(cuid())
+  suiteId    String
+  suite      TestSuite @relation(fields: [suiteId], references: [id], onDelete: Cascade)
+  testCaseId String
+  testCase   TestCase  @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  order      Int       @default(0)
+
+  @@unique([suiteId, testCaseId])
+  @@index([suiteId])
+}
+
+model Tag {
+  id        String       @id @default(cuid())
+  projectId String
+  project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name      String
+  color     String       @default("#6366f1")
+  testCases TagTestCase[]
+
+  @@unique([projectId, name])
+  @@index([projectId])
+}
+
+model TagTestCase {
+  tagId      String
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  testCaseId String
+  testCase   TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@id([tagId, testCaseId])
 }
