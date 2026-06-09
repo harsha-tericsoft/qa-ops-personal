@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { RoamClient } from '@/lib/roam/client'
-import { PrismaClient } from '@/app/generated/prisma'
 import { decryptApiKey } from '@/lib/roam/crypto'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
 
 // POST /api/roam/test-connection
 export async function POST(req: NextRequest) {

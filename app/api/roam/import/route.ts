@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@/app/generated/prisma'
 import { importFromFile } from '@/lib/roam/sync'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
 
 // POST /api/roam/import
 export async function POST(req: NextRequest) {

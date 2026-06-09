@@ -1,8 +1,7 @@
-import { PrismaClient, SuiteCategory } from '@/app/generated/prisma'
+import { SuiteCategory } from '@/app/generated/prisma'
 import { selectBySuite } from './test-selector.service'
 import { createCycle } from './execution.service'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
 
 export async function getSuite(suiteId: string) {
   const suite = await prisma.testSuite.findUniqueOrThrow({

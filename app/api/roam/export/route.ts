@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@/app/generated/prisma'
 import { exportToRoamJSON } from '@/lib/roam/exporter'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
 
 // GET /api/roam/export
 export async function GET(req: NextRequest) {

@@ -1,6 +1,6 @@
-import { PrismaClient } from '@/app/generated/prisma'
 import { RoamPage, RoamBlock } from './client'
 import { slugify } from '@/lib/utils/formatters'
+import { prisma } from '@/lib/prisma'
 
 export interface SyncResult {
   added: number
@@ -8,8 +8,6 @@ export interface SyncResult {
   skipped: number
   errors: string[]
 }
-
-const prisma = new PrismaClient()
 
 export async function importRoamJSON(
   pages: RoamPage[],

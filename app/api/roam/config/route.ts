@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@/app/generated/prisma'
 import { encryptApiKey, maskApiKey } from '@/lib/roam/crypto'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
 
 // GET /api/roam/config
 export async function GET(req: NextRequest) {

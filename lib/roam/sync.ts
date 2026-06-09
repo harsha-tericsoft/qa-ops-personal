@@ -1,9 +1,7 @@
-import { PrismaClient } from '@/app/generated/prisma'
 import { RoamClient } from './client'
 import { importRoamJSON, SyncResult } from './importer'
 import { decryptApiKey } from './crypto'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
 
 export async function syncNow(projectId: string): Promise<SyncResult & { error?: string }> {
   const startTime = Date.now()

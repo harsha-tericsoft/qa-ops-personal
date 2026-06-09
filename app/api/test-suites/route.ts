@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@/app/generated/prisma'
-
-const prisma = new PrismaClient()
+import { getTestSuites, createTestSuite } from '@/lib/db'
 
 // GET /api/test-suites
 export async function GET(req: NextRequest) {
@@ -11,17 +9,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const suites = await prisma.testSuite.findMany({
-      where: { projectId },
-      include: {
-        testCases: {
-          include: { testCase: true },
-          orderBy: { order: 'asc' },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    })
-
+    const suites = await getTestSuites(projectId)
     return NextResponse.json(suites)
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error'
@@ -38,28 +26,16 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { name, description, selectionMethod, selectionConfig, testCaseIds } = body
+    const { name, description, category = 'CUSTOM' } = body
 
-    if (!name || !selectionMethod || !testCaseIds || !Array.isArray(testCaseIds)) {
+    if (!name) {
       return NextResponse.json(
-        { error: 'name, selectionMethod, and testCaseIds array required' },
+        { error: 'name is required' },
         { status: 400 }
       )
     }
 
-    const suite = await prisma.testSuite.create({
-      data: {
-        projectId,
-        name,
-        description,
-        selectionMethod,
-        selectionConfig,
-        testCases: {
-          createMany: {
-            data: testCaseIds.map((testCaseId: string, order: number) => ({
-              testCaseId,
-              order,
-            })),
+    const suite = await createTestSuite(projectId, name, category, description)
           },
         },
       },

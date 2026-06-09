@@ -1,7 +1,5 @@
-import { PrismaClient } from '@/app/generated/prisma'
 import { RoamPage, RoamBlock } from './client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
 
 export async function exportToRoamJSON(repositoryId: string): Promise<RoamPage[]> {
   // Fetch all nodes for the repository

@@ -1,6 +1,4 @@
-import { PrismaClient, RunStatus } from '@/app/generated/prisma'
-
-const prisma = new PrismaClient()
+import { createExecutionCycle, getExecutionCycles, getExecutionCycle } from '@/lib/db'
 
 export interface CreateCycleInput {
   projectId: string
@@ -21,63 +19,26 @@ export interface CycleMetrics {
 }
 
 export async function createCycle(input: CreateCycleInput) {
-  const { projectId, name, description, startDate, endDate, testCaseIds } = input
+  const { projectId, name, description, startDate, endDate } = input
 
-  const cycle = await prisma.executionCycle.create({
-    data: {
-      projectId,
-      name,
-      description,
-      startDate,
-      endDate,
-      testRuns: {
-        createMany: {
-          data: testCaseIds.map(testCaseId => ({
-            testCaseId,
-          })),
-        },
-      },
-    },
-    include: {
-      testRuns: true,
-    },
-  })
+  const cycle = await createExecutionCycle(
+    projectId,
+    name,
+    'PLANNED',
+    description,
+    startDate?.toISOString(),
+    endDate?.toISOString()
+  )
 
   return cycle
 }
 
 export async function getCycle(cycleId: string) {
-  const cycle = await prisma.executionCycle.findUniqueOrThrow({
-    where: { id: cycleId },
-    include: {
-      testRuns: {
-        include: {
-          testCase: true,
-          comments: true,
-          jiraLinks: true,
-          attachments: true,
-        },
-      },
-    },
-  })
-
-  return cycle
+  return getExecutionCycle(cycleId)
 }
 
 export async function listCycles(projectId: string) {
-  const cycles = await prisma.executionCycle.findMany({
-    where: { projectId },
-    include: {
-      testRuns: {
-        select: {
-          status: true,
-        },
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-  })
-
-  return cycles
+  return getExecutionCycles(projectId)
 }
 
 export async function updateCycleStatus(cycleId: string, status: string) {

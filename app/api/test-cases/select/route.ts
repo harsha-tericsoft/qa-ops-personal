@@ -5,9 +5,7 @@ import {
   selectBySuite,
   selectBySearch,
 } from '@/lib/services/test-selector.service'
-import { PrismaClient } from '@/app/generated/prisma'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
 
 // GET /api/test-cases/select
 export async function GET(req: NextRequest) {

@@ -1,6 +1,4 @@
-import { PrismaClient } from '@/app/generated/prisma'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
 
 export async function selectByRepoNode(nodeId: string): Promise<string[]> {
   // Get the node to find its path

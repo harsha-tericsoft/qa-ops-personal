@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient, RunStatus } from '@/app/generated/prisma'
+import { RunStatus } from '@/app/generated/prisma'
 import { updateRunStatus } from '@/lib/services/execution.service'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
 
 type RouteParams = { params: Promise<{ id: string }> }
 

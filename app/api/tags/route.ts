@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@/app/generated/prisma'
-
-const prisma = new PrismaClient()
+import { getTags, createTag } from '@/lib/db'
 
 // GET /api/tags
 export async function GET(req: NextRequest) {
@@ -11,16 +9,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const tags = await prisma.tag.findMany({
-      where: { projectId },
-      include: {
-        testCases: {
-          select: { testCaseId: true },
-        },
-      },
-      orderBy: { name: 'asc' },
-    })
-
+    const tags = await getTags(projectId)
     return NextResponse.json(tags)
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error'
@@ -43,14 +32,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'name required' }, { status: 400 })
     }
 
-    const tag = await prisma.tag.create({
-      data: {
-        projectId,
-        name,
-        color: color || '#6366f1',
-      },
-    })
-
+    const tag = await createTag(projectId, name, color)
     return NextResponse.json(tag, { status: 201 })
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error'
