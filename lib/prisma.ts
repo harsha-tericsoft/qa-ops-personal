@@ -25,12 +25,9 @@ const prismaClientSingleton = () => {
     const dbUrl = getDatabaseUrl()
     console.log('[Prisma] Initializing client with DATABASE_URL:', dbUrl.substring(0, 50) + '...')
 
-    // Create Prisma client with PrismaPg adapter for direct PostgreSQL connection
+    // Create Prisma client with PrismaPg adapter (required for Prisma 7)
     const adapter = new PrismaPg({
       url: dbUrl,
-      connectionConfig: {
-        connectTimeoutSeconds: 5,
-      },
     })
 
     const client = new PrismaClient({
