@@ -216,6 +216,10 @@ export async function getDashboardMetrics(projectId: string) {
       failStats,
       blockedStats,
       openDefects,
+      roamConfig,
+      testSuites,
+      tagCount,
+      repositoryNodes,
     ] = await Promise.all([
       client.query('SELECT COUNT(*) as count FROM "TestCase" WHERE "projectId" = $1', [projectId]),
       client.query('SELECT COUNT(*) as count FROM "ExecutionCycle" WHERE "projectId" = $1 AND status = $2', [projectId, 'IN_PROGRESS']),
@@ -223,6 +227,10 @@ export async function getDashboardMetrics(projectId: string) {
       client.query('SELECT COUNT(*) as count FROM "TestRun" WHERE status = $1 AND "cycleId" IN (SELECT id FROM "ExecutionCycle" WHERE "projectId" = $2)', ['FAIL', projectId]),
       client.query('SELECT COUNT(*) as count FROM "TestRun" WHERE status = $1 AND "cycleId" IN (SELECT id FROM "ExecutionCycle" WHERE "projectId" = $2)', ['BLOCKED', projectId]),
       client.query('SELECT COUNT(*) as count FROM "JiraLink" WHERE "runId" IN (SELECT id FROM "TestRun" WHERE "cycleId" IN (SELECT id FROM "ExecutionCycle" WHERE "projectId" = $1))', [projectId]),
+      client.query('SELECT id, "syncEnabled", "lastSyncAt", "lastSyncStatus" FROM "RoamConfig" WHERE "projectId" = $1', [projectId]),
+      client.query('SELECT COUNT(*) as count FROM "TestSuite" WHERE "projectId" = $1', [projectId]),
+      client.query('SELECT COUNT(DISTINCT id) as count FROM "Tag" WHERE "projectId" = $1', [projectId]),
+      client.query('SELECT COUNT(*) as count FROM "RepositoryNode" WHERE "projectId" = $1 AND "deletedAt" IS NULL', [projectId]),
     ])
 
     const total = parseInt(totalTests.rows[0]?.count || 0)
@@ -231,13 +239,21 @@ export async function getDashboardMetrics(projectId: string) {
     const fail = parseInt(failStats.rows[0]?.count || 0)
     const blocked = parseInt(blockedStats.rows[0]?.count || 0)
     const defects = parseInt(openDefects.rows[0]?.count || 0)
+    const suites = parseInt(testSuites.rows[0]?.count || 0)
+    const tags = parseInt(tagCount.rows[0]?.count || 0)
+    const repos = parseInt(repositoryNodes.rows[0]?.count || 0)
 
     const totalRuns = pass + fail + blocked
-    const passRate = totalRuns > 0 ? Math.round((pass / totalRuns) * 100 * 10) / 10 : 0
-    const failRate = totalRuns > 0 ? Math.round((fail / totalRuns) * 100 * 10) / 10 : 0
+    const hasExecutionData = totalRuns > 0
 
-    let readiness: 'READY' | 'AT_RISK' | 'NOT_READY'
-    if (passRate >= 95 && blocked === 0 && defects === 0) {
+    const passRate = hasExecutionData ? Math.round((pass / totalRuns) * 100 * 10) / 10 : -1
+    const failRate = hasExecutionData ? Math.round((fail / totalRuns) * 100 * 10) / 10 : -1
+    const blockedRate = hasExecutionData ? Math.round((blocked / totalRuns) * 100 * 10) / 10 : -1
+
+    let readiness: 'READY' | 'AT_RISK' | 'NOT_READY' | 'INSUFFICIENT_DATA'
+    if (!hasExecutionData) {
+      readiness = 'INSUFFICIENT_DATA'
+    } else if (passRate >= 95 && blocked === 0 && defects === 0) {
       readiness = 'READY'
     } else if (passRate >= 80 && (blocked > 0 || defects > 0)) {
       readiness = 'AT_RISK'
@@ -245,18 +261,30 @@ export async function getDashboardMetrics(projectId: string) {
       readiness = 'NOT_READY'
     }
 
+    const roamData = roamConfig.rows[0]
+    const isRoamConfigured = roamData && roamData.syncEnabled === true
+
     return {
       totalTests: total,
-      syncedTests: Math.ceil(total * 0.6),
+      repositoryTests: repos,
+      testSuites: suites,
+      tagCount: tags,
       activeCycles: active,
-      passRate,
-      failRate,
+      passRate: hasExecutionData ? passRate : null,
+      failRate: hasExecutionData ? failRate : null,
+      blockedRate: hasExecutionData ? blockedRate : null,
       blockedTests: blocked,
       openDefects: defects,
       readiness,
       passCount: pass,
       failCount: fail,
       totalRunTests: totalRuns,
+      hasExecutionData,
+      roamConfig: {
+        isConfigured: isRoamConfigured,
+        lastSyncAt: roamData?.lastSyncAt || null,
+        lastSyncStatus: roamData?.lastSyncStatus || 'NEVER',
+      },
     }
   } finally {
     client.release()

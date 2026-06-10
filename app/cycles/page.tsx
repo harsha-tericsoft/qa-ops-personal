@@ -1,4 +1,6 @@
-export default function ExecutionCyclesPage() {
+import { ProtectedRoute } from '@/components/ProtectedRoute'
+
+function ExecutionCyclesContent() {
   return (
     <div className="p-8">
       <div className="max-w-6xl mx-auto">
@@ -38,5 +40,13 @@ export default function ExecutionCyclesPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ExecutionCyclesPage() {
+  return (
+    <ProtectedRoute>
+      <ExecutionCyclesContent />
+    </ProtectedRoute>
   )
 }

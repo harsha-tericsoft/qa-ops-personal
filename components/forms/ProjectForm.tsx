@@ -24,7 +24,17 @@ export function ProjectForm({ onSuccess }: ProjectFormProps) {
         body: JSON.stringify({ name, description }),
       })
 
-      if (!response.ok) throw new Error('Failed to create project')
+      if (!response.ok) {
+        let errorMessage = 'Failed to create project'
+        try {
+          const data = await response.json()
+          errorMessage = data.error || errorMessage
+        } catch {
+          errorMessage = `Server error (${response.status}): ${response.statusText}`
+        }
+        throw new Error(errorMessage)
+      }
+
       setName('')
       setDescription('')
       onSuccess?.()

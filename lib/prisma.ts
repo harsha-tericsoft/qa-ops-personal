@@ -1,34 +1,43 @@
 import { PrismaClient } from '@prisma/client'
-import { PrismaPg } from '@prisma/adapter-pg'
-import { Pool } from 'pg'
 
 declare global {
   var prisma: PrismaClient | undefined
 }
 
-const connectionString = process.env.DATABASE_URL
-if (!connectionString) {
-  throw new Error('DATABASE_URL is required')
+const getDatabaseUrl = () => {
+  const url = process.env.DATABASE_URL
+  if (!url) {
+    throw new Error('DATABASE_URL environment variable is not set')
+  }
+
+  // Basic URL validation
+  if (!url.startsWith('postgresql://') && !url.startsWith('postgres://')) {
+    throw new Error('DATABASE_URL must be a valid PostgreSQL connection string')
+  }
+
+  return url
 }
 
-// Extract connection info from URL to check if it's pgbouncer or regular
-const isPgBouncer = connectionString.includes('pooler.supabase.com')
+const prismaClientSingleton = () => {
+  try {
+    return new PrismaClient({
+      log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+    })
+  } catch (error) {
+    console.error('Failed to initialize Prisma Client:', error)
+    throw error
+  }
+}
 
-// For pgbouncer, we don't need to create our own pool - use directUrl
-const adapter = new PrismaPg({
-  pool: new Pool({
-    connectionString,
-    max: 5,
-    min: 1,
-  }),
-})
-
-export const prisma =
-  global.prisma ||
-  new PrismaClient({
-    adapter,
-  })
+export const prisma = global.prisma ?? prismaClientSingleton()
 
 if (process.env.NODE_ENV !== 'production') {
   global.prisma = prisma
+}
+
+// Graceful shutdown
+if (typeof global !== 'undefined') {
+  if (process.env.NODE_ENV !== 'production') {
+    global.prisma = prisma
+  }
 }

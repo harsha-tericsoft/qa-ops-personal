@@ -1,4 +1,6 @@
-export default function TagsPage() {
+import { ProtectedRoute } from '@/components/ProtectedRoute'
+
+function TagsContent() {
   return (
     <div className="p-8">
       <div className="max-w-6xl mx-auto">
@@ -38,5 +40,13 @@ export default function TagsPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function TagsPage() {
+  return (
+    <ProtectedRoute>
+      <TagsContent />
+    </ProtectedRoute>
   )
 }

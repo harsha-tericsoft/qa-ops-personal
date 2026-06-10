@@ -42,13 +42,20 @@ export function RoamConfigForm({ projectId, onSuccess }: RoamConfigFormProps) {
         }
       )
 
-      const data = await response.json()
-
-      if (response.ok) {
-        setSuccess(`✅ Connection successful! Found ${data.pagesCount} pages`)
-      } else {
-        setError(data.error || 'Connection failed')
+      if (!response.ok) {
+        let errorMessage = 'Connection failed'
+        try {
+          const data = await response.json()
+          errorMessage = data.error || errorMessage
+        } catch {
+          errorMessage = `Server error (${response.status}): ${response.statusText}`
+        }
+        setError(errorMessage)
+        return
       }
+
+      const data = await response.json()
+      setSuccess(`✅ Connection successful! Found ${data.pagesCount} pages`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Connection test failed')
     } finally {
@@ -78,7 +85,16 @@ export function RoamConfigForm({ projectId, onSuccess }: RoamConfigFormProps) {
         }
       )
 
-      if (!response.ok) throw new Error('Failed to save configuration')
+      if (!response.ok) {
+        let errorMessage = 'Failed to save configuration'
+        try {
+          const data = await response.json()
+          errorMessage = data.error || errorMessage
+        } catch {
+          errorMessage = `Server error (${response.status}): ${response.statusText}`
+        }
+        throw new Error(errorMessage)
+      }
 
       setSuccess('✅ Roam configuration saved!')
       setGraphName('')

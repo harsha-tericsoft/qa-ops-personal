@@ -31,7 +31,16 @@ export function TestCaseForm({ projectId, onSuccess }: TestCaseFormProps) {
         }),
       })
 
-      if (!response.ok) throw new Error('Failed to create test case')
+      if (!response.ok) {
+        let errorMessage = 'Failed to create test case'
+        try {
+          const data = await response.json()
+          errorMessage = data.error || errorMessage
+        } catch {
+          errorMessage = `Server error (${response.status}): ${response.statusText}`
+        }
+        throw new Error(errorMessage)
+      }
 
       setTitle('')
       setDescription('')

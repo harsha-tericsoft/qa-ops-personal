@@ -2,12 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useAuth } from '@/lib/hooks/useAuth'
 
 interface NavItem {
   label: string
   href: string
   icon: string
   description: string
+  requiresLead?: boolean
 }
 
 const navItems: NavItem[] = [
@@ -22,52 +24,55 @@ const navItems: NavItem[] = [
     href: '/projects',
     icon: '📁',
     description: 'Manage projects',
+    requiresLead: true,
   },
   {
-    label: 'Repository Tree',
+    label: 'Repository',
     href: '/repository',
     icon: '🌳',
-    description: 'Test hierarchy',
+    description: 'View imported test hierarchy',
   },
   {
     label: 'Test Cases',
     href: '/test-cases',
     icon: '✅',
-    description: 'Manage test cases',
+    description: 'View imported test cases',
   },
   {
     label: 'Test Suites',
     href: '/test-suites',
     icon: '📦',
-    description: 'Saved test collections',
+    description: 'Organize tests for execution',
   },
   {
     label: 'Execution Cycles',
     href: '/cycles',
     icon: '🔄',
-    description: 'Test execution runs',
-  },
-  {
-    label: 'Tags',
-    href: '/tags',
-    icon: '🏷️',
-    description: 'Organize by tags',
-  },
-  {
-    label: 'Roam Integration',
-    href: '/roam',
-    icon: '🔗',
-    description: 'Sync with Roam',
+    description: 'Execute and track tests',
   },
 ]
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const { user, isAuthenticated, loading } = useAuth()
+
+  // Don't render sidebar while loading or if not authenticated
+  if (loading || !isAuthenticated) {
+    return null
+  }
+
+  // Filter items based on role
+  const visibleItems = navItems.filter((item) => {
+    if (item.requiresLead && user?.role !== 'LEAD') {
+      return false
+    }
+    return true
+  })
 
   return (
     <aside className="w-64 bg-white border-r border-gray-200 overflow-y-auto">
       <nav className="p-4 space-y-1">
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const isActive = pathname.startsWith(item.href)
           return (
             <Link

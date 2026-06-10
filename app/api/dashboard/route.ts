@@ -14,7 +14,11 @@ export async function GET(req: NextRequest) {
 
   try {
     const metrics = await getProjectDashboardMetrics(projectId)
-    return NextResponse.json(metrics)
+    return NextResponse.json(metrics, {
+      headers: {
+        'Cache-Control': 'no-store, max-age=0',
+      },
+    })
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json({ error: msg }, { status: 500 })

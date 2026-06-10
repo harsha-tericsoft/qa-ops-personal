@@ -74,7 +74,7 @@ export function ProjectList() {
                 </td>
                 <td className="px-6 py-4 text-sm">
                   <Link
-                    href={`/projects/${project.id}/dashboard`}
+                    href={`/projects/${project.id}`}
                     className="text-blue-600 hover:underline"
                   >
                     View

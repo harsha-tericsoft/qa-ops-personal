@@ -1,6 +1,6 @@
 interface ReadinessBadgeProps {
-  status: 'READY' | 'AT_RISK' | 'NOT_READY'
-  passRate: number
+  status: 'READY' | 'AT_RISK' | 'NOT_READY' | 'INSUFFICIENT_DATA'
+  passRate: number | null
   blockedTests: number
   openDefects: number
 }
@@ -27,6 +27,13 @@ const statusConfig = {
     badgeColor: 'bg-red-600',
     label: 'NOT READY',
   },
+  INSUFFICIENT_DATA: {
+    icon: '📊',
+    bgColor: 'bg-slate-100',
+    textColor: 'text-slate-900',
+    badgeColor: 'bg-slate-600',
+    label: 'INSUFFICIENT DATA',
+  },
 }
 
 export function ReadinessBadge({
@@ -43,10 +50,13 @@ export function ReadinessBadge({
         <span className="text-3xl">{config.icon}</span>
         <div>
           <h3 className="text-lg font-bold">{config.label}</h3>
-          <p className="mt-1 text-sm">
-            {passRate.toFixed(1)}% pass rate · {blockedTests} blocked ·{' '}
-            {openDefects} defects
-          </p>
+          {status === 'INSUFFICIENT_DATA' ? (
+            <p className="mt-1 text-sm">Execution data required for readiness assessment.</p>
+          ) : (
+            <p className="mt-1 text-sm">
+              {passRate !== null ? `${passRate.toFixed(1)}% pass rate` : '-'} · {blockedTests} blocked · {openDefects} defects
+            </p>
+          )}
         </div>
       </div>
     </div>

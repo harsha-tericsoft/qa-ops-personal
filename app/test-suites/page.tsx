@@ -1,4 +1,6 @@
-export default function TestSuitesPage() {
+import { ProtectedRoute } from '@/components/ProtectedRoute'
+
+function TestSuitesContent() {
   return (
     <div className="p-8">
       <div className="max-w-6xl mx-auto">
@@ -38,5 +40,13 @@ export default function TestSuitesPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function TestSuitesPage() {
+  return (
+    <ProtectedRoute>
+      <TestSuitesContent />
+    </ProtectedRoute>
   )
 }
