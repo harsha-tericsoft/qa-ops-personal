@@ -40,8 +40,8 @@ export async function POST(req: NextRequest) {
 
     const project = await prisma.project.create({
       data: {
-        name: name.trim(),
-        description: description?.trim() || null,
+        name: String(name).trim(),
+        description: description ? String(description).trim() : null,
       },
     })
 

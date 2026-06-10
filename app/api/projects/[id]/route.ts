@@ -86,8 +86,8 @@ export async function PUT(
     const project = await prisma.project.update({
       where: { id },
       data: {
-        name: name.trim(),
-        description: description?.trim() || null,
+        name: String(name).trim(),
+        description: description ? String(description).trim() : null,
       },
     })
 
