@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
 
 declare global {
   var prisma: PrismaClient | undefined
@@ -21,22 +22,19 @@ const getDatabaseUrl = () => {
 const prismaClientSingleton = () => {
   try {
     // Validate DATABASE_URL before creating client
-    let dbUrlString = getDatabaseUrl()
-    console.log('[Prisma] Initializing client with DATABASE_URL:', dbUrlString.substring(0, 50) + '...')
+    const dbUrl = getDatabaseUrl()
+    console.log('[Prisma] Initializing client with DATABASE_URL:', dbUrl.substring(0, 50) + '...')
 
-    // Set connection timeout to 5 seconds to prevent hanging
-    const dbUrl = new URL(dbUrlString)
-    if (!dbUrl.searchParams.has('connect_timeout')) {
-      dbUrl.searchParams.set('connect_timeout', '5')
-    }
-    dbUrlString = dbUrl.toString()
+    // Create Prisma client with PrismaPg adapter for direct PostgreSQL connection
+    const adapter = new PrismaPg({
+      url: dbUrl,
+      connectionConfig: {
+        connectTimeoutSeconds: 5,
+      },
+    })
 
     const client = new PrismaClient({
-      datasources: {
-        db: {
-          url: dbUrlString,
-        },
-      },
+      adapter,
       log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
     })
 
@@ -54,10 +52,8 @@ try {
   prismaInstance = global.prisma ?? prismaClientSingleton()
 } catch (error) {
   console.error('[Prisma] Error during initialization:', error)
-  // Create a fallback client that will error on use
-  prismaInstance = new PrismaClient({
-    log: ['error'],
-  })
+  // Re-throw the error instead of silently failing
+  throw error
 }
 
 export const prisma = prismaInstance
