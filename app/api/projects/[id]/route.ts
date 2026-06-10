@@ -16,30 +16,45 @@ export async function GET(
       )
     }
 
-    const project = await prisma.project.findUnique({
-      where: { id },
-      include: {
-        roamConfig: {
-          select: {
-            id: true,
-            graphName: true,
-            lastSyncAt: true,
-            lastSyncStatus: true,
-            syncEnabled: true,
+    console.log(`[DEBUG] Fetching project with ID: ${id}`)
+
+    try {
+      const project = await prisma.project.findUnique({
+        where: { id },
+        include: {
+          roamConfig: {
+            select: {
+              id: true,
+              graphName: true,
+              lastSyncAt: true,
+              lastSyncStatus: true,
+              syncEnabled: true,
+            },
           },
         },
-      },
-    })
+      })
 
-    if (!project) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+      if (!project) {
+        console.log(`[DEBUG] Project not found: ${id}`)
+        return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+      }
+
+      console.log(`[DEBUG] Project found: ${id}`)
+      return NextResponse.json(project)
+    } catch (dbError) {
+      console.error('[DEBUG] Database error:', dbError)
+      throw dbError
     }
-
-    return NextResponse.json(project)
   } catch (error) {
     console.error('Error fetching project:', error)
-    const msg = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.json({ error: msg }, { status: 500 })
+    const msg = error instanceof Error ? error.message : JSON.stringify(error)
+    return NextResponse.json(
+      {
+        error: msg,
+        details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+      },
+      { status: 500 }
+    )
   }
 }
 

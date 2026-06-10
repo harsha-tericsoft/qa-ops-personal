@@ -20,6 +20,9 @@ const getDatabaseUrl = () => {
 
 const prismaClientSingleton = () => {
   try {
+    // Validate DATABASE_URL before creating client
+    getDatabaseUrl()
+
     return new PrismaClient({
       log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
     })
