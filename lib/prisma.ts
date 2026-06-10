@@ -21,26 +21,47 @@ const getDatabaseUrl = () => {
 const prismaClientSingleton = () => {
   try {
     // Validate DATABASE_URL before creating client
-    getDatabaseUrl()
+    let dbUrlString = getDatabaseUrl()
+    console.log('[Prisma] Initializing client with DATABASE_URL:', dbUrlString.substring(0, 50) + '...')
 
-    return new PrismaClient({
+    // Set connection timeout to 5 seconds to prevent hanging
+    const dbUrl = new URL(dbUrlString)
+    if (!dbUrl.searchParams.has('connect_timeout')) {
+      dbUrl.searchParams.set('connect_timeout', '5')
+    }
+    dbUrlString = dbUrl.toString()
+
+    const client = new PrismaClient({
+      datasources: {
+        db: {
+          url: dbUrlString,
+        },
+      },
       log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
     })
+
+    console.log('[Prisma] Client initialized successfully')
+    return client
   } catch (error) {
-    console.error('Failed to initialize Prisma Client:', error)
+    console.error('[Prisma] Failed to initialize Prisma Client:', error)
     throw error
   }
 }
 
-export const prisma = global.prisma ?? prismaClientSingleton()
+let prismaInstance: PrismaClient | undefined
 
-if (process.env.NODE_ENV !== 'production') {
-  global.prisma = prisma
+try {
+  prismaInstance = global.prisma ?? prismaClientSingleton()
+} catch (error) {
+  console.error('[Prisma] Error during initialization:', error)
+  // Create a fallback client that will error on use
+  prismaInstance = new PrismaClient({
+    log: ['error'],
+  })
 }
 
-// Graceful shutdown
-if (typeof global !== 'undefined') {
-  if (process.env.NODE_ENV !== 'production') {
-    global.prisma = prisma
-  }
+export const prisma = prismaInstance
+
+if (process.env.NODE_ENV !== 'production' && typeof global !== 'undefined') {
+  global.prisma = prisma
 }

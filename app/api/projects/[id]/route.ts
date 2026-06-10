@@ -21,17 +21,6 @@ export async function GET(
     try {
       const project = await prisma.project.findUnique({
         where: { id },
-        include: {
-          roamConfig: {
-            select: {
-              id: true,
-              graphName: true,
-              lastSyncAt: true,
-              lastSyncStatus: true,
-              syncEnabled: true,
-            },
-          },
-        },
       })
 
       if (!project) {
