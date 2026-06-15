@@ -27,7 +27,6 @@ export async function GET(req: NextRequest) {
       config: {
         projectId: config.projectId,
         graphName: config.graphName,
-        apiEndpoint: config.apiEndpoint,
         lastSyncAt: config.lastSyncAt,
         lastSyncStatus: config.lastSyncStatus,
         lastSyncError: config.lastSyncError,
@@ -40,17 +39,30 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/roam/config - Save Roam Local API configuration
+// Requires: graphName and localApiToken (format: roam-graph-local-token-*)
 export async function POST(req: NextRequest) {
   try {
-    const { projectId, graphName, apiToken, apiEndpoint = 'http://localhost:8000' } = await req.json()
+    const { projectId, graphName, localApiToken } = await req.json()
 
     // Validate required fields
-    if (!projectId || !graphName || !apiToken) {
+    if (!projectId || !graphName || !localApiToken) {
       return NextResponse.json(
         {
           success: false,
           error: 'Missing required fields',
-          details: 'Project ID, Graph Name, and API Token are required',
+          details: 'Project ID, Graph Name, and Local API Token are required',
+        },
+        { status: 400 }
+      )
+    }
+
+    // Validate token format (should be: roam-graph-local-token-*)
+    if (!localApiToken.startsWith('roam-graph-local-token-')) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid token format',
+          details: 'Token must be a local API token in format: roam-graph-local-token-*. Generate one in Roam Desktop Settings.',
         },
         { status: 400 }
       )
@@ -77,13 +89,11 @@ export async function POST(req: NextRequest) {
       create: {
         projectId,
         graphName,
-        apiToken: encryptApiKey(apiToken),
-        apiEndpoint: apiEndpoint || 'http://localhost:8000',
+        localApiToken: encryptApiKey(localApiToken),
       },
       update: {
         graphName,
-        apiToken: encryptApiKey(apiToken),
-        apiEndpoint: apiEndpoint || 'http://localhost:8000',
+        localApiToken: encryptApiKey(localApiToken),
       },
     })
 
@@ -93,7 +103,6 @@ export async function POST(req: NextRequest) {
       config: {
         projectId: config.projectId,
         graphName: config.graphName,
-        apiEndpoint: apiEndpoint,
       },
     })
   } catch (error) {

@@ -14,8 +14,7 @@ export function RoamConfigForm({ projectId, onSuccess }: RoamConfigFormProps) {
   const [success, setSuccess] = useState('')
 
   const [graphName, setGraphName] = useState('')
-  const [apiToken, setApiToken] = useState('')
-  const [apiEndpoint, setApiEndpoint] = useState('http://localhost:8000')
+  const [localApiToken, setLocalApiToken] = useState('')
 
   // Load existing config
   useEffect(() => {
@@ -26,7 +25,6 @@ export function RoamConfigForm({ projectId, onSuccess }: RoamConfigFormProps) {
 
         if (data.success && data.configured && data.config) {
           setGraphName(data.config.graphName)
-          setApiEndpoint(data.config.apiEndpoint)
           // Don't show token for security
         }
       } catch (err) {
@@ -38,8 +36,8 @@ export function RoamConfigForm({ projectId, onSuccess }: RoamConfigFormProps) {
   }, [projectId])
 
   const handleTestConnection = async () => {
-    if (!graphName || !apiToken) {
-      setError('Graph Name and API Token are required')
+    if (!graphName || !localApiToken) {
+      setError('Graph Name and Local API Token are required')
       return
     }
 
@@ -82,8 +80,7 @@ export function RoamConfigForm({ projectId, onSuccess }: RoamConfigFormProps) {
         body: JSON.stringify({
           projectId,
           graphName,
-          apiToken,
-          apiEndpoint,
+          localApiToken,
         }),
       })
 
@@ -95,7 +92,7 @@ export function RoamConfigForm({ projectId, onSuccess }: RoamConfigFormProps) {
       }
 
       setSuccess('✅ Roam configuration saved successfully!')
-      setApiToken('') // Clear token after saving
+      setLocalApiToken('') // Clear token after saving
       onSuccess?.()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
@@ -132,33 +129,19 @@ export function RoamConfigForm({ projectId, onSuccess }: RoamConfigFormProps) {
         </label>
         <input
           type="password"
-          value={apiToken}
-          onChange={(e) => setApiToken(e.target.value)}
-          placeholder="Your Roam local API token"
+          value={localApiToken}
+          onChange={(e) => setLocalApiToken(e.target.value)}
+          placeholder="roam-graph-local-token-..."
           className="w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
-        <p className="text-xs text-gray-500 mt-1">🔐 Stored securely (encrypted with AES-256-GCM)</p>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-900 mb-1">
-          API Endpoint
-        </label>
-        <input
-          type="url"
-          value={apiEndpoint}
-          onChange={(e) => setApiEndpoint(e.target.value)}
-          placeholder="http://localhost:8000"
-          className="w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        />
-        <p className="text-xs text-gray-500 mt-1">Default: http://localhost:8000 (adjust if Roam runs on different port)</p>
+        <p className="text-xs text-gray-500 mt-1">🔐 Stored securely (encrypted with AES-256-GCM). Must start with: roam-graph-local-token-</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <button
           type="button"
           onClick={handleTestConnection}
-          disabled={testing || !graphName || !apiToken}
+          disabled={testing || !graphName || !localApiToken}
           className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium text-sm"
         >
           {testing ? '⏳ Testing...' : '🧪 Test Connection'}

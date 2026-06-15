@@ -1,6 +1,5 @@
 import { RoamClient } from './client'
 import { importRoamJSON, SyncResult } from './importer'
-import { decryptApiKey } from './crypto'
 import { prisma } from '@/lib/prisma'
 
 export async function testConnection(projectId: string): Promise<{
@@ -21,8 +20,8 @@ export async function testConnection(projectId: string): Promise<{
       }
     }
 
-    const decryptedToken = decryptApiKey(config.apiToken || '')
-    const client = new RoamClient(config.graphName, decryptedToken, config.apiEndpoint)
+    // Use RoamClient with encrypted local API token
+    const client = new RoamClient(config.graphName, config.localApiToken)
 
     const canConnect = await client.testConnection()
 
@@ -30,13 +29,13 @@ export async function testConnection(projectId: string): Promise<{
       return {
         success: false,
         error: 'Connection test failed',
-        details: 'Roam did not respond to test query',
+        details: 'Roam Desktop may not be running or token is invalid',
       }
     }
 
     return {
       success: true,
-      details: `Connected to Roam at ${config.apiEndpoint}`,
+      details: `Connected to Roam graph "${config.graphName}"`,
     }
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error'
@@ -81,9 +80,8 @@ export async function initialSync(projectId: string): Promise<{
       })
     }
 
-    // Create Roam client with decrypted token and per-project endpoint
-    const decryptedToken = decryptApiKey(config.apiToken || '')
-    const client = new RoamClient(config.graphName, decryptedToken, config.apiEndpoint)
+    // Create Roam client with encrypted local API token
+    const client = new RoamClient(config.graphName, config.localApiToken)
 
     // Test connection first
     const canConnect = await client.testConnection()
@@ -201,9 +199,8 @@ export async function refreshSync(projectId: string): Promise<{
       throw new Error('No repository found. Run initial sync first.')
     }
 
-    // Create Roam client
-    const decryptedToken = decryptApiKey(config.apiToken || '')
-    const client = new RoamClient(config.graphName, decryptedToken, config.apiEndpoint)
+    // Create Roam client with encrypted local API token
+    const client = new RoamClient(config.graphName, config.localApiToken)
 
     // Test connection first
     const canConnect = await client.testConnection()

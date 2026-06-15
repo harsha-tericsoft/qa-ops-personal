@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { RoamClient } from '@/lib/roam/client'
-import { decryptApiKey } from '@/lib/roam/crypto'
 import { prisma } from '@/lib/prisma'
-import { testConnection } from '@/lib/roam/sync'
 
 // POST /api/roam/test-connection
+// Tests connection to Roam Desktop using local API token
 export async function POST(req: NextRequest) {
   try {
     const { projectId } = await req.json()
@@ -32,11 +31,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Decrypt token
-    const decryptedToken = decryptApiKey(config.apiToken || '')
-
-    // Create client with per-project endpoint
-    const client = new RoamClient(config.graphName, decryptedToken, config.apiEndpoint)
+    // Create client with local API token
+    const client = new RoamClient(config.graphName, config.localApiToken)
 
     const startTime = Date.now()
 
@@ -58,8 +54,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({
           success: true,
-          message: `Connected to Roam at ${config.apiEndpoint}`,
-          endpoint: config.apiEndpoint,
+          message: `Connected to Roam graph "${config.graphName}"`,
           graphName: config.graphName,
         })
       } else {
@@ -84,7 +79,7 @@ export async function POST(req: NextRequest) {
         {
           success: false,
           error: errorMsg,
-          endpoint: config.apiEndpoint,
+          details: 'Ensure Roam Desktop is running and the token is valid',
         },
         { status: 500 }
       )
