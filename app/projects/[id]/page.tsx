@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { useAuth } from '@/lib/hooks/useAuth'
-import { RoamImportFileForm } from '@/components/forms/RoamImportFileForm'
-import { RoamLiveSyncForm } from '@/components/forms/RoamLiveSyncForm'
-import { RepositoryMetrics } from '@/components/repository/RepositoryMetrics'
+import { RoamConfigForm } from '@/components/forms/RoamConfigForm'
+import { SyncStatusWidget } from '@/components/roam/SyncStatusWidget'
+import { RepositorySyncButton } from '@/components/roam/RepositorySyncButton'
+import { RepositoryVisualization } from '@/components/repository/RepositoryVisualization'
 import { ProjectDeleteDialog } from '@/components/projects/ProjectDeleteDialog'
 
 interface Project {
@@ -27,6 +28,7 @@ function ProjectDetailsContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [syncRefresh, setSyncRefresh] = useState(0)
 
   useEffect(() => {
     if (projectId) {
@@ -156,62 +158,70 @@ function ProjectDetailsContent() {
           </div>
         </div>
 
-        {/* Repository Metrics */}
+        {/* Roam Configuration & Sync - Phase 1A */}
         <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Repository Status</h2>
-          <RepositoryMetrics projectId={projectId} />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Roam Integration</h2>
+          <p className="text-gray-600 mb-6">Connect to Roam Desktop and synchronize your test repository</p>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Configuration */}
+            <div className="md:col-span-2">
+              <RoamConfigForm
+                projectId={projectId}
+                onSuccess={() => setSyncRefresh(r => r + 1)}
+              />
+            </div>
+
+            {/* Sync Status */}
+            <div>
+              <SyncStatusWidget
+                projectId={projectId}
+                refreshTrigger={syncRefresh}
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Roam Integration */}
+        {/* Repository Sync */}
         <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Roam Integration</h2>
-          <p className="text-gray-600 mb-8">
-            Import test cases from Roam Research. Choose one method below.
-          </p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Repository Synchronization</h2>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Method 1: Import File */}
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Method 1: Import File</h3>
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                <p className="text-sm text-green-800">No API key required. Upload a Roam export file.</p>
-              </div>
-              <RoamImportFileForm projectId={projectId} onSuccess={fetchProject} />
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Initial Sync */}
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Initial Sync</h3>
+              <p className="text-gray-600 text-sm mb-4">
+                Import all test cases from Roam for the first time. Creates the repository structure.
+              </p>
+              <RepositorySyncButton
+                projectId={projectId}
+                syncType="initial"
+                onSyncComplete={() => setSyncRefresh(r => r + 1)}
+              />
             </div>
 
-            {/* Method 2: Live Sync */}
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Method 2: Live Sync</h3>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                <p className="text-sm text-blue-800">API key required. Sync automatically with Roam.</p>
-              </div>
-              <RoamLiveSyncForm projectId={projectId} onSuccess={fetchProject} />
-            </div>
-          </div>
-
-          {/* Info Boxes */}
-          <div className="grid md:grid-cols-2 gap-8 mt-8">
-            <div className="bg-cyan-50 rounded-lg border border-cyan-200 p-6">
-              <h4 className="font-bold text-cyan-900 mb-2">📤 What Gets Imported</h4>
-              <ul className="text-cyan-800 text-sm space-y-1">
-                <li>✓ Test case hierarchy and structure</li>
-                <li>✓ Test titles and descriptions</li>
-                <li>✓ Folder organization and nesting</li>
-                <li>✓ Tags from page properties</li>
-                <li>✓ Never deletes existing data</li>
-              </ul>
-            </div>
-
-            <div className="bg-blue-50 rounded-lg border border-blue-200 p-6">
-              <h4 className="font-bold text-blue-900 mb-2">🔐 Security</h4>
-              <ul className="text-blue-800 text-sm space-y-1">
-                <li>✓ AES-256-GCM encryption at rest</li>
-                <li>✓ HTTPS only connections</li>
-                <li>✓ No data retained from Roam</li>
-                <li>✓ Audit logging of all syncs</li>
-              </ul>
+            {/* Refresh Sync */}
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Refresh Sync</h3>
+              <p className="text-gray-600 text-sm mb-4">
+                Update the repository with any new or changed test cases from Roam.
+              </p>
+              <RepositorySyncButton
+                projectId={projectId}
+                syncType="refresh"
+                onSyncComplete={() => setSyncRefresh(r => r + 1)}
+              />
             </div>
           </div>
+        </div>
+
+        {/* Repository Visualization */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Repository Structure</h2>
+          <RepositoryVisualization
+            projectId={projectId}
+            refreshTrigger={syncRefresh}
+          />
         </div>
 
         {/* Project Info */}

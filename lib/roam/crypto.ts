@@ -10,7 +10,7 @@ const SALT = 'roam-qa-ops-salt' // Fixed salt for deterministic key derivation
 
 // Derive a 32-byte key from the environment variable
 function getKey() {
-  return scryptSync(ROAM_ENCRYPTION_KEY, SALT, 32)
+  return scryptSync(ROAM_ENCRYPTION_KEY!, SALT, 32)
 }
 
 export function encryptApiKey(plaintext: string): string {

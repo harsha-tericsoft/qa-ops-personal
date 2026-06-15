@@ -61,6 +61,34 @@ enum UserRole {
   QA_ENGINEER
 }
 
+enum RepositoryType {
+  FRONTEND
+  BACKEND
+  MONOREPO
+  MICROSERVICE
+  AUTOMATION
+}
+
+enum RepositoryPurpose {
+  PRIMARY
+  SECONDARY
+  LEGACY
+}
+
+enum ConnectionStatus {
+  not_tested
+  connected
+  error
+  token_expired
+}
+
+enum AnalysisStatus {
+  not_analyzed
+  analyzing
+  analyzed
+  error
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -73,30 +101,36 @@ model User {
 }
 
 model Project {
-  id               String              @id @default(cuid())
-  name             String
-  description      String?
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
-  repositories     Repository[]
-  testCases        TestCase[]
-  roamConfig       RoamConfig?
-  syncLogs         SyncLog[]
-  executionCycles  ExecutionCycle[]
-  testSuites       TestSuite[]
-  tags             Tag[]
+  id                      String              @id @default(cuid())
+  name                    String
+  description             String?
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+  repositories            Repository[]
+  testCases               TestCase[]
+  roamConfig              RoamConfig?
+  syncLogs                SyncLog[]
+  executionCycles         ExecutionCycle[]
+  testSuites              TestSuite[]
+  tags                    Tag[]
+  codeRepositories        CodeRepository[]
+  codeRepositoriesEnabled Boolean             @default(false)
 }
 
 model Repository {
-  id          String           @id @default(cuid())
-  projectId   String
-  project     Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  name        String
-  description String?
-  roamSyncId  String?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  nodes       RepositoryNode[]
+  id              String           @id @default(cuid())
+  projectId       String
+  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name            String
+  description     String?
+  roamSyncId      String?
+  lastSyncAt      DateTime?
+  lastSyncStatus  String?  // "success" | "failed"
+  lastSyncError   String?
+  totalTestCount  Int              @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  nodes           RepositoryNode[]
 
   @@index([projectId])
 }
@@ -108,18 +142,19 @@ model RepositoryNode {
   projectId    String
   name         String
   slug         String
-  path         String // "/id1/id2/id3"
-  depth        Int              @default(0)
+  path         String // "/id1/id2/id3" - supports unlimited nesting
+  depth        Int              @default(0)  // Calculated from path depth
   order        Int              @default(0)
   type         NodeType         @default(FOLDER)
   description  String?
-  metadata     Json?
+  metadata     Json?  // Flexible storage for Roam metadata until API structure verified
   parentId     String?
   parent       RepositoryNode?  @relation("NodeTree", fields: [parentId], references: [id], onDelete: SetNull)
   children     RepositoryNode[] @relation("NodeTree")
   roamNodeId   String?          @unique
   roamPageId   String?
   syncedAt     DateTime?
+  tags         String[]         @default([]) // Tag-based automation detection
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
   deletedAt    DateTime?
@@ -129,6 +164,70 @@ model RepositoryNode {
   @@index([projectId])
   @@index([parentId])
   @@index([path])
+}
+
+model CodeRepository {
+  id                        String                          @id @default(cuid())
+  projectId                 String
+  project                   Project                         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  repositoryName            String
+  repositoryUrl             String
+  repositoryType            RepositoryType
+  repositoryPurpose         RepositoryPurpose               @default(PRIMARY)
+  branch                    String                          @default("main")
+  connectionStatus          ConnectionStatus                @default(not_tested)
+  lastConnectionTestAt      DateTime?
+  lastConnectionTestError   String?
+  detectedTechStack         Json?
+  detectedAt                DateTime?
+  analysisStatus            AnalysisStatus                  @default(not_analyzed)
+  analysisVersion           Int                             @default(0)
+  lastAnalyzedAt            DateTime?
+  description               String?
+  tags                      String[]                        @default([])
+  isActive                  Boolean                         @default(true)
+  createdBy                 String?
+  createdAt                 DateTime                        @default(now())
+  updatedAt                 DateTime                        @updatedAt
+  credentials               CodeRepositoryCredential[]
+  connectionTests           CodeRepositoryConnectionTest[]
+
+  @@index([projectId])
+  @@index([createdAt(sort: Desc)])
+}
+
+model CodeRepositoryCredential {
+  id                        String                  @id @default(cuid())
+  codeRepositoryId          String
+  codeRepository            CodeRepository          @relation(fields: [codeRepositoryId], references: [id], onDelete: Cascade)
+  credentialType            String                  @default("github_pat")
+  encryptedValue            String
+  encryptionAlgorithm       String                  @default("AES-256-GCM")
+  encryptionKeyId           String?
+  isActive                  Boolean                 @default(true)
+  lastUsedAt                DateTime?
+  createdAt                 DateTime                @default(now())
+  expiresAt                 DateTime?
+
+  @@unique([codeRepositoryId, credentialType])
+  @@index([codeRepositoryId])
+  @@index([expiresAt])
+}
+
+model CodeRepositoryConnectionTest {
+  id                        String                  @id @default(cuid())
+  codeRepositoryId          String
+  codeRepository            CodeRepository          @relation(fields: [codeRepositoryId], references: [id], onDelete: Cascade)
+  testType                  String
+  testStatus                String
+  testMessage               String?
+  testError                 String?
+  responseTimeMs            Int?
+  testedBy                  String?
+  createdAt                 DateTime                @default(now())
+
+  @@index([codeRepositoryId, createdAt(sort: Desc)])
+  @@index([testStatus])
 }
 
 model TestCase {
@@ -163,15 +262,18 @@ model RoamConfig {
   projectId      String        @unique
   project        Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
   graphName      String
-  graphUrl       String
-  apiKey         String
+  apiToken       String        // Stores the encrypted API token (Local API)
+  apiEndpoint    String        @default("http://localhost:8000") // Per-project configurable endpoint
   syncEnabled    Boolean       @default(false)
   syncIntervalMin Int           @default(15)
   syncDirection  SyncDirection @default(IMPORT_ONLY)
   lastSyncAt     DateTime?
   lastSyncStatus SyncStatus    @default(NEVER)
+  lastSyncError  String?       // Track sync errors
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+
+  @@index([projectId])
 }
 
 model SyncLog {

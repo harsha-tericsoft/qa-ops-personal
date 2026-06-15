@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface RoamConfigFormProps {
   projectId: string
@@ -14,13 +14,32 @@ export function RoamConfigForm({ projectId, onSuccess }: RoamConfigFormProps) {
   const [success, setSuccess] = useState('')
 
   const [graphName, setGraphName] = useState('')
-  const [graphUrl, setGraphUrl] = useState('')
-  const [apiKey, setApiKey] = useState('')
-  const [syncDirection, setSyncDirection] = useState('IMPORT_ONLY')
+  const [apiToken, setApiToken] = useState('')
+  const [apiEndpoint, setApiEndpoint] = useState('http://localhost:8000')
+
+  // Load existing config
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const response = await fetch(`/api/roam/config?projectId=${projectId}`)
+        const data = await response.json()
+
+        if (data.success && data.configured && data.config) {
+          setGraphName(data.config.graphName)
+          setApiEndpoint(data.config.apiEndpoint)
+          // Don't show token for security
+        }
+      } catch (err) {
+        console.error('Failed to load config:', err)
+      }
+    }
+
+    loadConfig()
+  }, [projectId])
 
   const handleTestConnection = async () => {
-    if (!graphName || !apiKey) {
-      setError('Graph name and API key are required')
+    if (!graphName || !apiToken) {
+      setError('Graph Name and API Token are required')
       return
     }
 
@@ -29,33 +48,20 @@ export function RoamConfigForm({ projectId, onSuccess }: RoamConfigFormProps) {
     setSuccess('')
 
     try {
-      const response = await fetch(
-        `/api/roam/test-connection?projectId=${projectId}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            graphName,
-            graphUrl,
-            apiKey,
-          }),
-        }
-      )
+      const response = await fetch('/api/roam/test-connection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId }),
+      })
 
-      if (!response.ok) {
-        let errorMessage = 'Connection failed'
-        try {
-          const data = await response.json()
-          errorMessage = data.error || errorMessage
-        } catch {
-          errorMessage = `Server error (${response.status}): ${response.statusText}`
-        }
-        setError(errorMessage)
+      const data = await response.json()
+
+      if (!response.ok || !data.success) {
+        setError(data.error || 'Connection test failed')
         return
       }
 
-      const data = await response.json()
-      setSuccess(`✅ Connection successful! Found ${data.pagesCount} pages`)
+      setSuccess(`✅ ${data.message}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Connection test failed')
     } finally {
@@ -70,36 +76,26 @@ export function RoamConfigForm({ projectId, onSuccess }: RoamConfigFormProps) {
     setLoading(true)
 
     try {
-      const response = await fetch(
-        `/api/roam/config?projectId=${projectId}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            graphName,
-            graphUrl,
-            apiKey,
-            syncDirection,
-            syncEnabled: true,
-          }),
-        }
-      )
+      const response = await fetch('/api/roam/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId,
+          graphName,
+          apiToken,
+          apiEndpoint,
+        }),
+      })
 
-      if (!response.ok) {
-        let errorMessage = 'Failed to save configuration'
-        try {
-          const data = await response.json()
-          errorMessage = data.error || errorMessage
-        } catch {
-          errorMessage = `Server error (${response.status}): ${response.statusText}`
-        }
-        throw new Error(errorMessage)
+      const data = await response.json()
+
+      if (!response.ok || !data.success) {
+        setError(data.error || data.details || 'Failed to save configuration')
+        return
       }
 
-      setSuccess('✅ Roam configuration saved!')
-      setGraphName('')
-      setGraphUrl('')
-      setApiKey('')
+      setSuccess('✅ Roam configuration saved successfully!')
+      setApiToken('') // Clear token after saving
       onSuccess?.()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
@@ -110,91 +106,81 @@ export function RoamConfigForm({ projectId, onSuccess }: RoamConfigFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded-lg border border-gray-200">
-      {error && <div className="text-red-600 text-sm bg-red-50 p-3 rounded">{error}</div>}
-      {success && <div className="text-green-600 text-sm bg-green-50 p-3 rounded">{success}</div>}
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">Roam Desktop Local API Configuration</h3>
+
+      {error && <div className="text-red-600 text-sm bg-red-50 p-3 rounded border border-red-200">{error}</div>}
+      {success && <div className="text-green-600 text-sm bg-green-50 p-3 rounded border border-green-200">{success}</div>}
 
       <div>
         <label className="block text-sm font-medium text-gray-900 mb-1">
-          Roam Graph Name *
+          Graph Name <span className="text-red-600">*</span>
         </label>
         <input
           type="text"
           value={graphName}
           onChange={(e) => setGraphName(e.target.value)}
           required
-          placeholder="e.g., my-qa-graph"
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          placeholder="e.g., Project_Kinergy"
+          className="w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
-        <p className="text-xs text-gray-500 mt-1">Your Roam graph name (from URL)</p>
+        <p className="text-xs text-gray-500 mt-1">The name of your Roam graph in Roam Desktop</p>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-900 mb-1">
-          Roam Graph URL
-        </label>
-        <input
-          type="url"
-          value={graphUrl}
-          onChange={(e) => setGraphUrl(e.target.value)}
-          placeholder="https://roamresearch.com/#/app/your-graph"
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-900 mb-1">
-          Roam API Key *
+          Local API Token <span className="text-red-600">*</span>
         </label>
         <input
           type="password"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-          required
-          placeholder="Your Roam API key (encrypted)"
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          value={apiToken}
+          onChange={(e) => setApiToken(e.target.value)}
+          placeholder="Your Roam local API token"
+          className="w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
-        <p className="text-xs text-gray-500 mt-1">🔐 Encrypted with AES-256-GCM</p>
+        <p className="text-xs text-gray-500 mt-1">🔐 Stored securely (encrypted with AES-256-GCM)</p>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-900 mb-1">
-          Sync Direction
+          API Endpoint
         </label>
-        <select
-          value={syncDirection}
-          onChange={(e) => setSyncDirection(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="IMPORT_ONLY">Import Only (Roam → QA Ops)</option>
-          <option value="EXPORT_ONLY">Export Only (QA Ops → Roam)</option>
-          <option value="BIDIRECTIONAL">Bidirectional (both ways)</option>
-        </select>
+        <input
+          type="url"
+          value={apiEndpoint}
+          onChange={(e) => setApiEndpoint(e.target.value)}
+          placeholder="http://localhost:8000"
+          className="w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+        <p className="text-xs text-gray-500 mt-1">Default: http://localhost:8000 (adjust if Roam runs on different port)</p>
       </div>
 
-      <button
-        type="button"
-        onClick={handleTestConnection}
-        disabled={testing || !graphName || !apiKey}
-        className="w-full bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 disabled:bg-gray-400 transition-colors font-medium"
-      >
-        {testing ? 'Testing...' : 'Test Connection'}
-      </button>
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          onClick={handleTestConnection}
+          disabled={testing || !graphName || !apiToken}
+          className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium text-sm"
+        >
+          {testing ? '⏳ Testing...' : '🧪 Test Connection'}
+        </button>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors font-medium"
-      >
-        {loading ? 'Saving...' : 'Save Configuration'}
-      </button>
+        <button
+          type="submit"
+          disabled={loading}
+          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium text-sm"
+        >
+          {loading ? '⏳ Saving...' : '💾 Save Configuration'}
+        </button>
+      </div>
 
-      <div className="bg-cyan-50 border border-cyan-200 rounded p-4">
-        <p className="text-xs text-cyan-900">
-          <strong>How to get your API key:</strong><br/>
-          1. Visit your Roam account settings<br/>
-          2. Go to "Integrations" → "API"<br/>
-          3. Create a new API key and copy it here
-        </p>
+      <div className="bg-blue-50 border border-blue-200 rounded p-4 space-y-2">
+        <p className="text-xs font-semibold text-blue-900">📚 How to get your API Token:</p>
+        <ol className="text-xs text-blue-800 list-decimal list-inside space-y-1">
+          <li>Open Roam Desktop</li>
+          <li>Go to Settings → API or Settings → Integrations</li>
+          <li>Find or create a Local API token</li>
+          <li>Copy and paste it above</li>
+        </ol>
       </div>
     </form>
   )

@@ -5,7 +5,7 @@
 
 // login.setup.ts
 
-// import { STORAGE_STATE } from "../../playwright.config"; // STORAGE_STATE = "./auth/session.json"
+// import { STORAGE_STATE } from "./playwright.config"; // STORAGE_STATE = "./auth/session.json"
 // import { test } from "../fixtures";
 
 // test.describe("Login page", () => {
@@ -23,7 +23,7 @@
 //     });
 // });
 
-import { STORAGE_STATE } from "../../playwright.config";
+import { STORAGE_STATE } from "./playwright.config";
 import { test } from "../fixtures";
 
 test("authenticate user and save session", async ({ page, loginPage }) => {

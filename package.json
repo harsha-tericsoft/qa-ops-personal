@@ -11,6 +11,7 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^6.19.3",
+    "axios": "^1.18.0",
     "lucide-react": "^1.17.0",
     "next": "16.2.7",
     "react": "19.2.4",
@@ -19,6 +20,9 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@roam-research/roam-cli": "^0.7.4",
+    "@roam-research/roam-tools-core": "^0.7.5",
+    "@roam-research/roam-tools-local": "^0.7.4",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

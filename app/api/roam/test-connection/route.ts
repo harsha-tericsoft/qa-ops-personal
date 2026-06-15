@@ -2,66 +2,97 @@ import { NextRequest, NextResponse } from 'next/server'
 import { RoamClient } from '@/lib/roam/client'
 import { decryptApiKey } from '@/lib/roam/crypto'
 import { prisma } from '@/lib/prisma'
+import { testConnection } from '@/lib/roam/sync'
 
 // POST /api/roam/test-connection
 export async function POST(req: NextRequest) {
-  const projectId = req.nextUrl.searchParams.get('projectId')
-  if (!projectId) {
-    return NextResponse.json({ error: 'projectId required' }, { status: 400 })
-  }
-
-  const body = await req.json()
-  const { graphUrl, apiKey } = body
-
-  if (!graphUrl || !apiKey) {
-    return NextResponse.json({ error: 'graphUrl and apiKey required' }, { status: 400 })
-  }
-
-  // Extract graph name from URL
-  const match = graphUrl.match(/\/app\/([a-z0-9-]+)$/i)
-  if (!match) {
-    return NextResponse.json({ error: 'Invalid graph URL format' }, { status: 400 })
-  }
-
-  const graphName = match[1]
-
   try {
-    const client = new RoamClient(graphName, apiKey)
-    const success = await client.testConnection()
+    const { projectId } = await req.json()
 
-    if (success) {
-      // Also log this test in sync logs
+    if (!projectId) {
+      return NextResponse.json(
+        { success: false, error: 'projectId required' },
+        { status: 400 }
+      )
+    }
+
+    // Load config from database
+    const config = await prisma.roamConfig.findUnique({
+      where: { projectId },
+    })
+
+    if (!config) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'No Roam configuration found',
+          details: 'Configure Roam settings first',
+        },
+        { status: 400 }
+      )
+    }
+
+    // Decrypt token
+    const decryptedToken = decryptApiKey(config.apiToken || '')
+
+    // Create client with per-project endpoint
+    const client = new RoamClient(config.graphName, decryptedToken, config.apiEndpoint)
+
+    const startTime = Date.now()
+
+    try {
+      const success = await client.testConnection()
+
+      const duration = Date.now() - startTime
+
+      if (success) {
+        // Log successful test
+        await prisma.syncLog.create({
+          data: {
+            projectId,
+            action: 'TEST_CONNECTION',
+            status: 'SUCCESS',
+            durationMs: duration,
+          },
+        })
+
+        return NextResponse.json({
+          success: true,
+          message: `Connected to Roam at ${config.apiEndpoint}`,
+          endpoint: config.apiEndpoint,
+          graphName: config.graphName,
+        })
+      } else {
+        throw new Error('Connection test failed')
+      }
+    } catch (error) {
+      const duration = Date.now() - startTime
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+
+      // Log failed test
       await prisma.syncLog.create({
         data: {
           projectId,
           action: 'TEST_CONNECTION',
-          status: 'SUCCESS',
-          durationMs: 0,
+          status: 'FAILED',
+          error: errorMsg,
+          durationMs: duration,
         },
       })
 
-      return NextResponse.json({ success: true, message: 'Connected successfully' })
-    } else {
       return NextResponse.json(
-        { success: false, message: 'Failed to connect to Roam API' },
-        { status: 401 }
+        {
+          success: false,
+          error: errorMsg,
+          endpoint: config.apiEndpoint,
+        },
+        { status: 500 }
       )
     }
   } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-
-    await prisma.syncLog.create({
-      data: {
-        projectId,
-        action: 'TEST_CONNECTION',
-        status: 'FAILED',
-        error: errorMsg,
-        durationMs: 0,
-      },
-    })
-
+    const msg = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { success: false, message: errorMsg },
+      { success: false, error: msg },
       { status: 500 }
     )
   }

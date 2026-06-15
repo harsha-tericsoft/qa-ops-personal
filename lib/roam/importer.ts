@@ -40,6 +40,8 @@ async function importPage(
   const nodePath = parentPath === '/' ? `/${page.uid}` : `${parentPath}/${page.uid}`
 
   try {
+    let nodeId: string
+
     const existing = await prisma.repositoryNode.findUnique({
       where: { roamNodeId: page.uid },
     })
@@ -103,6 +105,8 @@ async function importBlock(
   const blockPath = parentPath === '/' ? `/${block.uid}` : `${parentPath}/${block.uid}`
 
   try {
+    let nodeId: string
+
     const existing = await prisma.repositoryNode.findUnique({
       where: { roamNodeId: block.uid },
     })

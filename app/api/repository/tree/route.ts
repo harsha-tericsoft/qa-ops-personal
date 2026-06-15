@@ -1,50 +1,73 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-// GET /api/repository/tree?projectId={id}&parentId={id?}&search={query?}
+// GET /api/repository/tree?projectId={id}
+// Returns full tree structure with unlimited nesting depth
 export async function GET(req: NextRequest) {
-  const projectId = req.nextUrl.searchParams.get('projectId')
-  const parentId = req.nextUrl.searchParams.get('parentId') || null
-  const search = req.nextUrl.searchParams.get('search') || ''
-  const tags = req.nextUrl.searchParams.getAll('tags')
-
-  if (!projectId) {
-    return NextResponse.json({ error: 'projectId required' }, { status: 400 })
-  }
-
   try {
-    const query: any = {
-      projectId,
-    }
+    const projectId = req.nextUrl.searchParams.get('projectId')
 
-    if (parentId) {
-      query.parentId = parentId
-    } else {
-      query.parentId = null // Root nodes only
-    }
-
-    let nodes = await prisma.repositoryNode.findMany({
-      where: query,
-      include: {
-        children: {
-          select: { id: true }, // Just count
-        },
-      },
-      orderBy: [{ order: 'asc' }, { name: 'asc' }],
-    })
-
-    // Apply search filter
-    if (search) {
-      nodes = nodes.filter(
-        (n) =>
-          n.name.toLowerCase().includes(search.toLowerCase()) ||
-          n.description?.toLowerCase().includes(search.toLowerCase())
+    if (!projectId) {
+      return NextResponse.json(
+        { success: false, error: 'projectId required' },
+        { status: 400 }
       )
     }
 
-    return NextResponse.json(nodes)
+    // Get repository
+    const repository = await prisma.repository.findFirst({
+      where: { projectId },
+    })
+
+    if (!repository) {
+      return NextResponse.json({
+        success: true,
+        nodes: [],
+      })
+    }
+
+    const repositoryId = repository.id
+
+    // Recursively build tree
+    async function buildTree(parentId: string | null): Promise<any[]> {
+      const nodes = await prisma.repositoryNode.findMany({
+        where: {
+          repositoryId,
+          parentId,
+          deletedAt: null,
+        },
+        orderBy: [{ order: 'asc' }, { name: 'asc' }],
+      })
+
+      // Recursively add children for each node
+      return Promise.all(
+        nodes.map(async (node) => ({
+          id: node.id,
+          name: node.name,
+          type: node.type,
+          depth: node.depth,
+          path: node.path,
+          metadata: node.metadata,
+          tags: node.tags || [],
+          roamPageId: node.roamPageId,
+          children: await buildTree(node.id),
+        }))
+      )
+    }
+
+    const nodes = await buildTree(null)
+
+    return NextResponse.json({
+      success: true,
+      repositoryId: repository.id,
+      repositoryName: repository.name,
+      nodes,
+    })
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.json({ error: msg }, { status: 500 })
+    return NextResponse.json(
+      { success: false, error: msg },
+      { status: 500 }
+    )
   }
 }

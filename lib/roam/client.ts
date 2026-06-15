@@ -12,12 +12,17 @@ export interface RoamBlock {
 
 export class RoamClient {
   private graphName: string
-  private apiKey: string
-  private baseUrl = 'https://api.roamresearch.com/api/graph'
+  private apiToken: string
+  private apiEndpoint: string
 
-  constructor(graphName: string, apiKey: string) {
+  constructor(
+    graphName: string,
+    apiToken: string,
+    apiEndpoint: string = 'http://localhost:8000'
+  ) {
     this.graphName = graphName
-    this.apiKey = apiKey
+    this.apiToken = apiToken
+    this.apiEndpoint = apiEndpoint
   }
 
   async testConnection(): Promise<boolean> {
@@ -36,7 +41,7 @@ export class RoamClient {
        :where [?page :node/title ?title]]
     `
     const results = await this.queryDatalog(query)
-    return this.formatPages(results)
+    return this.formatPages(Array.isArray(results) ? results : [])
   }
 
   async writePage(pageTitle: string, blocks: RoamBlock[]): Promise<void> {
@@ -46,24 +51,48 @@ export class RoamClient {
   }
 
   private async queryDatalog(query: string): Promise<unknown> {
-    const url = `${this.baseUrl}/${this.graphName}/q`
+    const url = `${this.apiEndpoint}/api/graph/${this.graphName}/q`
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ query }),
-    })
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query }),
+      })
 
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`Roam API error: ${response.status} ${error}`)
+      if (!response.ok) {
+        // Detailed error messages for common failures
+        if (response.status === 502 || response.status === 503) {
+          throw new Error(
+            `Roam server not running. Check that Roam Desktop is running at ${this.apiEndpoint}`
+          )
+        }
+        if (response.status === 404) {
+          throw new Error(
+            `Graph "${this.graphName}" not found. Verify the graph name in Roam.`
+          )
+        }
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('Invalid API token. Check your Roam API token.')
+        }
+
+        const error = await response.text()
+        throw new Error(`Roam API error: ${response.status} ${error}`)
+      }
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('fetch')) {
+        throw new Error(
+          `Cannot reach Roam at ${this.apiEndpoint}. Check endpoint and network.`
+        )
+      }
+      throw error
     }
-
-    const data = await response.json()
-    return data
   }
 
   private formatPages(results: unknown[]): RoamPage[] {

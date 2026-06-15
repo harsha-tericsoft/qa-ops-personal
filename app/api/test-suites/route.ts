@@ -36,15 +36,6 @@ export async function POST(req: NextRequest) {
     }
 
     const suite = await createTestSuite(projectId, name, category, description)
-          },
-        },
-      },
-      include: {
-        testCases: {
-          include: { testCase: true },
-        },
-      },
-    })
 
     return NextResponse.json(suite, { status: 201 })
   } catch (error) {
