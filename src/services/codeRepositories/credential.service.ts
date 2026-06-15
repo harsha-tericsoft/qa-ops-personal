@@ -115,7 +115,8 @@ export class CodeRepositoryCredentialService {
     try {
       const iv = crypto.randomBytes(16)
       const key = Buffer.from(this.encryptionKey, 'base64')
-      const cipher = crypto.createCipheriv(this.encryptionAlgorithm, key, iv)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const cipher = crypto.createCipheriv(this.encryptionAlgorithm, key, iv) as any
 
       let encrypted = cipher.update(token, 'utf8', 'hex')
       encrypted += cipher.final('hex')
@@ -141,7 +142,8 @@ export class CodeRepositoryCredentialService {
       const encrypted = parts[2]
 
       const key = Buffer.from(this.encryptionKey, 'base64')
-      const decipher = crypto.createDecipheriv(this.encryptionAlgorithm, key, iv)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const decipher = crypto.createDecipheriv(this.encryptionAlgorithm, key, iv) as any
 
       decipher.setAuthTag(authTag)
 
