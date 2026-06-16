@@ -1,15 +1,24 @@
 import { RoamCliService } from './cli-service'
 import { decryptApiKey } from './crypto'
 
+/**
+ * RoamPage represents a page from Roam Desktop.
+ * All UIDs are normalized to strings to ensure type consistency
+ * across the import pipeline (roam-cli returns numbers, Prisma expects strings).
+ */
 export interface RoamPage {
   title: string
-  uid: string
+  uid: string  // Always string - normalized from roam-cli response
   children?: RoamBlock[]
 }
 
+/**
+ * RoamBlock represents a block within a Roam page.
+ * All UIDs are normalized to strings to ensure type consistency.
+ */
 export interface RoamBlock {
   string: string
-  uid: string
+  uid: string  // Always string - normalized from roam-cli response
   children?: RoamBlock[]
 }
 
@@ -67,7 +76,7 @@ export class RoamClient {
       const pages = await this.cliService.getAllPages()
       return pages.map((page) => ({
         title: page.title,
-        uid: page.uid,
+        uid: String(page.uid),  // Normalize uid to string (roam-cli may return number)
         children: page.children?.map((block) =>
           this.convertBlockToRoamBlock(block)
         ),
@@ -85,12 +94,13 @@ export class RoamClient {
   }
 
   /**
-   * Helper: Convert CLI service block format to RoamBlock format
+   * Helper: Convert CLI service block format to RoamBlock format.
+   * Normalizes uid to string since roam-cli may return numbers.
    */
   private convertBlockToRoamBlock(block: any): RoamBlock {
     return {
       string: block.string,
-      uid: block.uid,
+      uid: String(block.uid),  // Normalize uid to string (roam-cli may return number)
       children: block.children?.map((child: any) =>
         this.convertBlockToRoamBlock(child)
       ),
