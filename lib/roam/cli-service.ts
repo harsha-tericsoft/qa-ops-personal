@@ -30,9 +30,8 @@ export interface Page {
 }
 
 /**
- * RoamCliService: Wrapper around @roam-research/roam-cli
+ * RoamCliService: Wrapper around @roam-research/roam-cli v0.7.4
  * Uses official Roam command-line tool for local graph access
- * Token must be stored in environment: ROAM_LOCAL_API_TOKEN
  */
 export class RoamCliService {
   private graphName: string
@@ -45,20 +44,34 @@ export class RoamCliService {
 
   /**
    * Test connection to Roam Desktop
-   * Sets token env var and attempts a simple search command
+   * Uses: roam search --graph <name> --query="" --limit 1
    */
   async testConnection(): Promise<ConnectionTestResult> {
     try {
-      // Try a simple search command to verify connection
-      // This will fail if Roam Desktop is not running or token is invalid
-      const command = `ROAM_LOCAL_API_TOKEN="${this.localApiToken}" roam search --graph "${this.graphName}" "" --limit 1`
+      // Verify connection by searching with empty query (returns recently edited)
+      const command = `ROAM_LOCAL_API_TOKEN="${this.localApiToken}" roam search --graph "${this.graphName}" --query=""`
+
+      console.log('[RoamCliService.testConnection] Executing command:', command)
 
       try {
-        await execAsync(command, { timeout: 10000 })
+        const { stdout, stderr } = await execAsync(command, { timeout: 10000 })
+        console.log('[RoamCliService.testConnection] Success')
+        console.log('[RoamCliService.testConnection] stdout:', stdout.substring(0, 200))
+        if (stderr) console.log('[RoamCliService.testConnection] stderr:', stderr)
+
+        return {
+          success: true,
+          message: `Connected to Roam graph "${this.graphName}"`,
+          graphName: this.graphName,
+          details: 'Local API token verified and working',
+        }
       } catch (execError) {
         const error = execError as any
-        // roam search with empty query might return no results (exit code 0) or error
-        // Either way, if it runs without "not found" it means connection works
+        console.error('[RoamCliService.testConnection] Command failed')
+        console.error('[RoamCliService.testConnection] Error message:', error.message)
+        console.error('[RoamCliService.testConnection] Error code:', error.code)
+        console.error('[RoamCliService.testConnection] stderr:', error.stderr)
+
         if (
           error.message.includes('not found') ||
           error.message.includes('ENOENT') ||
@@ -67,8 +80,7 @@ export class RoamCliService {
           return {
             success: false,
             message: 'Roam CLI not installed or not accessible',
-            details:
-              'Install with: npm install -g @roam-research/roam-cli',
+            details: 'Install with: npm install -g @roam-research/roam-cli',
           }
         }
 
@@ -97,13 +109,12 @@ export class RoamCliService {
             details: 'Ensure Roam Desktop is running and the local API is enabled',
           }
         }
-      }
 
-      return {
-        success: true,
-        message: `Connected to Roam graph "${this.graphName}"`,
-        graphName: this.graphName,
-        details: 'Local API token verified and working',
+        return {
+          success: false,
+          message: `Connection failed: ${error.message}`,
+          details: 'Check Roam Desktop is running and token is valid',
+        }
       }
     } catch (error) {
       const errorMsg =
@@ -111,34 +122,42 @@ export class RoamCliService {
 
       return {
         success: false,
-        message: `Connection failed: ${errorMsg}`,
-        details: 'Check Roam Desktop is running and token is valid',
+        message: `Connection test error: ${errorMsg}`,
+        details: 'Unexpected error during connection test',
       }
     }
   }
 
   /**
-   * Search for content in the graph using roam-cli
-   * Returns search results as parsed JSON
+   * Search for content in the graph
+   * Uses: roam search --graph <name> --query <query>
    */
   async search(query: string): Promise<SearchResult[]> {
     try {
-      const command = `ROAM_LOCAL_API_TOKEN="${this.localApiToken}" roam search --graph "${this.graphName}" "${query}" --format json`
+      const command = `ROAM_LOCAL_API_TOKEN="${this.localApiToken}" roam search --graph "${this.graphName}" --query="${query}"`
+
+      console.log('[RoamCliService.search] Executing command:', command.substring(0, 100) + '...')
 
       const { stdout } = await execAsync(command, { timeout: 30000 })
+
+      console.log('[RoamCliService.search] Success, results received')
 
       // Parse JSON output
       const results = JSON.parse(stdout)
 
-      return Array.isArray(results)
-        ? results.map((result: any) => ({
+      // Handle both search results and suggestions formats
+      const items = results.results || results.suggestions?.recentlyEditedPages || []
+
+      return Array.isArray(items)
+        ? items.map((result: any) => ({
             uid: result.uid || '',
             title: result.title,
-            content: result.string || result.title,
-            type: result.title ? 'page' : 'block',
+            content: result.markdown || result.string || result.title,
+            type: result.type || (result.title ? 'page' : 'block'),
           }))
         : []
     } catch (error) {
+      console.error('[RoamCliService.search] Error:', error instanceof Error ? error.message : String(error))
       throw new Error(
         `Search failed: ${error instanceof Error ? error.message : String(error)}`
       )
@@ -146,17 +165,22 @@ export class RoamCliService {
   }
 
   /**
-   * Fetch a page by title using roam-cli
+   * Fetch a page by title
+   * Uses: roam get-page --graph <name> --title <title>
    */
   async fetchPageByTitle(title: string): Promise<Page | null> {
     try {
-      const command = `ROAM_LOCAL_API_TOKEN="${this.localApiToken}" roam fetch-page --graph "${this.graphName}" "${title}" --format json`
+      const command = `ROAM_LOCAL_API_TOKEN="${this.localApiToken}" roam get-page --graph "${this.graphName}" --title="${title}"`
+
+      console.log('[RoamCliService.fetchPageByTitle] Executing command:', command.substring(0, 100) + '...')
 
       const { stdout } = await execAsync(command, { timeout: 30000 })
 
+      console.log('[RoamCliService.fetchPageByTitle] Success, page received')
+
       const page = JSON.parse(stdout)
 
-      if (!page) {
+      if (!page || !page.uid) {
         return null
       }
 
@@ -166,6 +190,7 @@ export class RoamCliService {
         children: this.convertBlocksToTree(page.children || []),
       }
     } catch (error) {
+      console.error('[RoamCliService.fetchPageByTitle] Error:', error instanceof Error ? error.message : String(error))
       throw new Error(
         `Fetch page failed: ${error instanceof Error ? error.message : String(error)}`
       )
@@ -173,13 +198,18 @@ export class RoamCliService {
   }
 
   /**
-   * Fetch a block and its children using roam-cli
+   * Fetch a block and its children
+   * Uses: roam get-block --graph <name> --uid <uid>
    */
   async fetchBlockWithChildren(uid: string): Promise<Block | null> {
     try {
-      const command = `ROAM_LOCAL_API_TOKEN="${this.localApiToken}" roam fetch-block --graph "${this.graphName}" "${uid}" --format json`
+      const command = `ROAM_LOCAL_API_TOKEN="${this.localApiToken}" roam get-block --graph "${this.graphName}" --uid="${uid}"`
+
+      console.log('[RoamCliService.fetchBlockWithChildren] Executing command:', command.substring(0, 100) + '...')
 
       const { stdout } = await execAsync(command, { timeout: 30000 })
+
+      console.log('[RoamCliService.fetchBlockWithChildren] Success, block received')
 
       const block = JSON.parse(stdout)
 
@@ -189,6 +219,7 @@ export class RoamCliService {
 
       return this.convertBlockToTree(block)
     } catch (error) {
+      console.error('[RoamCliService.fetchBlockWithChildren] Error:', error instanceof Error ? error.message : String(error))
       throw new Error(
         `Fetch block failed: ${error instanceof Error ? error.message : String(error)}`
       )
@@ -197,16 +228,22 @@ export class RoamCliService {
 
   /**
    * Create a new page in the graph
+   * Uses: roam create-page --graph <name> --title <title>
    */
   async createPage(title: string): Promise<{ uid: string }> {
     try {
-      const command = `ROAM_LOCAL_API_TOKEN="${this.localApiToken}" roam create-page --graph "${this.graphName}" "${title}" --format json`
+      const command = `ROAM_LOCAL_API_TOKEN="${this.localApiToken}" roam create-page --graph "${this.graphName}" --title="${title}"`
+
+      console.log('[RoamCliService.createPage] Executing command:', command.substring(0, 100) + '...')
 
       const { stdout } = await execAsync(command, { timeout: 30000 })
+
+      console.log('[RoamCliService.createPage] Success, page created')
 
       const result = JSON.parse(stdout)
       return { uid: result.uid || '' }
     } catch (error) {
+      console.error('[RoamCliService.createPage] Error:', error instanceof Error ? error.message : String(error))
       throw new Error(
         `Create page failed: ${error instanceof Error ? error.message : String(error)}`
       )
@@ -215,13 +252,19 @@ export class RoamCliService {
 
   /**
    * Update a block's content
+   * Uses: roam update-block --graph <name> --uid <uid> --content <content>
    */
   async updateBlock(uid: string, content: string): Promise<void> {
     try {
-      const command = `ROAM_LOCAL_API_TOKEN="${this.localApiToken}" roam update-block --graph "${this.graphName}" "${uid}" "${content}"`
+      const command = `ROAM_LOCAL_API_TOKEN="${this.localApiToken}" roam update-block --graph "${this.graphName}" --uid="${uid}" --content="${content}"`
+
+      console.log('[RoamCliService.updateBlock] Executing command:', command.substring(0, 100) + '...')
 
       await execAsync(command, { timeout: 30000 })
+
+      console.log('[RoamCliService.updateBlock] Success, block updated')
     } catch (error) {
+      console.error('[RoamCliService.updateBlock] Error:', error instanceof Error ? error.message : String(error))
       throw new Error(
         `Update block failed: ${error instanceof Error ? error.message : String(error)}`
       )
@@ -230,18 +273,27 @@ export class RoamCliService {
 
   /**
    * Export graph as JSON
+   * Uses: roam datalog-query for exporting structured data
+   * Note: roam export command does not exist in v0.7.4
    */
-async exportGraph(): Promise<unknown> {
+  async exportGraph(): Promise<unknown> {
     try {
-      const command = `ROAM_LOCAL_API_TOKEN="${this.localApiToken}" roam export --graph "${this.graphName}" --format json`
+      // Query to get all pages with basic structure
+      const datalogQuery = '[:find ?e :where [?e :node/title]]'
+      const command = `ROAM_LOCAL_API_TOKEN="${this.localApiToken}" roam datalog-query --graph "${this.graphName}" --query="${datalogQuery}"`
+
+      console.log('[RoamCliService.exportGraph] Executing command:', command.substring(0, 100) + '...')
 
       const { stdout } = await execAsync(command, {
         timeout: 60000,
         maxBuffer: 50 * 1024 * 1024, // 50MB buffer for large exports
       })
 
+      console.log('[RoamCliService.exportGraph] Success, data exported')
+
       return JSON.parse(stdout)
     } catch (error) {
+      console.error('[RoamCliService.exportGraph] Error:', error instanceof Error ? error.message : String(error))
       throw new Error(
         `Export failed: ${error instanceof Error ? error.message : String(error)}`
       )
@@ -250,35 +302,34 @@ async exportGraph(): Promise<unknown> {
 
   /**
    * Get all pages in the graph
-   * Uses list-graphs and fetch-page to build complete page list
+   * Uses: roam datalog-query to find all pages
    */
   async getAllPages(): Promise<Page[]> {
     try {
-      const command = `ROAM_LOCAL_API_TOKEN="${this.localApiToken}" roam list-graphs --format json`
+      // Query to get all pages with titles
+      const datalogQuery = '[:find ?e ?title :where [?e :node/title ?title]]'
+      const command = `ROAM_LOCAL_API_TOKEN="${this.localApiToken}" roam datalog-query --graph "${this.graphName}" --query="${datalogQuery}"`
 
-      const { stdout } = await execAsync(command, { timeout: 30000 })
+      console.log('[RoamCliService.getAllPages] Executing command:', command.substring(0, 100) + '...')
 
-      const graphs = JSON.parse(stdout)
-      const currentGraph = graphs.find((g: any) => g.name === this.graphName)
+      const { stdout } = await execAsync(command, { timeout: 60000 })
 
-      if (!currentGraph) {
-        throw new Error(`Graph "${this.graphName}" not found`)
-      }
+      console.log('[RoamCliService.getAllPages] Success, pages retrieved')
 
-      // For full page list, we need to export and parse
-      // Since list-graphs only returns metadata, use export
-      const allData = await this.exportGraph() as any
+      const results = JSON.parse(stdout)
 
-      if (Array.isArray(allData)) {
-        return allData.map((page: any) => ({
-          uid: page.uid || '',
-          title: page.title || '',
-          children: this.convertBlocksToTree(page.children || []),
+      // Parse datalog results - format is [[uid, title], ...]
+      if (Array.isArray(results)) {
+        return results.map((row: any) => ({
+          uid: row[0] || '',
+          title: row[1] || '',
+          children: [],
         }))
       }
 
       return []
     } catch (error) {
+      console.error('[RoamCliService.getAllPages] Error:', error instanceof Error ? error.message : String(error))
       throw new Error(
         `Get pages failed: ${error instanceof Error ? error.message : String(error)}`
       )
@@ -305,10 +356,8 @@ async exportGraph(): Promise<unknown> {
 
   /**
    * Cleanup: No persistent connection to close
-   * roam-cli is stateless subprocess invocations
    */
   async close(): Promise<void> {
-    // No cleanup needed for CLI subprocess approach
     return Promise.resolve()
   }
 }
