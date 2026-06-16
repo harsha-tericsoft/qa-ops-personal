@@ -49,12 +49,19 @@ export class RoamCliService {
   async testConnection(): Promise<ConnectionTestResult> {
     try {
       // Verify connection by searching with empty query (returns recently edited)
-      const command = `ROAM_LOCAL_API_TOKEN="${this.localApiToken}" roam search --graph "${this.graphName}" --query=""`
+      const command = `roam search --graph "${this.graphName}" --query=""`
 
       console.log('[RoamCliService.testConnection] Executing command:', command)
 
       try {
-        const { stdout, stderr } = await execAsync(command, { timeout: 10000 })
+        // Pass token via environment variable in execAsync options (works on all platforms)
+        const { stdout, stderr } = await execAsync(command, {
+          timeout: 10000,
+          env: {
+            ...process.env,
+            ROAM_LOCAL_API_TOKEN: this.localApiToken,
+          },
+        })
         console.log('[RoamCliService.testConnection] Success')
         console.log('[RoamCliService.testConnection] stdout:', stdout.substring(0, 200))
         if (stderr) console.log('[RoamCliService.testConnection] stderr:', stderr)
@@ -134,11 +141,17 @@ export class RoamCliService {
    */
   async search(query: string): Promise<SearchResult[]> {
     try {
-      const command = `ROAM_LOCAL_API_TOKEN="${this.localApiToken}" roam search --graph "${this.graphName}" --query="${query}"`
+      const command = `roam search --graph "${this.graphName}" --query="${query}"`
 
       console.log('[RoamCliService.search] Executing command:', command.substring(0, 100) + '...')
 
-      const { stdout } = await execAsync(command, { timeout: 30000 })
+      const { stdout } = await execAsync(command, {
+        timeout: 30000,
+        env: {
+          ...process.env,
+          ROAM_LOCAL_API_TOKEN: this.localApiToken,
+        },
+      })
 
       console.log('[RoamCliService.search] Success, results received')
 
@@ -170,11 +183,17 @@ export class RoamCliService {
    */
   async fetchPageByTitle(title: string): Promise<Page | null> {
     try {
-      const command = `ROAM_LOCAL_API_TOKEN="${this.localApiToken}" roam get-page --graph "${this.graphName}" --title="${title}"`
+      const command = `roam get-page --graph "${this.graphName}" --title="${title}"`
 
       console.log('[RoamCliService.fetchPageByTitle] Executing command:', command.substring(0, 100) + '...')
 
-      const { stdout } = await execAsync(command, { timeout: 30000 })
+      const { stdout } = await execAsync(command, {
+        timeout: 30000,
+        env: {
+          ...process.env,
+          ROAM_LOCAL_API_TOKEN: this.localApiToken,
+        },
+      })
 
       console.log('[RoamCliService.fetchPageByTitle] Success, page received')
 
@@ -203,11 +222,17 @@ export class RoamCliService {
    */
   async fetchBlockWithChildren(uid: string): Promise<Block | null> {
     try {
-      const command = `ROAM_LOCAL_API_TOKEN="${this.localApiToken}" roam get-block --graph "${this.graphName}" --uid="${uid}"`
+      const command = `roam get-block --graph "${this.graphName}" --uid="${uid}"`
 
       console.log('[RoamCliService.fetchBlockWithChildren] Executing command:', command.substring(0, 100) + '...')
 
-      const { stdout } = await execAsync(command, { timeout: 30000 })
+      const { stdout } = await execAsync(command, {
+        timeout: 30000,
+        env: {
+          ...process.env,
+          ROAM_LOCAL_API_TOKEN: this.localApiToken,
+        },
+      })
 
       console.log('[RoamCliService.fetchBlockWithChildren] Success, block received')
 
@@ -232,11 +257,17 @@ export class RoamCliService {
    */
   async createPage(title: string): Promise<{ uid: string }> {
     try {
-      const command = `ROAM_LOCAL_API_TOKEN="${this.localApiToken}" roam create-page --graph "${this.graphName}" --title="${title}"`
+      const command = `roam create-page --graph "${this.graphName}" --title="${title}"`
 
       console.log('[RoamCliService.createPage] Executing command:', command.substring(0, 100) + '...')
 
-      const { stdout } = await execAsync(command, { timeout: 30000 })
+      const { stdout } = await execAsync(command, {
+        timeout: 30000,
+        env: {
+          ...process.env,
+          ROAM_LOCAL_API_TOKEN: this.localApiToken,
+        },
+      })
 
       console.log('[RoamCliService.createPage] Success, page created')
 
@@ -256,11 +287,17 @@ export class RoamCliService {
    */
   async updateBlock(uid: string, content: string): Promise<void> {
     try {
-      const command = `ROAM_LOCAL_API_TOKEN="${this.localApiToken}" roam update-block --graph "${this.graphName}" --uid="${uid}" --content="${content}"`
+      const command = `roam update-block --graph "${this.graphName}" --uid="${uid}" --content="${content}"`
 
       console.log('[RoamCliService.updateBlock] Executing command:', command.substring(0, 100) + '...')
 
-      await execAsync(command, { timeout: 30000 })
+      await execAsync(command, {
+        timeout: 30000,
+        env: {
+          ...process.env,
+          ROAM_LOCAL_API_TOKEN: this.localApiToken,
+        },
+      })
 
       console.log('[RoamCliService.updateBlock] Success, block updated')
     } catch (error) {
@@ -280,13 +317,17 @@ export class RoamCliService {
     try {
       // Query to get all pages with basic structure
       const datalogQuery = '[:find ?e :where [?e :node/title]]'
-      const command = `ROAM_LOCAL_API_TOKEN="${this.localApiToken}" roam datalog-query --graph "${this.graphName}" --query="${datalogQuery}"`
+      const command = `roam datalog-query --graph "${this.graphName}" --query="${datalogQuery}"`
 
       console.log('[RoamCliService.exportGraph] Executing command:', command.substring(0, 100) + '...')
 
       const { stdout } = await execAsync(command, {
         timeout: 60000,
         maxBuffer: 50 * 1024 * 1024, // 50MB buffer for large exports
+        env: {
+          ...process.env,
+          ROAM_LOCAL_API_TOKEN: this.localApiToken,
+        },
       })
 
       console.log('[RoamCliService.exportGraph] Success, data exported')
@@ -308,11 +349,17 @@ export class RoamCliService {
     try {
       // Query to get all pages with titles
       const datalogQuery = '[:find ?e ?title :where [?e :node/title ?title]]'
-      const command = `ROAM_LOCAL_API_TOKEN="${this.localApiToken}" roam datalog-query --graph "${this.graphName}" --query="${datalogQuery}"`
+      const command = `roam datalog-query --graph "${this.graphName}" --query="${datalogQuery}"`
 
       console.log('[RoamCliService.getAllPages] Executing command:', command.substring(0, 100) + '...')
 
-      const { stdout } = await execAsync(command, { timeout: 60000 })
+      const { stdout } = await execAsync(command, {
+        timeout: 60000,
+        env: {
+          ...process.env,
+          ROAM_LOCAL_API_TOKEN: this.localApiToken,
+        },
+      })
 
       console.log('[RoamCliService.getAllPages] Success, pages retrieved')
 

@@ -28,23 +28,50 @@ export function encryptApiKey(plaintext: string): string {
 }
 
 export function decryptApiKey(ciphertext: string): string {
+  console.log('[crypto.decryptApiKey] Starting decryption')
+  console.log('[crypto.decryptApiKey] Ciphertext length:', ciphertext?.length || 0)
+  console.log('[crypto.decryptApiKey] Ciphertext type:', typeof ciphertext)
+  console.log('[crypto.decryptApiKey] Ciphertext is undefined:', ciphertext === undefined)
+  console.log('[crypto.decryptApiKey] Ciphertext is null:', ciphertext === null)
+
   const key = getKey()
-  const [ivHex, authTagHex, encrypted] = ciphertext.split(':')
+  console.log('[crypto.decryptApiKey] Key derived, length:', key.length)
 
-  if (!ivHex || !authTagHex || !encrypted) {
-    throw new Error('Invalid cipher format')
+  try {
+    const parts = ciphertext.split(':')
+    console.log('[crypto.decryptApiKey] Split parts count:', parts.length)
+    console.log('[crypto.decryptApiKey] Part 0 (iv) length:', parts[0]?.length || 0)
+    console.log('[crypto.decryptApiKey] Part 1 (authTag) length:', parts[1]?.length || 0)
+    console.log('[crypto.decryptApiKey] Part 2 (encrypted) length:', parts[2]?.length || 0)
+
+    const [ivHex, authTagHex, encrypted] = parts
+
+    if (!ivHex || !authTagHex || !encrypted) {
+      console.error('[crypto.decryptApiKey] Invalid cipher format - missing parts')
+      throw new Error('Invalid cipher format')
+    }
+
+    console.log('[crypto.decryptApiKey] Converting hex to buffers...')
+    const iv = Buffer.from(ivHex, 'hex')
+    const authTag = Buffer.from(authTagHex, 'hex')
+    console.log('[crypto.decryptApiKey] IV buffer length:', iv.length)
+    console.log('[crypto.decryptApiKey] AuthTag buffer length:', authTag.length)
+
+    const decipher = createDecipheriv(ALGORITHM, key, iv)
+    decipher.setAuthTag(authTag)
+
+    console.log('[crypto.decryptApiKey] Decipher created, calling decipher.update...')
+    let decrypted = decipher.update(encrypted, 'hex', 'utf8')
+    decrypted += decipher.final('utf8')
+    console.log('[crypto.decryptApiKey] Decryption successful, result length:', decrypted.length)
+
+    return decrypted
+  } catch (error) {
+    console.error('[crypto.decryptApiKey] ERROR during decryption:')
+    console.error('[crypto.decryptApiKey] Error message:', error instanceof Error ? error.message : String(error))
+    console.error('[crypto.decryptApiKey] Stack:', error instanceof Error ? error.stack : '')
+    throw error
   }
-
-  const iv = Buffer.from(ivHex, 'hex')
-  const authTag = Buffer.from(authTagHex, 'hex')
-  const decipher = createDecipheriv(ALGORITHM, key, iv)
-
-  decipher.setAuthTag(authTag)
-
-  let decrypted = decipher.update(encrypted, 'hex', 'utf8')
-  decrypted += decipher.final('utf8')
-
-  return decrypted
 }
 
 // Mask API key for display (show last 4 chars)

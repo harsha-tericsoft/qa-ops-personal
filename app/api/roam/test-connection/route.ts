@@ -5,8 +5,12 @@ import { prisma } from '@/lib/prisma'
 // POST /api/roam/test-connection
 // Tests connection to Roam Desktop using local API token
 export async function POST(req: NextRequest) {
+  const requestId = Math.random().toString(36).substring(7)
+  console.log(`[TEST_CONNECTION:${requestId}] Request received`)
+
   try {
     const { projectId } = await req.json()
+    console.log(`[TEST_CONNECTION:${requestId}] projectId:`, projectId)
 
     if (!projectId) {
       return NextResponse.json(
@@ -16,8 +20,14 @@ export async function POST(req: NextRequest) {
     }
 
     // Load config from database
+    console.log(`[TEST_CONNECTION:${requestId}] Loading RoamConfig from database`)
     const config = await prisma.roamConfig.findUnique({
       where: { projectId },
+    })
+    console.log(`[TEST_CONNECTION:${requestId}] Config loaded:`, {
+      exists: !!config,
+      graphName: config?.graphName,
+      hasApiToken: !!config?.apiToken,
     })
 
     if (!config) {
@@ -32,6 +42,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!config.apiToken) {
+      console.log(`[TEST_CONNECTION:${requestId}] ERROR: apiToken is missing`)
       return NextResponse.json(
         {
           success: false,
@@ -43,16 +54,27 @@ export async function POST(req: NextRequest) {
     }
 
     // Create client with encrypted token
-    const client = new RoamClient(config.graphName, config.apiToken)
+    console.log(`[TEST_CONNECTION:${requestId}] Creating RoamClient with graphName: ${config.graphName}`)
+    let client: any
+    try {
+      client = new RoamClient(config.graphName, config.apiToken)
+      console.log(`[TEST_CONNECTION:${requestId}] RoamClient created successfully`)
+    } catch (error) {
+      console.error(`[TEST_CONNECTION:${requestId}] ERROR creating RoamClient:`, error)
+      throw error
+    }
 
     const startTime = Date.now()
 
     try {
+      console.log(`[TEST_CONNECTION:${requestId}] Calling client.testConnection()`)
       const success = await client.testConnection()
+      console.log(`[TEST_CONNECTION:${requestId}] testConnection() returned:`, success)
 
       const duration = Date.now() - startTime
 
       if (success) {
+        console.log(`[TEST_CONNECTION:${requestId}] Test successful, logging to database`)
         // Log successful test
         await prisma.syncLog.create({
           data: {
@@ -63,17 +85,24 @@ export async function POST(req: NextRequest) {
           },
         })
 
+        console.log(`[TEST_CONNECTION:${requestId}] Success response sent`)
         return NextResponse.json({
           success: true,
           message: `Connected to Roam graph "${config.graphName}"`,
           graphName: config.graphName,
         })
       } else {
-        throw new Error('Connection test failed')
+        console.log(`[TEST_CONNECTION:${requestId}] Test returned false`)
+        throw new Error('Connection test failed - received false from CLI')
       }
     } catch (error) {
       const duration = Date.now() - startTime
       const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+      const errorStack = error instanceof Error ? error.stack : ''
+
+      console.error(`[TEST_CONNECTION:${requestId}] Test failed with error:`)
+      console.error(`[TEST_CONNECTION:${requestId}] Message: ${errorMsg}`)
+      console.error(`[TEST_CONNECTION:${requestId}] Stack: ${errorStack}`)
 
       // Log failed test
       await prisma.syncLog.create({
@@ -90,15 +119,25 @@ export async function POST(req: NextRequest) {
         {
           success: false,
           error: errorMsg,
-          details: 'Ensure Roam Desktop is running and the token is valid',
+          details: 'Check server logs for full error details',
         },
         { status: 500 }
       )
     }
   } catch (error) {
-    const msg = error instanceof Error ? error.message : 'Unknown error'
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+    const errorStack = error instanceof Error ? error.stack : ''
+
+    console.error(`[TEST_CONNECTION] Outer catch - fatal error:`)
+    console.error(`[TEST_CONNECTION] Message: ${errorMsg}`)
+    console.error(`[TEST_CONNECTION] Stack: ${errorStack}`)
+
     return NextResponse.json(
-      { success: false, error: msg },
+      {
+        success: false,
+        error: errorMsg,
+        details: 'Check server logs for full error details',
+      },
       { status: 500 }
     )
   }

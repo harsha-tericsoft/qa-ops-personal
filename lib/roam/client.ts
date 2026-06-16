@@ -22,20 +22,42 @@ export class RoamClient {
   private cliService: RoamCliService
 
   constructor(graphName: string, encryptedToken: string) {
+    console.log('[RoamClient.constructor] Started with graphName:', graphName)
+
     if (!encryptedToken) {
+      console.error('[RoamClient.constructor] ERROR: encryptedToken is missing')
       throw new Error('RoamClient: encryptedToken is required but undefined')
     }
 
+    console.log('[RoamClient.constructor] encryptedToken provided, length:', encryptedToken.length)
+
     // Decrypt the stored token
-    const localApiToken = decryptApiKey(encryptedToken)
-    this.cliService = new RoamCliService(graphName, localApiToken)
+    try {
+      console.log('[RoamClient.constructor] Calling decryptApiKey...')
+      const localApiToken = decryptApiKey(encryptedToken)
+      console.log('[RoamClient.constructor] Token decrypted successfully, length:', localApiToken.length)
+
+      console.log('[RoamClient.constructor] Creating RoamCliService...')
+      this.cliService = new RoamCliService(graphName, localApiToken)
+      console.log('[RoamClient.constructor] RoamCliService created successfully')
+    } catch (error) {
+      console.error('[RoamClient.constructor] ERROR during initialization:')
+      console.error('[RoamClient.constructor] Error message:', error instanceof Error ? error.message : String(error))
+      console.error('[RoamClient.constructor] Stack:', error instanceof Error ? error.stack : '')
+      throw error
+    }
   }
 
   async testConnection(): Promise<boolean> {
+    console.log('[RoamClient.testConnection] Called')
     try {
+      console.log('[RoamClient.testConnection] Calling cliService.testConnection()...')
       const result = await this.cliService.testConnection()
+      console.log('[RoamClient.testConnection] Result received:', result.success ? 'SUCCESS' : 'FAILED')
       return result.success
-    } catch {
+    } catch (error) {
+      console.error('[RoamClient.testConnection] Exception caught:')
+      console.error('[RoamClient.testConnection] Error:', error instanceof Error ? error.message : String(error))
       return false
     }
   }
