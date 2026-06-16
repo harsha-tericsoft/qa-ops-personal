@@ -20,8 +20,8 @@ export async function testConnection(projectId: string): Promise<{
       }
     }
 
-    // Use RoamClient with encrypted local API token
-    const client = new RoamClient(config.graphName, config.localApiToken)
+    // Use RoamClient with encrypted API token
+    const client = new RoamClient(config.graphName, config.apiToken)
 
     const canConnect = await client.testConnection()
 
@@ -81,7 +81,7 @@ export async function initialSync(projectId: string): Promise<{
     }
 
     // Create Roam client with encrypted local API token
-    const client = new RoamClient(config.graphName, config.localApiToken)
+    const client = new RoamClient(config.graphName, config.apiToken)
 
     // Test connection first
     const canConnect = await client.testConnection()
@@ -200,7 +200,7 @@ export async function refreshSync(projectId: string): Promise<{
     }
 
     // Create Roam client with encrypted local API token
-    const client = new RoamClient(config.graphName, config.localApiToken)
+    const client = new RoamClient(config.graphName, config.apiToken)
 
     // Test connection first
     const canConnect = await client.testConnection()

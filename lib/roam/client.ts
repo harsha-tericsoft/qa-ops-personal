@@ -22,6 +22,10 @@ export class RoamClient {
   private cliService: RoamCliService
 
   constructor(graphName: string, encryptedToken: string) {
+    if (!encryptedToken) {
+      throw new Error('RoamClient: encryptedToken is required but undefined')
+    }
+
     // Decrypt the stored token
     const localApiToken = decryptApiKey(encryptedToken)
     this.cliService = new RoamCliService(graphName, localApiToken)

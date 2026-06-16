@@ -262,7 +262,8 @@ model RoamConfig {
   projectId      String        @unique
   project        Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
   graphName      String        // Roam graph name (e.g., "Project_Kinergy")
-  localApiToken  String        // Encrypted local API token format: roam-graph-local-token-*
+  apiToken       String        // Encrypted local API token (format: roam-graph-local-token-*)
+  apiEndpoint    String        @default("http://localhost:8000") // Deprecated - kept for backward compat
   syncEnabled    Boolean       @default(false)
   syncIntervalMin Int           @default(15)
   syncDirection  SyncDirection @default(IMPORT_ONLY)

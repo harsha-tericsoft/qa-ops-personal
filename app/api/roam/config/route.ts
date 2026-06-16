@@ -39,25 +39,25 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/roam/config - Save Roam Local API configuration
-// Requires: graphName and localApiToken (format: roam-graph-local-token-*)
+// Requires: graphName and apiToken (format: roam-graph-local-token-*)
 export async function POST(req: NextRequest) {
   try {
-    const { projectId, graphName, localApiToken } = await req.json()
+    const { projectId, graphName, apiToken } = await req.json()
 
     // Validate required fields
-    if (!projectId || !graphName || !localApiToken) {
+    if (!projectId || !graphName || !apiToken) {
       return NextResponse.json(
         {
           success: false,
           error: 'Missing required fields',
-          details: 'Project ID, Graph Name, and Local API Token are required',
+          details: 'Project ID, Graph Name, and API Token are required',
         },
         { status: 400 }
       )
     }
 
     // Validate token format (should be: roam-graph-local-token-*)
-    if (!localApiToken.startsWith('roam-graph-local-token-')) {
+    if (!apiToken.startsWith('roam-graph-local-token-')) {
       return NextResponse.json(
         {
           success: false,
@@ -89,11 +89,11 @@ export async function POST(req: NextRequest) {
       create: {
         projectId,
         graphName,
-        localApiToken: encryptApiKey(localApiToken),
+        apiToken: encryptApiKey(apiToken),
       },
       update: {
         graphName,
-        localApiToken: encryptApiKey(localApiToken),
+        apiToken: encryptApiKey(apiToken),
       },
     })
 

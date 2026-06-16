@@ -14,7 +14,7 @@ export function RoamConfigForm({ projectId, onSuccess }: RoamConfigFormProps) {
   const [success, setSuccess] = useState('')
 
   const [graphName, setGraphName] = useState('')
-  const [localApiToken, setLocalApiToken] = useState('')
+  const [apiToken, setLocalApiToken] = useState('')
 
   // Load existing config
   useEffect(() => {
@@ -36,7 +36,7 @@ export function RoamConfigForm({ projectId, onSuccess }: RoamConfigFormProps) {
   }, [projectId])
 
   const handleTestConnection = async () => {
-    if (!graphName || !localApiToken) {
+    if (!graphName || !apiToken) {
       setError('Graph Name and Local API Token are required')
       return
     }
@@ -80,7 +80,7 @@ export function RoamConfigForm({ projectId, onSuccess }: RoamConfigFormProps) {
         body: JSON.stringify({
           projectId,
           graphName,
-          localApiToken,
+          apiToken,
         }),
       })
 
@@ -129,7 +129,7 @@ export function RoamConfigForm({ projectId, onSuccess }: RoamConfigFormProps) {
         </label>
         <input
           type="password"
-          value={localApiToken}
+          value={apiToken}
           onChange={(e) => setLocalApiToken(e.target.value)}
           placeholder="roam-graph-local-token-..."
           className="w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -141,7 +141,7 @@ export function RoamConfigForm({ projectId, onSuccess }: RoamConfigFormProps) {
         <button
           type="button"
           onClick={handleTestConnection}
-          disabled={testing || !graphName || !localApiToken}
+          disabled={testing || !graphName || !apiToken}
           className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium text-sm"
         >
           {testing ? '⏳ Testing...' : '🧪 Test Connection'}

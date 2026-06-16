@@ -31,8 +31,19 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Create client with local API token
-    const client = new RoamClient(config.graphName, config.localApiToken)
+    if (!config.apiToken) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Local API token not configured',
+          details: 'Save your local API token in Roam configuration first',
+        },
+        { status: 400 }
+      )
+    }
+
+    // Create client with encrypted token
+    const client = new RoamClient(config.graphName, config.apiToken)
 
     const startTime = Date.now()
 
