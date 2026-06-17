@@ -1,5 +1,6 @@
 import { exec } from 'child_process'
 import { promisify } from 'util'
+import { MarkdownRoamParser, RoamMarkdownBlock } from './markdown-parser'
 
 const execAsync = promisify(exec)
 
@@ -344,6 +345,7 @@ export class RoamCliService {
   /**
    * Get all pages in the graph
    * Uses: roam datalog-query to find all pages
+   * @deprecated Use getRepositorySubtree() instead for targeted imports
    */
   async getAllPages(): Promise<Page[]> {
     try {
@@ -379,6 +381,60 @@ export class RoamCliService {
       console.error('[RoamCliService.getAllPages] Error:', error instanceof Error ? error.message : String(error))
       throw new Error(
         `Get pages failed: ${error instanceof Error ? error.message : String(error)}`
+      )
+    }
+  }
+
+  /**
+   * Get repository subtree starting from a root page title
+   * Uses: roam get-page to fetch page with full markdown hierarchy
+   * Parses: Markdown content into structured tree using MarkdownRoamParser
+   */
+  async getRepositorySubtree(rootPageTitle: string): Promise<RoamMarkdownBlock | null> {
+    try {
+      console.log('[RoamCliService.getRepositorySubtree] Fetching repository subtree:', rootPageTitle)
+
+      // Fetch page with full markdown hierarchy
+      const command = `roam get-page --graph "${this.graphName}" --title="${rootPageTitle}"`
+
+      console.log('[RoamCliService.getRepositorySubtree] Executing command:', command.substring(0, 100) + '...')
+
+      const { stdout } = await execAsync(command, {
+        timeout: 60000,
+        maxBuffer: 50 * 1024 * 1024, // 50MB buffer for large pages
+        env: {
+          ...process.env,
+          ROAM_LOCAL_API_TOKEN: this.localApiToken,
+        },
+      })
+
+      const response = JSON.parse(stdout)
+
+      if (!response || !response.uid) {
+        console.error('[RoamCliService.getRepositorySubtree] Root page not found:', rootPageTitle)
+        return null
+      }
+
+      console.log('[RoamCliService.getRepositorySubtree] Found root page:', rootPageTitle, 'uid:', response.uid)
+
+      // Parse markdown hierarchy
+      const tree = MarkdownRoamParser.parseMarkdown(response.markdown || '', rootPageTitle, response.uid)
+
+      if (!tree) {
+        console.error('[RoamCliService.getRepositorySubtree] Failed to parse markdown for:', rootPageTitle)
+        return null
+      }
+
+      console.log(
+        '[RoamCliService.getRepositorySubtree] Success, parsed tree with',
+        tree.children?.length || 0,
+        'root children'
+      )
+      return tree
+    } catch (error) {
+      console.error('[RoamCliService.getRepositorySubtree] Error:', error instanceof Error ? error.message : String(error))
+      throw new Error(
+        `Get repository subtree failed: ${error instanceof Error ? error.message : String(error)}`
       )
     }
   }

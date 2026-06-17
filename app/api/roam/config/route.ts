@@ -27,6 +27,7 @@ export async function GET(req: NextRequest) {
       config: {
         projectId: config.projectId,
         graphName: config.graphName,
+        repositoryRootPage: config.repositoryRootPage,
         lastSyncAt: config.lastSyncAt,
         lastSyncStatus: config.lastSyncStatus,
         lastSyncError: config.lastSyncError,
@@ -39,18 +40,30 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/roam/config - Save Roam Local API configuration
-// Requires: graphName and apiToken (format: roam-graph-local-token-*)
+// Requires: graphName, apiToken (format: roam-graph-local-token-*), and repositoryRootPage
 export async function POST(req: NextRequest) {
   try {
-    const { projectId, graphName, apiToken } = await req.json()
+    const { projectId, graphName, apiToken, repositoryRootPage } = await req.json()
 
     // Validate required fields
-    if (!projectId || !graphName || !apiToken) {
+    if (!projectId || !graphName || !apiToken || !repositoryRootPage) {
       return NextResponse.json(
         {
           success: false,
           error: 'Missing required fields',
-          details: 'Project ID, Graph Name, and API Token are required',
+          details: 'Project ID, Graph Name, API Token, and Repository Root Page are required',
+        },
+        { status: 400 }
+      )
+    }
+
+    // Validate repositoryRootPage is not empty
+    if (typeof repositoryRootPage !== 'string' || repositoryRootPage.trim() === '') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid repository root page',
+          details: 'Repository Root Page must be a non-empty string (e.g., "Project_Kinergy" or "QA Repository")',
         },
         { status: 400 }
       )
@@ -90,10 +103,12 @@ export async function POST(req: NextRequest) {
         projectId,
         graphName,
         apiToken: encryptApiKey(apiToken),
+        repositoryRootPage: repositoryRootPage.trim(),
       },
       update: {
         graphName,
         apiToken: encryptApiKey(apiToken),
+        repositoryRootPage: repositoryRootPage.trim(),
       },
     })
 
@@ -103,6 +118,7 @@ export async function POST(req: NextRequest) {
       config: {
         projectId: config.projectId,
         graphName: config.graphName,
+        repositoryRootPage: config.repositoryRootPage,
       },
     })
   } catch (error) {

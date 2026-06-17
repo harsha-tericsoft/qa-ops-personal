@@ -60,7 +60,13 @@ export function RepositoryTree({
       }
 
       const data = await response.json()
-      setNodes(data)
+
+      if (!Array.isArray(data.nodes)) {
+        console.error('[RepositoryTree] API response nodes is not an array:', data)
+        setNodes([])
+      } else {
+        setNodes(data.nodes)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
       setNodes([])
@@ -144,7 +150,7 @@ export function RepositoryTree({
     )
   }
 
-  if (nodes.length === 0) {
+  if (!Array.isArray(nodes) || nodes.length === 0) {
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
         <p className="text-gray-600">

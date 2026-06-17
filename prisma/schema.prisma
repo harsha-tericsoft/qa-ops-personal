@@ -10,6 +10,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum NodeType {
@@ -46,6 +47,21 @@ enum RunStatus {
   PASS
   FAIL
   BLOCKED
+}
+
+enum TestCaseStatus {
+  NOT_RUN
+  PASSED
+  FAILED
+  BLOCKED
+  IN_PROGRESS
+}
+
+enum TestCasePriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
 }
 
 enum SuiteCategory {
@@ -115,6 +131,7 @@ model Project {
   tags                    Tag[]
   codeRepositories        CodeRepository[]
   codeRepositoriesEnabled Boolean             @default(false)
+  roamTestCases           RoamTestCase[]      @relation(name: "ProjectTestCases")
 }
 
 model Repository {
@@ -159,11 +176,36 @@ model RepositoryNode {
   updatedAt    DateTime         @updatedAt
   deletedAt    DateTime?
   testCases    TestCaseNode[]
+  testCase     RoamTestCase?    // Link to test case if this node is a test
 
   @@index([repositoryId])
   @@index([projectId])
   @@index([parentId])
   @@index([path])
+}
+
+model RoamTestCase {
+  id                String           @id @default(cuid())
+  projectId         String
+  project           Project          @relation(name: "ProjectTestCases", fields: [projectId], references: [id], onDelete: Cascade)
+  repositoryNodeId  String           @unique
+  repositoryNode    RepositoryNode   @relation(fields: [repositoryNodeId], references: [id], onDelete: Cascade)
+  title             String
+  status            TestCaseStatus   @default(NOT_RUN)
+  priority          TestCasePriority @default(MEDIUM)
+  tags              String[]         @default([])
+  sourceRoamUid     String?          // Original Roam UID for traceability
+  lastExecutedAt    DateTime?
+  executionCount    Int              @default(0)
+  passCount         Int              @default(0)
+  failCount         Int              @default(0)
+  metadata          Json?            // Flexible storage
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([projectId])
+  @@index([repositoryNodeId])
+  @@index([status])
 }
 
 model CodeRepository {
@@ -258,20 +300,21 @@ model TestCaseNode {
 }
 
 model RoamConfig {
-  id             String        @id @default(cuid())
-  projectId      String        @unique
-  project        Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  graphName      String        // Roam graph name (e.g., "Project_Kinergy")
-  apiToken       String        // Encrypted local API token (format: roam-graph-local-token-*)
-  apiEndpoint    String        @default("http://localhost:8000") // Deprecated - kept for backward compat
-  syncEnabled    Boolean       @default(false)
-  syncIntervalMin Int           @default(15)
-  syncDirection  SyncDirection @default(IMPORT_ONLY)
-  lastSyncAt     DateTime?
-  lastSyncStatus SyncStatus    @default(NEVER)
-  lastSyncError  String?       // Track sync errors
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id                   String        @id @default(cuid())
+  projectId            String        @unique
+  project              Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  graphName            String        // Roam graph name (e.g., "Project_Kinergy")
+  apiToken             String        // Encrypted local API token (format: roam-graph-local-token-*)
+  apiEndpoint          String        @default("http://localhost:8000") // Deprecated - kept for backward compat
+  repositoryRootPage   String?       @db.Text // Root page to import from (e.g., "Project_Kinergy", "QA Repository")
+  syncEnabled          Boolean       @default(false)
+  syncIntervalMin      Int           @default(15)
+  syncDirection        SyncDirection @default(IMPORT_ONLY)
+  lastSyncAt           DateTime?
+  lastSyncStatus       SyncStatus    @default(NEVER)
+  lastSyncError        String?       // Track sync errors
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
 
   @@index([projectId])
 }

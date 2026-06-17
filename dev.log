@@ -1,0 +1,24 @@
+
+> qa-ops@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.7 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.5:3000
+- Environments: .env.local, .env
+✓ Ready in 1103ms
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\harsh\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\harsh\ClaudeCode\Assignment3\qa-ops\package-lock.json
+
+
+[Prisma] Initializing Prisma Client (v6)
+[Prisma] Client initialized successfully
+ GET /api/admin/audit 200 in 6.4s (next.js: 380ms, application-code: 6.0s)
+[debug-flatten] Parsing markdown...
+[debug-flatten] Flattening tree...
+[debug-flatten] Total nodes: 3718
+ POST /api/admin/debug-flatten 200 in 2.0s (next.js: 1898ms, application-code: 122ms)

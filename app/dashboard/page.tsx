@@ -50,9 +50,33 @@ function DashboardContent() {
     setLoading(true)
     setError('')
     try {
-      const response = await fetch(`/api/dashboard?projectId=${projectId}`)
+      // Try new metrics API first
+      const response = await fetch(`/api/dashboard/summary?projectId=${projectId}`)
       if (response.ok) {
-        const data = await response.json()
+        const summaryData = await response.json()
+        // Transform to legacy format
+        const data: DashboardMetrics = {
+          totalTests: summaryData.totalTests,
+          repositoryTests: summaryData.totalTests,
+          testSuites: 0,
+          tagCount: 0,
+          activeCycles: 0,
+          passRate: summaryData.totalTests > 0 ? summaryData.passRate : null,
+          failRate: summaryData.totalTests > 0 ? ((summaryData.failed / summaryData.totalTests) * 100) : null,
+          blockedRate: summaryData.totalTests > 0 ? ((summaryData.blocked / summaryData.totalTests) * 100) : null,
+          blockedTests: summaryData.blocked,
+          openDefects: 0,
+          readiness: 'READY',
+          passCount: summaryData.passed,
+          failCount: summaryData.failed,
+          totalRunTests: summaryData.passed + summaryData.failed + summaryData.blocked + summaryData.inProgress,
+          hasExecutionData: (summaryData.passed + summaryData.failed) > 0,
+          roamConfig: {
+            isConfigured: true,
+            lastSyncAt: new Date(),
+            lastSyncStatus: 'SUCCESS',
+          },
+        }
         setMetrics(data)
       } else {
         setError('Failed to load dashboard metrics')

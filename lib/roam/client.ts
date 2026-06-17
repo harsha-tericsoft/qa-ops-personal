@@ -1,5 +1,6 @@
 import { RoamCliService } from './cli-service'
 import { decryptApiKey } from './crypto'
+import { MarkdownRoamParser, RoamMarkdownBlock } from './markdown-parser'
 
 /**
  * RoamPage represents a page from Roam Desktop.
@@ -84,6 +85,29 @@ export class RoamClient {
     } catch (error) {
       console.error('Error fetching pages:', error)
       return []
+    }
+  }
+
+  async fetchRepositorySubtree(rootPageTitle: string): Promise<RoamMarkdownBlock | null> {
+    try {
+      console.log('[RoamClient.fetchRepositorySubtree] Fetching repository subtree:', rootPageTitle)
+      const tree = await this.cliService.getRepositorySubtree(rootPageTitle)
+
+      if (!tree) {
+        console.error('[RoamClient.fetchRepositorySubtree] Root page not found:', rootPageTitle)
+        return null
+      }
+
+      console.log('[RoamClient.fetchRepositorySubtree] ROOT_PAGE_TEXT =', tree.text)
+      console.log('[RoamClient.fetchRepositorySubtree] ROOT_CHILDREN_COUNT =', tree.children?.length || 0)
+      if (tree.children && tree.children.length > 0) {
+        console.log('[RoamClient.fetchRepositorySubtree] FIRST_5_CHILDREN =', tree.children.slice(0, 5).map(c => c.text))
+      }
+      console.log('[RoamClient.fetchRepositorySubtree] Success, retrieved tree root:', tree.text)
+      return tree
+    } catch (error) {
+      console.error('[RoamClient.fetchRepositorySubtree] Error:', error)
+      return null
     }
   }
 

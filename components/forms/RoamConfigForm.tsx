@@ -15,6 +15,7 @@ export function RoamConfigForm({ projectId, onSuccess }: RoamConfigFormProps) {
 
   const [graphName, setGraphName] = useState('')
   const [apiToken, setLocalApiToken] = useState('')
+  const [repositoryRootPage, setRepositoryRootPage] = useState('')
 
   // Load existing config
   useEffect(() => {
@@ -25,6 +26,7 @@ export function RoamConfigForm({ projectId, onSuccess }: RoamConfigFormProps) {
 
         if (data.success && data.configured && data.config) {
           setGraphName(data.config.graphName)
+          setRepositoryRootPage(data.config.repositoryRootPage || '')
           // Don't show token for security
         }
       } catch (err) {
@@ -38,6 +40,11 @@ export function RoamConfigForm({ projectId, onSuccess }: RoamConfigFormProps) {
   const handleTestConnection = async () => {
     if (!graphName || !apiToken) {
       setError('Graph Name and Local API Token are required')
+      return
+    }
+
+    if (!repositoryRootPage || repositoryRootPage.trim() === '') {
+      setError('Repository Root Page is required')
       return
     }
 
@@ -71,6 +78,12 @@ export function RoamConfigForm({ projectId, onSuccess }: RoamConfigFormProps) {
     e.preventDefault()
     setError('')
     setSuccess('')
+
+    if (!repositoryRootPage || repositoryRootPage.trim() === '') {
+      setError('Repository Root Page is required')
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -81,6 +94,7 @@ export function RoamConfigForm({ projectId, onSuccess }: RoamConfigFormProps) {
           projectId,
           graphName,
           apiToken,
+          repositoryRootPage,
         }),
       })
 
@@ -135,6 +149,21 @@ export function RoamConfigForm({ projectId, onSuccess }: RoamConfigFormProps) {
           className="w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
         <p className="text-xs text-gray-500 mt-1">🔐 Stored securely (encrypted with AES-256-GCM). Must start with: roam-graph-local-token-</p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-900 mb-1">
+          Repository Root Page <span className="text-red-600">*</span>
+        </label>
+        <input
+          type="text"
+          value={repositoryRootPage}
+          onChange={(e) => setRepositoryRootPage(e.target.value)}
+          required
+          placeholder="e.g., Project_Kinergy or QA Repository"
+          className="w-full px-4 py-2 text-gray-900 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+        <p className="text-xs text-gray-500 mt-1">The root page in your Roam graph containing all test cases to import. Only this page and its descendants will be imported.</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
