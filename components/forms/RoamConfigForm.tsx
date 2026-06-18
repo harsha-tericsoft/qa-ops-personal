@@ -53,10 +53,18 @@ export function RoamConfigForm({ projectId, onSuccess }: RoamConfigFormProps) {
     setSuccess('')
 
     try {
+      const payload = {
+        projectId,
+        graphName,
+        apiToken,
+        repositoryRootPage,
+      }
+      console.log('[TEST_CONNECTION] Sending request:', JSON.stringify(payload, null, 2))
+
       const response = await fetch('/api/roam/test-connection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId }),
+        body: JSON.stringify(payload),
       })
 
       const data = await response.json()

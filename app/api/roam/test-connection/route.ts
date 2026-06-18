@@ -12,12 +12,16 @@ export async function POST(req: NextRequest) {
   console.log(`[TEST_CONNECTION:${requestId}] Request received`)
 
   try {
-    const { projectId, graphName, apiToken, repositoryRootPage } = await req.json()
+    const requestBody = await req.json()
+    const { projectId, graphName, apiToken, repositoryRootPage } = requestBody
 
-    console.log(`[TEST_CONNECTION:${requestId}] Request parameters:`)
+    console.log(`[TEST_CONNECTION:${requestId}] Raw request body received:`)
+    console.log(JSON.stringify(requestBody, null, 2))
+
+    console.log(`[TEST_CONNECTION:${requestId}] Parsed parameters:`)
     console.log(`  projectId: ${projectId}`)
     console.log(`  graphName (from body): ${graphName || '(not provided)'}`)
-    console.log(`  apiToken (from body): ${apiToken ? '(encrypted)' : '(not provided)'}`)
+    console.log(`  apiToken (from body): ${apiToken ? '(set, length: ' + apiToken.length + ')' : '(not provided)'}`)
     console.log(`  repositoryRootPage (from body): ${repositoryRootPage || '(not provided)'}`)
 
     if (!projectId) {
