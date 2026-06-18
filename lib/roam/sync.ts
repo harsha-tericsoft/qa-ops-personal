@@ -14,6 +14,8 @@ async function importMarkdownNodes(
   projectId: string
 ): Promise<SyncResult> {
   const result: SyncResult = { added: 0, updated: 0, skipped: 0, errors: [] }
+  const startTime = Date.now()
+  const dbOperationTimes: number[] = []
 
   console.log('[importMarkdownNodes] TOTAL_NODES =', nodes.length)
 
@@ -42,14 +44,17 @@ async function importMarkdownNodes(
         .substring(0, 50)
 
       try {
+        const opStart = Date.now()
         const existing = await prisma.repositoryNode.findUnique({
           where: { roamNodeId: node.uid },
         })
+        const findDuration = Date.now() - opStart
 
         if (existing) {
           uidToNodeId.set(node.uid, existing.id)
 
           if (existing.name !== node.text) {
+            const updateStart = Date.now()
             await prisma.repositoryNode.update({
               where: { id: existing.id },
               data: {
@@ -61,6 +66,7 @@ async function importMarkdownNodes(
                 syncedAt: new Date(),
               },
             })
+            dbOperationTimes.push(Date.now() - updateStart)
             result.updated++
           } else {
             result.skipped++
@@ -73,6 +79,7 @@ async function importMarkdownNodes(
           }
 
           // Create node with correct parentId
+          const createStart = Date.now()
           const created = await prisma.repositoryNode.create({
             data: {
               repositoryId,
@@ -88,6 +95,7 @@ async function importMarkdownNodes(
               syncedAt: new Date(),
             },
           })
+          dbOperationTimes.push(Date.now() - createStart)
 
           uidToNodeId.set(node.uid, created.id)
           result.added++
@@ -99,7 +107,22 @@ async function importMarkdownNodes(
       }
     }
 
+    const totalDuration = Date.now() - startTime
     console.log('[importMarkdownNodes] Complete: created', result.added, 'nodes, updated', result.updated)
+
+    // Log timing analysis
+    if (dbOperationTimes.length > 0) {
+      const avgTime = dbOperationTimes.reduce((a, b) => a + b, 0) / dbOperationTimes.length
+      const minTime = Math.min(...dbOperationTimes)
+      const maxTime = Math.max(...dbOperationTimes)
+      console.log(`[importMarkdownNodes] Database operations timing:`)
+      console.log(`  Total operations: ${dbOperationTimes.length}`)
+      console.log(`  Average time per op: ${avgTime.toFixed(2)}ms`)
+      console.log(`  Min/Max: ${minTime}ms / ${maxTime}ms`)
+      console.log(`  ⚠️ ALERT: SEQUENTIAL INSERTS DETECTED - Each create() is a separate database round trip!`)
+      console.log(`  Expected optimization: ~${(result.added / 500).toFixed(0)} batches of 500 records instead of ${result.added} individual inserts`)
+    }
+    console.log(`[importMarkdownNodes] Total function duration: ${totalDuration}ms`)
   } catch (error) {
     result.errors.push(error instanceof Error ? error.message : 'Unknown error')
   }
@@ -159,6 +182,7 @@ export async function initialSync(projectId: string): Promise<{
   syncLogId: string
 }> {
   const startTime = Date.now()
+  const timings: Record<string, number> = {}
 
   try {
     // Load Roam config
@@ -207,7 +231,9 @@ export async function initialSync(projectId: string): Promise<{
     // Fetch repository subtree using new markdown-based approach
     console.log('[initialSync] SYNC_SOURCE = fetchRepositorySubtree (scoped import)')
     console.log('[initialSync] Fetching repository subtree:', config.repositoryRootPage)
+    const fetchStart = Date.now()
     const tree = await client.fetchRepositorySubtree(config.repositoryRootPage)
+    timings.fetch = Date.now() - fetchStart
 
     if (!tree) {
       throw new Error(
@@ -218,17 +244,23 @@ export async function initialSync(projectId: string): Promise<{
 
     // Flatten tree and import into database
     console.log('[initialSync] Flattening markdown tree to database format')
+    const flattenStart = Date.now()
     const nodes = MarkdownRoamParser.flattenTree(tree)
-    console.log('[initialSync] Flattened tree contains', nodes.length, 'nodes')
+    timings.flatten = Date.now() - flattenStart
+    console.log('[initialSync] Flattened tree contains', nodes.length, 'nodes, took', timings.flatten, 'ms')
 
     // Convert markdown blocks to RoamPage format for import
+    const importStart = Date.now()
     const importResult = await importMarkdownNodes(nodes, repository.id, projectId)
+    timings.import = Date.now() - importStart
     const result = importResult
 
     // Extract test cases from imported nodes
     console.log('[initialSync] Extracting test cases from imported nodes...')
+    const extractStart = Date.now()
     const testCaseResult = await TestCaseExtractor.extractTestCases(repository.id, projectId)
-    console.log('[initialSync] Test case extraction: created', testCaseResult.created, ', skipped', testCaseResult.skipped)
+    timings.extract = Date.now() - extractStart
+    console.log('[initialSync] Test case extraction: created', testCaseResult.created, ', skipped', testCaseResult.skipped, ', took', timings.extract, 'ms')
 
     // Update repository sync status
     await prisma.repository.update({
@@ -241,8 +273,23 @@ export async function initialSync(projectId: string): Promise<{
       },
     })
 
-    // Log sync operation
+    // Log detailed timing breakdown
     const duration = Date.now() - startTime
+    console.log('\n=== INITIAL SYNC TIMING REPORT ===')
+    console.log(`Total sync duration: ${duration}ms`)
+    console.log(`\nStage breakdown:`)
+    console.log(`  fetchRepositorySubtree:  ${timings.fetch}ms (${((timings.fetch/duration)*100).toFixed(1)}%)`)
+    console.log(`  flattenMarkdownTree:     ${timings.flatten}ms (${((timings.flatten/duration)*100).toFixed(1)}%)`)
+    console.log(`  importMarkdownNodes:     ${timings.import}ms (${((timings.import/duration)*100).toFixed(1)}%)`)
+    console.log(`  extractTestCases:        ${timings.extract}ms (${((timings.extract/duration)*100).toFixed(1)}%)`)
+    console.log(`\nData counts:`)
+    console.log(`  Total nodes fetched: ${nodes.length}`)
+    console.log(`  Nodes added: ${result.added}`)
+    console.log(`  Nodes updated: ${result.updated}`)
+    console.log(`  Nodes skipped: ${result.skipped}`)
+    console.log(`  Total test cases extracted: ${testCaseResult.created}`)
+    console.log(`\n================================\n`)
+
     const syncLog = await prisma.syncLog.create({
       data: {
         projectId,
