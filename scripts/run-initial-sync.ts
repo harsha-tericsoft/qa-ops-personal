@@ -21,12 +21,35 @@ async function main() {
     console.log(`   graphName: ${config.graphName}`)
     console.log(`   repositoryRootPage: ${config.repositoryRootPage}`)
 
-    console.log(`\n🚀 Running initialSync with timing logs...\n`)
+    // Get repository to check if we need to clear it
+    const repo = await prisma.repository.findFirst({
+      where: { projectId: config.projectId },
+      select: { id: true }
+    })
+
+    if (repo) {
+      console.log(`\n⚠️ Clearing existing repository data...`)
+      // Delete test cases by project
+      await prisma.roamTestCase.deleteMany({ where: { projectId: config.projectId } })
+      // Delete nodes by repository
+      await prisma.repositoryNode.deleteMany({ where: { repositoryId: repo.id } })
+      console.log(`✅ Repository cleared`)
+    }
+
+    console.log(`\n🚀 Running initialSync with optimization (batch inserts)...\n`)
 
     const result = await initialSync(config.projectId)
 
     console.log(`\n✅ Sync completed:`)
     console.log(`   ${JSON.stringify(result, null, 2)}`)
+
+    // Get stats
+    const nodes = await prisma.repositoryNode.count({ where: { repositoryId: repo?.id } })
+    const tests = await prisma.roamTestCase.count({ where: { projectId: config.projectId } })
+
+    console.log(`\n📊 Final stats:`)
+    console.log(`   Total repository nodes: ${nodes}`)
+    console.log(`   Total test cases: ${tests}`)
 
     process.exit(0)
   } catch (error) {

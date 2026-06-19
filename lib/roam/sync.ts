@@ -48,6 +48,7 @@ async function importMarkdownNodes(
     // Split nodes into create/update/skip categories
     const nodesToCreate: Array<any> = []
     const nodesToUpdate: Array<{ id: string; data: any }> = []
+    const nodeWithParentRefs: Array<{ uid: string; parentId: string | null }> = []
 
     for (const node of sortedNodes) {
       if (!node.uid) continue
@@ -82,13 +83,7 @@ async function importMarkdownNodes(
           result.skipped++
         }
       } else {
-        // Queue for creation
-        // Determine parentId: convert Roam UID to RepositoryNode.id
-        let parentNodeId: string | null = null
-        if (node.parentId) {
-          parentNodeId = uidToNodeId.get(node.parentId) || null
-        }
-
+        // Queue for creation (WITHOUT parentId first - we'll set it after creation)
         nodesToCreate.push({
           repositoryId,
           projectId,
@@ -96,11 +91,17 @@ async function importMarkdownNodes(
           slug,
           path: node.parentPath,
           depth: node.nodeDepth,
-          parentId: parentNodeId,
+          parentId: null, // Set to null for now
           roamNodeId: node.uid,
           type: nodeType,
           tags: node.tags || [],
           syncedAt: new Date(),
+        })
+
+        // Track parent references for later update
+        nodeWithParentRefs.push({
+          uid: node.uid,
+          parentId: node.parentId || null
         })
       }
     }
@@ -137,7 +138,59 @@ async function importMarkdownNodes(
     }
 
     const createDuration = Date.now() - createStart
-    console.log(`[importMarkdownNodes] All creates completed in ${createDuration}ms`)
+    console.log(`[importMarkdownNodes] All creates completed in ${createDuration}ms (${result.added} nodes created)`)
+
+    // CRITICAL: Fix parent IDs for newly created nodes
+    // Since createMany doesn't return IDs, we need to fetch them from the database
+    if (nodeWithParentRefs.length > 0) {
+      console.log(`[importMarkdownNodes] Fetching created node IDs to set parent references...`)
+      const fixStart = Date.now()
+
+      // Get all created nodes with their roamNodeIds
+      const createdNodesWithUids = await prisma.repositoryNode.findMany({
+        where: {
+          repositoryId,
+          roamNodeId: { in: nodeWithParentRefs.map(n => n.uid) }
+        },
+        select: { id: true, roamNodeId: true }
+      })
+
+      const createdMap = new Map(createdNodesWithUids.map(n => [n.roamNodeId, n.id]))
+
+      // Prepare parent ID updates
+      const parentUpdates: Array<{ id: string; parentId: string | null }> = []
+
+      for (const ref of nodeWithParentRefs) {
+        if (!ref.parentId) continue // Skip root nodes
+
+        const nodeId = createdMap.get(ref.uid)
+        const parentNodeId = createdMap.get(ref.parentId) ||
+                            uidToNodeId.get(ref.parentId) ||
+                            null
+
+        if (nodeId && parentNodeId) {
+          parentUpdates.push({
+            id: nodeId,
+            parentId: parentNodeId
+          })
+        }
+      }
+
+      // Batch update parent IDs
+      console.log(`[importMarkdownNodes] Updating parent IDs for ${parentUpdates.length} nodes...`)
+      const PARENT_BATCH_SIZE = 1000
+      for (let i = 0; i < parentUpdates.length; i += PARENT_BATCH_SIZE) {
+        const batch = parentUpdates.slice(i, i + PARENT_BATCH_SIZE)
+        for (const update of batch) {
+          await prisma.repositoryNode.update({
+            where: { id: update.id },
+            data: { parentId: update.parentId }
+          })
+        }
+      }
+
+      console.log(`[importMarkdownNodes] Parent IDs fixed in ${Date.now() - fixStart}ms`)
+    }
 
     // OPTIMIZATION: Batch update operations
     console.log(`[importMarkdownNodes] Updating ${nodesToUpdate.length} nodes...`)
