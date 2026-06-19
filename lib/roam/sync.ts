@@ -29,13 +29,27 @@ async function importMarkdownNodes(
       console.log(`  [${i}] uid=${sortedNodes[i].uid}, depth=${sortedNodes[i].nodeDepth}, parentId=${sortedNodes[i].parentId}, text=${sortedNodes[i].text?.substring(0, 50)}`)
     }
 
+    // CRITICAL: Deduplicate nodes by roamNodeId (same node can appear multiple times in tree)
+    const seenUids = new Set<string>()
+    const deduplicatedNodes: typeof sortedNodes = []
+    for (const node of sortedNodes) {
+      if (node.uid && !seenUids.has(node.uid)) {
+        seenUids.add(node.uid)
+        deduplicatedNodes.push(node)
+      }
+    }
+    const dupCount = sortedNodes.length - deduplicatedNodes.length
+    if (dupCount > 0) {
+      console.log(`[importMarkdownNodes] ⚠️  DEDUPLICATED: ${dupCount} duplicate nodes removed (${sortedNodes.length} → ${deduplicatedNodes.length} unique)`)
+    }
+
     // OPTIMIZATION: Load all existing nodes in ONE query
     console.log('[importMarkdownNodes] Loading existing nodes (one query)...')
     const loadStart = Date.now()
     const existingNodes = await prisma.repositoryNode.findMany({
       where: {
         repositoryId,
-        roamNodeId: { in: sortedNodes.map(n => n.uid) }
+        roamNodeId: { in: deduplicatedNodes.map(n => n.uid) }
       },
       select: { id: true, roamNodeId: true, name: true }
     })
@@ -50,7 +64,7 @@ async function importMarkdownNodes(
     const nodesToUpdate: Array<{ id: string; data: any }> = []
     const nodeWithParentRefs: Array<{ uid: string; parentId: string | null }> = []
 
-    for (const node of sortedNodes) {
+    for (const node of deduplicatedNodes) {
       if (!node.uid) continue
 
       const nodeType = node.isTestCase ? 'FILE' : 'FOLDER'
@@ -114,7 +128,9 @@ async function importMarkdownNodes(
 
     // Process nodes in depth order - parents before children
     // Create nodes with proper parent IDs using the mapping as we go
-    for (const node of sortedNodes) {
+    for (let nodeIdx = 0; nodeIdx < deduplicatedNodes.length; nodeIdx++) {
+      const node = deduplicatedNodes[nodeIdx]
+      const isLastNode = nodeIdx === deduplicatedNodes.length - 1
       if (!node.uid) continue
 
       const nodeType = node.isTestCase ? 'FILE' : 'FOLDER'
@@ -147,13 +163,13 @@ async function importMarkdownNodes(
         })
 
         // If we've accumulated enough nodes or this is the last batch, insert them
-        if (nodesToCreateFinal.length >= 500 || node === sortedNodes[sortedNodes.length - 1]) {
+        if (nodesToCreateFinal.length >= 500 || isLastNode) {
           if (nodesToCreateFinal.length > 0) {
             try {
               const batchStart = Date.now()
               const created = await prisma.repositoryNode.createMany({
                 data: nodesToCreateFinal,
-                skipDuplicates: true
+                skipDuplicates: true  // Safe now that we've deduplicated by roamNodeId
               })
               const batchDuration = Date.now() - batchStart
 
@@ -176,8 +192,15 @@ async function importMarkdownNodes(
               nodesToCreateFinal = []
             } catch (error) {
               const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-              console.error(`[importMarkdownNodes] Batch error:`, errorMsg)
-              result.errors.push(`Batch creation error: ${errorMsg}`)
+              const errorCode = (error as any)?.code || 'UNKNOWN'
+              console.error(`[importMarkdownNodes] Batch error [${errorCode}]:`, errorMsg.substring(0, 500))
+
+              // Log first node that was being created for debugging
+              if (nodesToCreateFinal.length > 0) {
+                console.error(`[importMarkdownNodes] First node in failed batch:`, JSON.stringify(nodesToCreateFinal[0], null, 0).substring(0, 200))
+              }
+
+              result.errors.push(`Batch creation error: ${errorMsg.substring(0, 200)}`)
               nodesToCreateFinal = []
             }
           }
@@ -211,7 +234,7 @@ async function importMarkdownNodes(
 
     const totalDuration = Date.now() - startTime
     console.log(`\n[importMarkdownNodes] OPTIMIZATION COMPLETE:`)
-    console.log(`  Total nodes: ${sortedNodes.length}`)
+    console.log(`  Total nodes: ${deduplicatedNodes.length} (after dedup)`)
     console.log(`  Created: ${result.added}`)
     console.log(`  Updated: ${result.updated}`)
     console.log(`  Skipped: ${result.skipped}`)
