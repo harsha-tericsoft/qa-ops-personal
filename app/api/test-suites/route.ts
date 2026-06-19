@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getTestSuites, createTestSuite } from '@/lib/db'
+import { createTestSuite } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
 
 // GET /api/test-suites
 export async function GET(req: NextRequest) {
@@ -9,7 +10,16 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const suites = await getTestSuites(projectId)
+    const suites = await prisma.testSuite.findMany({
+      where: { projectId },
+      include: {
+        testCases: {
+          include: { testCase: true },
+          orderBy: { order: 'asc' },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
     return NextResponse.json(suites)
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error'
