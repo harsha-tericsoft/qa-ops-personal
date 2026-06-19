@@ -167,13 +167,22 @@ async function importMarkdownNodes(
           if (nodesToCreateFinal.length > 0) {
             try {
               const batchStart = Date.now()
+
+              // Sample the batch to see what's being created
+              const sample = JSON.stringify({
+                count: nodesToCreateFinal.length,
+                first: nodesToCreateFinal[0],
+                last: nodesToCreateFinal[nodesToCreateFinal.length - 1]
+              }, null, 0).substring(0, 300)
+              console.log(`[importMarkdownNodes] Batch sample: ${sample}`)
+
               const created = await prisma.repositoryNode.createMany({
                 data: nodesToCreateFinal,
                 skipDuplicates: true  // Safe now that we've deduplicated by roamNodeId
               })
               const batchDuration = Date.now() - batchStart
 
-              console.log(`[importMarkdownNodes] Batch: ${nodesToCreateFinal.length} nodes queued, ${created.count} created in ${batchDuration}ms`)
+              console.log(`[importMarkdownNodes] Batch: ${nodesToCreateFinal.length} queued, ${created.count} created in ${batchDuration}ms`)
               result.added += created.count
 
               // Update uidToNodeId mapping with newly created nodes
