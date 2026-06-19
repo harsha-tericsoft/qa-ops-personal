@@ -73,7 +73,7 @@ export async function syncViaMCPSimple(projectId: string, graphName: string) {
       }
 
       // Create or update test case
-      await prisma.roamTestCase.upsert({
+      const roamTestCase = await prisma.roamTestCase.upsert({
         where: { repositoryNodeId: node.id },
         update: { title, status: 'NOT_RUN' },
         create: {
@@ -84,6 +84,18 @@ export async function syncViaMCPSimple(projectId: string, graphName: string) {
           sourceRoamUid: uid,
         },
       });
+
+      // Also create or update generic TestCase for suite compatibility
+      await prisma.testCase.upsert({
+        where: { id: roamTestCase.id }, // Use same ID for easy linking
+        update: { title },
+        create: {
+          id: roamTestCase.id,
+          projectId,
+          title,
+          description: `Imported from Roam: ${uid}`,
+        },
+      }).catch(() => null); // Ignore if ID already exists
 
       imported++;
     } catch (error) {
