@@ -15,9 +15,9 @@ async function importMarkdownNodes(
 ): Promise<SyncResult> {
   const result: SyncResult = { added: 0, updated: 0, skipped: 0, errors: [] }
   const startTime = Date.now()
-  const dbOperationTimes: number[] = []
 
   console.log('[importMarkdownNodes] TOTAL_NODES =', nodes.length)
+  console.log('[importMarkdownNodes] Starting batch import optimization...')
 
   try {
     // Sort nodes by depth (parents first) to ensure FK integrity
@@ -29,10 +29,26 @@ async function importMarkdownNodes(
       console.log(`  [${i}] uid=${sortedNodes[i].uid}, depth=${sortedNodes[i].nodeDepth}, parentId=${sortedNodes[i].parentId}, text=${sortedNodes[i].text?.substring(0, 50)}`)
     }
 
-    // Build uid -> RepositoryNode.id mapping as we create
-    const uidToNodeId = new Map<string, string>()
+    // OPTIMIZATION: Load all existing nodes in ONE query
+    console.log('[importMarkdownNodes] Loading existing nodes (one query)...')
+    const loadStart = Date.now()
+    const existingNodes = await prisma.repositoryNode.findMany({
+      where: {
+        repositoryId,
+        roamNodeId: { in: sortedNodes.map(n => n.uid) }
+      },
+      select: { id: true, roamNodeId: true, name: true }
+    })
+    console.log(`[importMarkdownNodes] Loaded ${existingNodes.length} existing nodes in ${Date.now() - loadStart}ms`)
 
-    // Process nodes in depth order (parents before children)
+    // Build uid -> RepositoryNode mapping
+    const existingMap = new Map(existingNodes.map(n => [n.roamNodeId, n]))
+    const uidToNodeId = new Map(existingNodes.map(n => [n.roamNodeId, n.id]))
+
+    // Split nodes into create/update/skip categories
+    const nodesToCreate: Array<any> = []
+    const nodesToUpdate: Array<{ id: string; data: any }> = []
+
     for (const node of sortedNodes) {
       if (!node.uid) continue
 
@@ -43,86 +59,123 @@ async function importMarkdownNodes(
         .replace(/\s+/g, '-')
         .substring(0, 50)
 
-      try {
-        const opStart = Date.now()
-        const existing = await prisma.repositoryNode.findUnique({
-          where: { roamNodeId: node.uid },
-        })
-        const findDuration = Date.now() - opStart
+      const existing = existingMap.get(node.uid)
 
-        if (existing) {
-          uidToNodeId.set(node.uid, existing.id)
+      if (existing) {
+        // Map existing node
+        uidToNodeId.set(node.uid, existing.id)
 
-          if (existing.name !== node.text) {
-            const updateStart = Date.now()
-            await prisma.repositoryNode.update({
-              where: { id: existing.id },
-              data: {
-                name: node.text,
-                slug,
-                type: nodeType,
-                tags: node.tags || [],
-                updatedAt: new Date(),
-                syncedAt: new Date(),
-              },
-            })
-            dbOperationTimes.push(Date.now() - updateStart)
-            result.updated++
-          } else {
-            result.skipped++
-          }
-        } else {
-          // Determine parentId: convert Roam UID to RepositoryNode.id
-          let parentNodeId: string | null = null
-          if (node.parentId) {
-            parentNodeId = uidToNodeId.get(node.parentId) || null
-          }
-
-          // Create node with correct parentId
-          const createStart = Date.now()
-          const created = await prisma.repositoryNode.create({
+        // Check if update needed
+        if (existing.name !== node.text) {
+          nodesToUpdate.push({
+            id: existing.id,
             data: {
-              repositoryId,
-              projectId,
               name: node.text,
               slug,
-              path: node.parentPath,
-              depth: node.nodeDepth,
-              parentId: parentNodeId,
-              roamNodeId: node.uid,
-              type: nodeType as any,
+              type: nodeType,
               tags: node.tags || [],
+              updatedAt: new Date(),
               syncedAt: new Date(),
-            },
+            }
           })
-          dbOperationTimes.push(Date.now() - createStart)
-
-          uidToNodeId.set(node.uid, created.id)
-          result.added++
+        } else {
+          result.skipped++
         }
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-        console.error('[importMarkdownNodes] Error creating node', node.uid, ':', errorMsg)
-        result.errors.push(`Error importing "${node.text}": ${errorMsg}`)
+      } else {
+        // Queue for creation
+        // Determine parentId: convert Roam UID to RepositoryNode.id
+        let parentNodeId: string | null = null
+        if (node.parentId) {
+          parentNodeId = uidToNodeId.get(node.parentId) || null
+        }
+
+        nodesToCreate.push({
+          repositoryId,
+          projectId,
+          name: node.text,
+          slug,
+          path: node.parentPath,
+          depth: node.nodeDepth,
+          parentId: parentNodeId,
+          roamNodeId: node.uid,
+          type: nodeType,
+          tags: node.tags || [],
+          syncedAt: new Date(),
+        })
       }
     }
 
-    const totalDuration = Date.now() - startTime
-    console.log('[importMarkdownNodes] Complete: created', result.added, 'nodes, updated', result.updated)
+    console.log(`[importMarkdownNodes] Split results: ${nodesToCreate.length} to create, ${nodesToUpdate.length} to update, ${result.skipped} skipped`)
 
-    // Log timing analysis
-    if (dbOperationTimes.length > 0) {
-      const avgTime = dbOperationTimes.reduce((a, b) => a + b, 0) / dbOperationTimes.length
-      const minTime = Math.min(...dbOperationTimes)
-      const maxTime = Math.max(...dbOperationTimes)
-      console.log(`[importMarkdownNodes] Database operations timing:`)
-      console.log(`  Total operations: ${dbOperationTimes.length}`)
-      console.log(`  Average time per op: ${avgTime.toFixed(2)}ms`)
-      console.log(`  Min/Max: ${minTime}ms / ${maxTime}ms`)
-      console.log(`  ⚠️ ALERT: SEQUENTIAL INSERTS DETECTED - Each create() is a separate database round trip!`)
-      console.log(`  Expected optimization: ~${(result.added / 500).toFixed(0)} batches of 500 records instead of ${result.added} individual inserts`)
+    // OPTIMIZATION: Batch create operations in transactions
+    const BATCH_SIZE = 500
+    console.log(`[importMarkdownNodes] Creating nodes in batches of ${BATCH_SIZE}...`)
+    const createStart = Date.now()
+
+    for (let i = 0; i < nodesToCreate.length; i += BATCH_SIZE) {
+      const batch = nodesToCreate.slice(i, i + BATCH_SIZE)
+      const batchNum = Math.floor(i / BATCH_SIZE) + 1
+      const totalBatches = Math.ceil(nodesToCreate.length / BATCH_SIZE)
+
+      console.log(`[importMarkdownNodes] Creating batch ${batchNum}/${totalBatches} (${batch.length} nodes)...`)
+
+      try {
+        const batchStart = Date.now()
+        const created = await prisma.repositoryNode.createMany({
+          data: batch,
+          skipDuplicates: true
+        })
+        const batchDuration = Date.now() - batchStart
+
+        console.log(`[importMarkdownNodes] Batch ${batchNum} created in ${batchDuration}ms`)
+        result.added += created.count
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+        console.error(`[importMarkdownNodes] Batch ${batchNum} error:`, errorMsg)
+        result.errors.push(`Batch ${batchNum} error: ${errorMsg}`)
+      }
     }
-    console.log(`[importMarkdownNodes] Total function duration: ${totalDuration}ms`)
+
+    const createDuration = Date.now() - createStart
+    console.log(`[importMarkdownNodes] All creates completed in ${createDuration}ms`)
+
+    // OPTIMIZATION: Batch update operations
+    console.log(`[importMarkdownNodes] Updating ${nodesToUpdate.length} nodes...`)
+    const updateStart = Date.now()
+
+    for (let i = 0; i < nodesToUpdate.length; i += BATCH_SIZE) {
+      const batch = nodesToUpdate.slice(i, i + BATCH_SIZE)
+      const batchNum = Math.floor(i / BATCH_SIZE) + 1
+
+      try {
+        const batchStart = Date.now()
+        for (const item of batch) {
+          await prisma.repositoryNode.update({
+            where: { id: item.id },
+            data: item.data
+          })
+        }
+        console.log(`[importMarkdownNodes] Update batch ${batchNum} completed in ${Date.now() - batchStart}ms`)
+        result.updated += batch.length
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+        console.error(`[importMarkdownNodes] Update batch ${batchNum} error:`, errorMsg)
+        result.errors.push(`Update batch ${batchNum} error: ${errorMsg}`)
+      }
+    }
+
+    const updateDuration = Date.now() - updateStart
+    console.log(`[importMarkdownNodes] All updates completed in ${updateDuration}ms`)
+
+    const totalDuration = Date.now() - startTime
+    console.log(`\n[importMarkdownNodes] OPTIMIZATION COMPLETE:`)
+    console.log(`  Total nodes: ${sortedNodes.length}`)
+    console.log(`  Created: ${result.added}`)
+    console.log(`  Updated: ${result.updated}`)
+    console.log(`  Skipped: ${result.skipped}`)
+    console.log(`  Duration: ${totalDuration}ms`)
+    console.log(`  Queries: ~${Math.ceil(nodesToCreate.length / BATCH_SIZE) + 1} (was ${sortedNodes.length * 2})`)
+    console.log(`  Query reduction: ${(sortedNodes.length * 2 / (Math.ceil(nodesToCreate.length / BATCH_SIZE) + 1)).toFixed(1)}x`)
   } catch (error) {
     result.errors.push(error instanceof Error ? error.message : 'Unknown error')
   }
