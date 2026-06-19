@@ -1,43 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getTestCases, createTestCase } from '@/lib/db'
+import { prisma } from '@/lib/prisma'
 
-// GET /api/test-cases
-export async function GET(req: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    const projectId = req.nextUrl.searchParams.get('projectId')
+    const projectId = request.nextUrl.searchParams.get('projectId')
 
     if (!projectId) {
       return NextResponse.json(
-        { error: 'projectId query parameter required' },
+        { error: 'projectId is required' },
         { status: 400 }
       )
     }
 
-    const testCases = await getTestCases(projectId)
+    const testCases = await prisma.roamTestCase.findMany({
+      where: { projectId },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        sourceRoamUid: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
     return NextResponse.json(testCases)
   } catch (error) {
-    const msg = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.json({ error: msg }, { status: 500 })
-  }
-}
-
-// POST /api/test-cases
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json()
-    const { projectId, title, description } = body
-
-    if (!projectId || !title) {
-      return NextResponse.json(
-        { error: 'projectId and title are required' },
-        { status: 400 }
-      )
-    }
-
-    const testCase = await createTestCase(projectId, title, description)
-    return NextResponse.json(testCase, { status: 201 })
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.json({ error: msg }, { status: 500 })
+    console.error('[test-cases] Error:', error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    )
   }
 }

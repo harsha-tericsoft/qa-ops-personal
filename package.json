@@ -20,6 +20,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.0",
     "@roam-research/roam-cli": "^0.7.4",
     "@roam-research/roam-tools-core": "^0.7.5",
     "@roam-research/roam-tools-local": "^0.7.4",
