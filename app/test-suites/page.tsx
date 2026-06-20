@@ -123,13 +123,16 @@ function TestSuitesContent() {
             .map((tc: any) => tc.id)
 
           if (testCasesToAdd.length > 0) {
-            await fetch(`/api/test-suites/${newSuite.id}`, {
+            const patchResponse = await fetch(`/api/test-suites/${newSuite.id}`, {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 testCaseIds: testCasesToAdd,
               }),
             })
+            if (!patchResponse.ok) {
+              console.error('Failed to add test cases:', await patchResponse.text())
+            }
           }
         }
 
@@ -139,7 +142,7 @@ function TestSuitesContent() {
         setSelectedNodeIds([])
         setSelectedTestCount(0)
         setShowCreateModal(false)
-        fetchSuites()
+        await fetchSuites()
       }
     } catch (error) {
       console.error('Error creating suite:', error)
@@ -172,7 +175,7 @@ function TestSuitesContent() {
         setSelectedNodeIds([])
         setSelectedTestCount(0)
         setShowEditModal(false)
-        fetchSuites()
+        await fetchSuites()
       }
     } catch (error) {
       console.error('Error editing suite:', error)
