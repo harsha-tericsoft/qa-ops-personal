@@ -21,7 +21,7 @@ export interface CycleMetrics {
 }
 
 export async function createCycle(input: CreateCycleInput) {
-  const { projectId, name, description, startDate, endDate } = input
+  const { projectId, name, description, startDate, endDate, testCaseIds } = input
 
   const cycle = await createExecutionCycle(
     projectId,
@@ -32,7 +32,24 @@ export async function createCycle(input: CreateCycleInput) {
     endDate?.toISOString()
   )
 
-  return cycle
+  // Create test runs for each test case
+  if (testCaseIds && testCaseIds.length > 0) {
+    await prisma.testRun.createMany({
+      data: testCaseIds.map((testCaseId) => ({
+        cycleId: cycle.id,
+        testCaseId,
+        status: 'NOT_EXECUTED',
+      })),
+    })
+  }
+
+  // Return cycle with test runs included
+  const fullCycle = await prisma.executionCycle.findUniqueOrThrow({
+    where: { id: cycle.id },
+    include: { testRuns: true },
+  })
+
+  return fullCycle
 }
 
 export async function getCycle(cycleId: string) {
