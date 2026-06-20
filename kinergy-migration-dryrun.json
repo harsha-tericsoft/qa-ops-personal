@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-06-20T12:42:03.868Z",
+  "graph": "Project_Kinergy",
+  "targetPage": "TestSuite : Kinergy",
+  "summary": {
+    "testCaseContainers": 0,
+    "totalCandidates": 0,
+    "alreadyMigrated": 0,
+    "toUpdate": 0
+  },
+  "updates": [],
+  "alreadyMigrated": [],
+  "testCaseContainers": []
+}

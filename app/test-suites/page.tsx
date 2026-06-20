@@ -53,11 +53,15 @@ function TestSuitesContent() {
 
   // Fetch suites for current project
   useEffect(() => {
-    if (currentProjectId !== 'default-project') {
+    if (currentProjectId && currentProjectId !== 'default-project') {
       fetchSuites()
       fetchAvailableTests()
+    } else if (projects.length > 0) {
+      // If projects loaded but projectId still default, use first project
+      const firstProjectId = projects[0].id
+      setCurrentProjectId(firstProjectId)
     }
-  }, [currentProjectId])
+  }, [currentProjectId, projects])
 
   const fetchSuites = async () => {
     setLoading(true)
