@@ -32,6 +32,15 @@ interface DashboardMetrics {
     lastSyncAt: Date | null
     lastSyncStatus: string
   }
+  executionCycles?: {
+    total: number
+    pass: number
+    fail: number
+    blocked: number
+    notExecuted: number
+    passRate: number
+    executionRate: number
+  }
 }
 
 function formatMetric(value: number | null): string {
@@ -76,6 +85,7 @@ function DashboardContent() {
             lastSyncAt: new Date(),
             lastSyncStatus: 'SUCCESS',
           },
+          executionCycles: summaryData.executionCycles,
         }
         setMetrics(data)
       } else {
@@ -166,6 +176,51 @@ function DashboardContent() {
         lastSyncAt={metrics.roamConfig.lastSyncAt}
         lastSyncStatus={metrics.roamConfig.lastSyncStatus}
       />
+
+      {/* Execution Cycle Metrics */}
+      {metrics.executionCycles && metrics.executionCycles.total > 0 && (
+        <div>
+          <h2 className="text-lg font-semibold mb-3 text-gray-900">Execution Cycle Results</h2>
+          <MetricGrid>
+            <MetricCard
+              label="Total Tests"
+              value={metrics.executionCycles.total}
+              color="blue"
+            />
+            <MetricCard
+              label="Passed"
+              value={metrics.executionCycles.pass}
+              color="green"
+            />
+            <MetricCard
+              label="Failed"
+              value={metrics.executionCycles.fail}
+              color="red"
+            />
+            <MetricCard
+              label="Blocked"
+              value={metrics.executionCycles.blocked}
+              color="orange"
+            />
+            <MetricCard
+              label="Not Executed"
+              value={metrics.executionCycles.notExecuted}
+              color="grey"
+            />
+            <MetricCard
+              label="Pass Rate"
+              value={formatMetric(metrics.executionCycles.passRate)}
+              color={
+                metrics.executionCycles.passRate >= 75
+                  ? 'green'
+                  : metrics.executionCycles.passRate >= 50
+                    ? 'orange'
+                    : 'red'
+              }
+            />
+          </MetricGrid>
+        </div>
+      )}
 
       {/* Quality Metrics */}
       {metrics.hasExecutionData && (
