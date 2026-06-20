@@ -1,0 +1,87 @@
+
+> qa-ops@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.7 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.5:3000
+- Environments: .env.local, .env
+✓ Ready in 521ms
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\harsh\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\harsh\ClaudeCode\Assignment3\qa-ops\package-lock.json
+
+
+ GET /test-suites 200 in 3.0s (next.js: 2.7s, application-code: 249ms)
+[Prisma] Initializing Prisma Client (v6)
+[Prisma] Client initialized successfully
+ GET /api/projects 200 in 2.2s (next.js: 382ms, application-code: 1813ms)
+ GET /api/projects 200 in 712ms (next.js: 3ms, application-code: 709ms)
+ GET /api/test-cases?projectId=cmqkr1y3x03n17k8kr1u9bwhv 200 in 2.1s (next.js: 204ms, application-code: 1915ms)
+ GET /api/test-suites?projectId=cmqkr1y3x03n17k8kr1u9bwhv 200 in 2.6s (next.js: 288ms, application-code: 2.3s)
+ GET /api/test-cases?projectId=cmqkr1y3x03n17k8kr1u9bwhv 200 in 806ms (next.js: 4ms, application-code: 802ms)
+ GET /api/test-suites?projectId=cmqkr1y3x03n17k8kr1u9bwhv 200 in 1288ms (next.js: 2ms, application-code: 1285ms)
+ GET /test-suites 200 in 108ms (next.js: 15ms, application-code: 93ms)
+ GET /login 200 in 644ms (next.js: 579ms, application-code: 65ms)
+ GET /test-suites 200 in 75ms (next.js: 6ms, application-code: 69ms)
+ GET /login 200 in 50ms (next.js: 6ms, application-code: 44ms)
+ GET /test-suites 200 in 88ms (next.js: 6ms, application-code: 82ms)
+ GET /login 200 in 36ms (next.js: 5ms, application-code: 31ms)
+ GET /test-suites 200 in 72ms (next.js: 6ms, application-code: 66ms)
+ GET /login 200 in 37ms (next.js: 4ms, application-code: 33ms)
+ GET /test-suites 200 in 74ms (next.js: 6ms, application-code: 69ms)
+ GET /login 200 in 32ms (next.js: 5ms, application-code: 27ms)
+ GET /test-suites 200 in 289ms (next.js: 110ms, application-code: 179ms)
+ GET /test-suites 200 in 84ms (next.js: 4ms, application-code: 80ms)
+ GET /test-suites 200 in 55ms (next.js: 25ms, application-code: 30ms)
+ GET /test-suites 200 in 57ms (next.js: 3ms, application-code: 54ms)
+ GET /test-suites 200 in 185ms (next.js: 4ms, application-code: 181ms)
+ GET /login 200 in 63ms (next.js: 24ms, application-code: 39ms)
+ GET /test-suites 200 in 50ms (next.js: 4ms, application-code: 46ms)
+ GET /login 200 in 19ms (next.js: 3ms, application-code: 17ms)
+ GET /login 200 in 43ms (next.js: 3ms, application-code: 40ms)
+ GET /test-suites 200 in 51ms (next.js: 4ms, application-code: 47ms)
+ GET /login 200 in 36ms (next.js: 5ms, application-code: 31ms)
+ GET /login 200 in 39ms (next.js: 3ms, application-code: 36ms)
+ GET /test-suites 200 in 41ms (next.js: 3ms, application-code: 38ms)
+ GET /login 200 in 20ms (next.js: 3ms, application-code: 17ms)
+ GET /login 200 in 36ms (next.js: 3ms, application-code: 34ms)
+ GET /test-suites 200 in 40ms (next.js: 3ms, application-code: 37ms)
+ GET /login 200 in 26ms (next.js: 4ms, application-code: 22ms)
+ GET /login 200 in 40ms (next.js: 3ms, application-code: 37ms)
+ GET /test-suites 200 in 38ms (next.js: 3ms, application-code: 35ms)
+prisma:error Error in PostgreSQL connection: Error { kind: Io, cause: Some(Os { code: 10054, kind: ConnectionReset, message: "An existing connection was forcibly closed by the remote host." }) }
+prisma:error Error in PostgreSQL connection: Error { kind: Io, cause: Some(Os { code: 10054, kind: ConnectionReset, message: "An existing connection was forcibly closed by the remote host." }) }
+prisma:error Error in PostgreSQL connection: Error { kind: Io, cause: Some(Os { code: 10054, kind: ConnectionReset, message: "An existing connection was forcibly closed by the remote host." }) }
+ POST /api/test-suites?projectId=79d857b2-36dd-4810-88ae-3ca8d9aaa8d4 201 in 3.0s (next.js: 116ms, application-code: 2.9s)
+[Prisma] Initializing Prisma Client (v6)
+[Prisma] Client initialized successfully
+ PATCH /api/test-suites/cmqmj0dth00017k4gblax33by 200 in 4.4s (next.js: 1686ms, application-code: 2.7s)
+[Prisma] Initializing Prisma Client (v6)
+[Prisma] Client initialized successfully
+ GET /api/test-suites/cmqmj0dth00017k4gblax33by 200 in 1941ms (next.js: 12ms, application-code: 1929ms)
+ POST /api/test-suites?projectId=79d857b2-36dd-4810-88ae-3ca8d9aaa8d4 201 in 1406ms (next.js: 3ms, application-code: 1403ms)
+[Prisma] Initializing Prisma Client (v6)
+[Prisma] Client initialized successfully
+ PATCH /api/test-suites/cmqmj0l4r00057k4gkxcdgk9w 200 in 2.6s (next.js: 15ms, application-code: 2.6s)
+ POST /api/test-suites?projectId=79d857b2-36dd-4810-88ae-3ca8d9aaa8d4 201 in 1683ms (next.js: 3ms, application-code: 1680ms)
+[Prisma] Initializing Prisma Client (v6)
+[Prisma] Client initialized successfully
+ PATCH /api/test-suites/cmqmj0pop00087k4g2av8bc27 200 in 2.5s (next.js: 13ms, application-code: 2.5s)
+ GET /api/test-suites?projectId=79d857b2-36dd-4810-88ae-3ca8d9aaa8d4 200 in 1484ms (next.js: 3ms, application-code: 1481ms)
+ POST /api/test-suites?projectId=79d857b2-36dd-4810-88ae-3ca8d9aaa8d4 201 in 1610ms (next.js: 4ms, application-code: 1606ms)
+[Prisma] Initializing Prisma Client (v6)
+[Prisma] Client initialized successfully
+ PATCH /api/test-suites/cmqmj0uxm000c7k4gttv6vcse 200 in 2.8s (next.js: 12ms, application-code: 2.7s)
+[Prisma] Initializing Prisma Client (v6)
+[Prisma] Client initialized successfully
+ GET /api/test-suites/cmqmj0uxm000c7k4gttv6vcse 200 in 1878ms (next.js: 25ms, application-code: 1853ms)
+ POST /api/test-suites?projectId=79d857b2-36dd-4810-88ae-3ca8d9aaa8d4 201 in 1453ms (next.js: 3ms, application-code: 1451ms)
+[Prisma] Initializing Prisma Client (v6)
+[Prisma] Client initialized successfully
+ DELETE /api/test-suites/cmqmj10xg000f7k4gg71aw4h8 200 in 903ms (next.js: 19ms, application-code: 884ms)
+ GET /api/repository?projectId=79d857b2-36dd-4810-88ae-3ca8d9aaa8d4 200 in 2.6s (next.js: 238ms, application-code: 2.4s)
+ GET /api/test-cases?projectId=79d857b2-36dd-4810-88ae-3ca8d9aaa8d4 200 in 1054ms (next.js: 39ms, application-code: 1015ms)

@@ -146,8 +146,19 @@ export function RepositoryTreeSelector({
       descendants.forEach((node: any) => newSelected.add(node.id))
     }
 
-    // Calculate total test count
-    const totalCount = Array.from(newSelected).reduce((sum, id) => {
+    // Calculate total test count - only sum top-level selected nodes
+    // (not all descendants, since testCounts includes descendants)
+    const topLevelSelected = new Set<string>()
+    Array.from(newSelected).forEach((nodeId) => {
+      // Check if this node's parent is also selected
+      const node = allNodes.find((n: any) => n.id === nodeId)
+      if (!node?.parentId || !newSelected.has(node.parentId)) {
+        // This is a top-level selected node
+        topLevelSelected.add(nodeId)
+      }
+    })
+
+    const totalCount = Array.from(topLevelSelected).reduce((sum, id) => {
       return sum + (testCounts[id] || 0)
     }, 0)
 
