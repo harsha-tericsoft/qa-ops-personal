@@ -53,11 +53,18 @@ export async function createCycle(input: CreateCycleInput) {
 }
 
 export async function getCycle(cycleId: string) {
-  return getExecutionCycle(cycleId)
+  return prisma.executionCycle.findUnique({
+    where: { id: cycleId },
+    include: { testRuns: true },
+  })
 }
 
 export async function listCycles(projectId: string) {
-  return getExecutionCycles(projectId)
+  return prisma.executionCycle.findMany({
+    where: { projectId },
+    include: { testRuns: true },
+    orderBy: { createdAt: 'desc' },
+  })
 }
 
 export async function updateCycleStatus(cycleId: string, status: string) {

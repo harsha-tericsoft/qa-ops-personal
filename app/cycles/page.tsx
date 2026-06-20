@@ -304,16 +304,16 @@ function ExecutionCyclesContent() {
                     {cycle.description && <p className="text-sm text-gray-600 mt-1">{cycle.description}</p>}
                     <div className="flex gap-4 mt-3">
                       <span className="text-sm text-gray-500">
-                        {cycle.testRuns.length} total tests
+                        {(cycle.testRuns ?? []).length} total tests
                       </span>
                       <span className="text-sm text-green-600">
-                        {cycle.testRuns.filter((r) => r.status === 'PASS').length} pass
+                        {(cycle.testRuns ?? []).filter((r) => r.status === 'PASS').length} pass
                       </span>
                       <span className="text-sm text-red-600">
-                        {cycle.testRuns.filter((r) => r.status === 'FAIL').length} fail
+                        {(cycle.testRuns ?? []).filter((r) => r.status === 'FAIL').length} fail
                       </span>
                       <span className="text-sm text-yellow-600">
-                        {cycle.testRuns.filter((r) => r.status === 'BLOCKED').length} blocked
+                        {(cycle.testRuns ?? []).filter((r) => r.status === 'BLOCKED').length} blocked
                       </span>
                     </div>
                   </div>
