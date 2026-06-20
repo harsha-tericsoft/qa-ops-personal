@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { name, description, category = 'CUSTOM' } = body
+    const { name, description, category = 'CUSTOM', selectionMethod = 'HIERARCHY' } = body
 
     if (!name) {
       return NextResponse.json(
@@ -45,7 +45,21 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const suite = await createTestSuite(projectId, name, category, description)
+    const suite = await prisma.testSuite.create({
+      data: {
+        projectId,
+        name,
+        description,
+        category,
+        selectionMethod,
+      },
+      include: {
+        testCases: {
+          include: { testCase: true },
+          orderBy: { order: 'asc' },
+        },
+      },
+    })
 
     return NextResponse.json(suite, { status: 201 })
   } catch (error) {
