@@ -21,6 +21,19 @@ export class MarkdownRoamParser {
   static parseMarkdown(markdown: string, pageTitle: string, pageUid: string): RoamMarkdownBlock | null {
     const lines = markdown.split('\n')
 
+    console.log('[MarkdownRoamParser.parseMarkdown] DEBUG: Input')
+    console.log(`  pageTitle: ${pageTitle}`)
+    console.log(`  pageUid: ${pageUid}`)
+    console.log(`  markdown lines: ${lines.length}`)
+    console.log(`  markdown length: ${markdown.length} chars`)
+
+    if (lines.length > 1) {
+      console.log(`  first 3 lines:`)
+      for (let i = 0; i < Math.min(3, lines.length); i++) {
+        console.log(`    [${i}] ${lines[i].substring(0, 80)}`)
+      }
+    }
+
     // Create root node for the page itself
     const root: RoamMarkdownBlock = {
       uid: pageUid,
@@ -90,6 +103,11 @@ export class MarkdownRoamParser {
 
       stack.push(block)
     }
+
+    console.log('[MarkdownRoamParser.parseMarkdown] DEBUG: Output')
+    console.log(`  root.children: ${root.children.length}`)
+    console.log(`  root.text: ${root.text}`)
+    console.log(`  root.uid: ${root.uid}`)
 
     return root
   }
@@ -164,6 +182,15 @@ export class MarkdownRoamParser {
     for (const child of block.children) {
       const childResults = this.flattenTree(child, block.uid || parentId, nodePath)
       result.push(...childResults)
+    }
+
+    // DEBUG: Log flattening stats at root level (when parentId is null)
+    if (parentId === null && block.children && block.children.length > 0) {
+      console.log('[MarkdownRoamParser.flattenTree] DEBUG: Root has', block.children.length, 'direct children')
+      for (let i = 0; i < Math.min(5, block.children.length); i++) {
+        console.log(`  [child ${i}] text=${block.children[i].text?.substring(0, 40)}, uid=${block.children[i].uid}, children=${block.children[i].children?.length || 0}`)
+      }
+      console.log(`[MarkdownRoamParser.flattenTree] Total result nodes: ${result.length}`)
     }
 
     return result
