@@ -168,7 +168,7 @@ model RepositoryNode {
   parentId     String?
   parent       RepositoryNode?  @relation("NodeTree", fields: [parentId], references: [id], onDelete: SetNull)
   children     RepositoryNode[] @relation("NodeTree")
-  roamNodeId   String?          @unique
+  roamNodeId   String?
   roamPageId   String?
   syncedAt     DateTime?
   tags         String[]         @default([]) // Tag-based automation detection
@@ -178,6 +178,7 @@ model RepositoryNode {
   testCases    TestCaseNode[]
   testCase     RoamTestCase?    // Link to test case if this node is a test
 
+  @@unique([repositoryId, roamNodeId])
   @@index([repositoryId])
   @@index([projectId])
   @@index([parentId])
