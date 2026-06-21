@@ -23,13 +23,7 @@ async function importMarkdownNodes(
     // Sort nodes by depth (parents first) to ensure FK integrity
     const sortedNodes = [...nodes].sort((a, b) => (a.nodeDepth || 0) - (b.nodeDepth || 0))
 
-    // DEBUG: Log what the flattened nodes actually contain
-    console.log('[importMarkdownNodes] DEBUG: First 10 nodes after flatten:')
-    for (let i = 0; i < Math.min(10, sortedNodes.length); i++) {
-      console.log(`  [${i}] uid=${sortedNodes[i].uid}, depth=${sortedNodes[i].nodeDepth}, parentId=${sortedNodes[i].parentId}, text=${sortedNodes[i].text?.substring(0, 50)}`)
-    }
-
-    // CRITICAL: Deduplicate nodes by roamNodeId (same node can appear multiple times in tree)
+    // Deduplicate nodes by roamNodeId (same node can appear multiple times in tree)
     const seenUids = new Set<string>()
     const deduplicatedNodes: typeof sortedNodes = []
     for (const node of sortedNodes) {
@@ -122,12 +116,7 @@ async function importMarkdownNodes(
 
     console.log(`[importMarkdownNodes] Split results: ${nodesToCreate.length} to create, ${nodesToUpdate.length} to update, ${result.skipped} skipped`)
 
-    // DEBUG: Log first node to create if any
-    if (nodesToCreate.length > 0) {
-      console.log('[importMarkdownNodes] DEBUG: First node to create:', JSON.stringify(nodesToCreate[0], null, 0).substring(0, 300))
-    }
-
-    // OPTIMIZATION: Create nodes with batch insert support
+    // Create nodes with batch insert support
     const createStart = Date.now()
     let nodesToCreateFinal: typeof nodesToCreate = []
 
@@ -173,14 +162,6 @@ async function importMarkdownNodes(
             try {
               const batchStart = Date.now()
 
-              // Sample the batch to see what's being created
-              const sample = JSON.stringify({
-                count: nodesToCreateFinal.length,
-                first: nodesToCreateFinal[0],
-                last: nodesToCreateFinal[nodesToCreateFinal.length - 1]
-              }, null, 0).substring(0, 300)
-              console.log(`[importMarkdownNodes] Batch sample: ${sample}`)
-
               const created = await prisma.repositoryNode.createMany({
                 data: nodesToCreateFinal,
                 skipDuplicates: true  // Safe now that we've deduplicated by roamNodeId
@@ -188,12 +169,6 @@ async function importMarkdownNodes(
               const batchDuration = Date.now() - batchStart
 
               console.log(`[importMarkdownNodes] Batch: ${nodesToCreateFinal.length} queued, ${created.count} created in ${batchDuration}ms`)
-
-              // DEBUG: Log if created count is 0
-              if (created.count === 0) {
-                console.warn('[importMarkdownNodes] ⚠️ BATCH CREATED 0 NODES (skipDuplicates may have filtered all)')
-                console.warn('[importMarkdownNodes] First node in batch:', JSON.stringify(nodesToCreateFinal[0], null, 0).substring(0, 300))
-              }
 
               result.added += created.count
 
@@ -387,12 +362,6 @@ export async function initialSync(projectId: string): Promise<{
     timings.flatten = Date.now() - flattenStart
     console.log('[initialSync] Flattened tree contains', nodes.length, 'nodes, took', timings.flatten, 'ms')
 
-    // DEBUG: Log first 10 flattened nodes
-    console.log('[initialSync] DEBUG: First 10 flattened nodes:')
-    for (let i = 0; i < Math.min(10, nodes.length); i++) {
-      console.log(`  [${i}] uid=${nodes[i].uid}, text=${nodes[i].text?.substring(0, 50)}, depth=${nodes[i].depth}, parentId=${nodes[i].parentId}`)
-    }
-
     // Convert markdown blocks to RoamPage format for import
     const importStart = Date.now()
     const importResult = await importMarkdownNodes(nodes, repository.id, projectId)
@@ -405,16 +374,6 @@ export async function initialSync(projectId: string): Promise<{
     const testCaseResult = await TestCaseExtractor.extractTestCases(repository.id, projectId)
     timings.extract = Date.now() - extractStart
     console.log('[initialSync] Test case extraction: created', testCaseResult.created, ', skipped', testCaseResult.skipped, ', took', timings.extract, 'ms')
-
-    // DEBUG: Verify nodes were actually created in DB
-    const nodeCountInDb = await prisma.repositoryNode.count({
-      where: { repositoryId: repository.id }
-    })
-    console.log('[initialSync] DEBUG: RepositoryNode count in DB:', nodeCountInDb)
-
-    if (nodeCountInDb === 0 && result.added > 0) {
-      console.error('[initialSync] ⚠️ CRITICAL: createMany returned added=${result.added} but DB has 0 nodes!')
-    }
 
     // Update repository sync status
     await prisma.repository.update({

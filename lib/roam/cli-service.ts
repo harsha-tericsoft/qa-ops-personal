@@ -417,18 +417,8 @@ export class RoamCliService {
 
       console.log('[RoamCliService.getRepositorySubtree] Found root page:', rootPageTitle, 'uid:', response.uid)
 
-      // DEBUG: Log markdown content
-      const markdown = response.markdown || ''
-      console.log('[RoamCliService.getRepositorySubtree] DEBUG: Markdown response')
-      console.log(`  markdown length: ${markdown.length} chars`)
-      console.log(`  markdown lines: ${markdown.split('\n').length}`)
-      if (markdown.length > 0) {
-        console.log(`  first 500 chars: ${markdown.substring(0, 500)}`)
-      } else {
-        console.log(`  markdown is EMPTY!`)
-      }
-
       // Parse markdown hierarchy
+      const markdown = response.markdown || ''
       const tree = MarkdownRoamParser.parseMarkdown(markdown, rootPageTitle, response.uid)
 
       if (!tree) {
