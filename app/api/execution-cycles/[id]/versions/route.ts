@@ -13,10 +13,8 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       orderBy: { versionNumber: 'desc' },
       include: {
         testRuns: {
-          select: {
-            id: true,
-            status: true,
-            testCaseId: true,
+          include: {
+            testCase: true,
           },
         },
       },
@@ -92,6 +90,13 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         buildVersion: buildVersion.trim(),
         releaseNotes,
         status: 'DRAFT',
+      },
+      include: {
+        testRuns: {
+          include: {
+            testCase: true,
+          },
+        },
       },
     })
 

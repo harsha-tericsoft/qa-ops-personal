@@ -399,7 +399,7 @@ function ExecutionCyclesContent() {
 
   const selectedCycle = cycles.find((c) => c.id === selectedCycleId)
   const selectedVersion = versions.find((v) => v.id === selectedVersionId)
-  const testRuns = selectedVersion?.testRuns || selectedCycle?.testRuns || []
+  const testRuns = (selectedVersion?.testRuns && selectedVersion.testRuns.length > 0) ? selectedVersion.testRuns : (selectedCycle?.testRuns || [])
   const isVersionCompleted = selectedVersion?.status === 'COMPLETED'
 
   if (selectedCycle) {
