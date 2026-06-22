@@ -127,7 +127,7 @@ function DashboardContent() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Welcome, {user?.name}! 👋</p>
+          <p className="text-gray-700 mt-1">Welcome, {user?.name}! 👋</p>
         </div>
         {user?.role === 'LEAD' && (
           <ProjectSelector

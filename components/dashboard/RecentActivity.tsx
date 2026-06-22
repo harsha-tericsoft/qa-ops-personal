@@ -55,9 +55,9 @@ export function RecentActivity({ projectId }: RecentActivityProps) {
       <h2 className="text-lg font-semibold mb-3 text-gray-900">Recent Activity</h2>
 
       {loading ? (
-        <div className="text-center py-4 text-gray-500">Loading...</div>
+        <div className="text-center py-4 text-gray-700">Loading...</div>
       ) : activities.length === 0 ? (
-        <div className="bg-white rounded-lg border border-gray-200 p-6 text-center text-gray-500">
+        <div className="bg-white rounded-lg border border-gray-200 p-6 text-center text-gray-700">
           No activity yet
         </div>
       ) : (
@@ -67,7 +67,7 @@ export function RecentActivity({ projectId }: RecentActivityProps) {
               <span className="text-xl mt-0.5">{activity.icon}</span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900">{activity.message}</p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-700 mt-1">
                   {new Intl.DateTimeFormat('en-US', {
                     month: 'short',
                     day: 'numeric',

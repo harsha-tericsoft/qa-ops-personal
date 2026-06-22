@@ -30,15 +30,15 @@ export function MetricCard({
   color = 'blue',
 }: MetricCardProps) {
   return (
-    <div className={`border rounded-lg p-4 ${colorMap[color]}`}>
-      <p className="text-sm font-medium text-gray-600">{label}</p>
-      <div className="mt-2 flex items-baseline gap-1">
-        <p className={`text-3xl font-bold ${valueColorMap[color]}`}>
+    <div className={`border rounded-lg p-5 ${colorMap[color]}`}>
+      <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">{label}</p>
+      <div className="mt-3 flex items-baseline gap-1">
+        <p className={`text-4xl font-bold ${valueColorMap[color]}`}>
           {value}
         </p>
-        {suffix && <span className="text-lg">{suffix}</span>}
+        {suffix && <span className="text-lg font-medium">{suffix}</span>}
       </div>
-      {subtitle && <p className="mt-2 text-xs text-gray-500">{subtitle}</p>}
+      {subtitle && <p className="mt-2 text-xs text-gray-700">{subtitle}</p>}
     </div>
   )
 }
