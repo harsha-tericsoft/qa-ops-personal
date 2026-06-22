@@ -119,52 +119,80 @@ async function importMarkdownNodes(
     // Create nodes with batch insert support
     const createStart = Date.now()
     let nodesToCreateFinal: typeof nodesToCreate = []
+    const createdNodeIds = new Map<string, string>()  // Track newly created node UIDs → DB IDs
 
-    // Process nodes in depth order - parents before children
-    // Create nodes with proper parent IDs using the mapping as we go
-    for (let nodeIdx = 0; nodeIdx < deduplicatedNodes.length; nodeIdx++) {
-      const node = deduplicatedNodes[nodeIdx]
-      const isLastNode = nodeIdx === deduplicatedNodes.length - 1
-      if (!node.uid) continue
+    // Sort nodes by depth to ensure parents are created before children
+    // Within same depth, stable sort preserves original order
+    const sortedForCreation = [...deduplicatedNodes].sort((a, b) => (a.nodeDepth || 0) - (b.nodeDepth || 0))
 
-      const nodeType = node.isTestCase ? 'FILE' : 'FOLDER'
-      const slug = node.text
-        .toLowerCase()
-        .replace(/[^\w\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .substring(0, 50)
+    // Group nodes by depth so we create all nodes at depth N before processing depth N+1
+    const nodesByDepth = new Map<number, typeof deduplicatedNodes>()
+    for (const node of sortedForCreation) {
+      const depth = node.nodeDepth || 0
+      if (!nodesByDepth.has(depth)) {
+        nodesByDepth.set(depth, [])
+      }
+      nodesByDepth.get(depth)!.push(node)
+    }
 
-      const existing = existingMap.get(node.uid)
-      if (!existing) {
-        // Determine parentId using the mapping of already-created nodes
-        let parentNodeId: string | null = null
-        if (node.parentId) {
-          parentNodeId = uidToNodeId.get(node.parentId) || null
-        }
+    const depths = Array.from(nodesByDepth.keys()).sort((a, b) => a - b)
 
-        nodesToCreateFinal.push({
-          repositoryId,
-          projectId,
-          name: node.text,
-          slug,
-          path: node.parentPath,
-          depth: node.nodeDepth,
-          parentId: parentNodeId,
-          roamNodeId: node.uid,
-          type: nodeType,
-          tags: node.tags || [],
-          syncedAt: new Date(),
-        })
+    // Process each depth level, creating all nodes at one depth before moving to next
+    for (const depth of depths) {
+      const nodesAtDepth = nodesByDepth.get(depth) || []
+      console.log(`[importMarkdownNodes] Processing depth ${depth}: ${nodesAtDepth.length} nodes`)
 
-        // If we've accumulated enough nodes or this is the last batch, insert them
-        if (nodesToCreateFinal.length >= 500 || isLastNode) {
-          if (nodesToCreateFinal.length > 0) {
+      for (let nodeIdx = 0; nodeIdx < nodesAtDepth.length; nodeIdx++) {
+        const node = nodesAtDepth[nodeIdx]
+        const isLastNodeAtDepth = nodeIdx === nodesAtDepth.length - 1
+        const isLastNodeOverall = depth === depths[depths.length - 1] && isLastNodeAtDepth
+        if (!node.uid) continue
+
+        const nodeType = node.isTestCase ? 'FILE' : 'FOLDER'
+        const slug = node.text
+          .toLowerCase()
+          .replace(/[^\w\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .substring(0, 50)
+
+        const existing = existingMap.get(node.uid)
+        if (!existing) {
+          // Determine parentId using BOTH existing nodes and newly created nodes
+          let parentNodeId: string | null = null
+          if (node.parentId) {
+            // First check newly created nodes from this import (parents at lower depths created first)
+            if (createdNodeIds.has(node.parentId)) {
+              parentNodeId = createdNodeIds.get(node.parentId) || null
+            } else {
+              // Fall back to existing nodes from database
+              parentNodeId = uidToNodeId.get(node.parentId) || null
+            }
+          }
+
+          nodesToCreateFinal.push({
+            repositoryId,
+            projectId,
+            name: node.text,
+            slug,
+            path: node.parentPath,
+            depth: node.nodeDepth,
+            parentId: parentNodeId,
+            roamNodeId: node.uid,
+            type: nodeType,
+            tags: node.tags || [],
+            syncedAt: new Date(),
+          })
+
+          // Flush batch when it reaches 500 or at end of this depth level
+          const shouldFlush = nodesToCreateFinal.length >= 500 || (isLastNodeAtDepth && nodesToCreateFinal.length > 0)
+
+          if (shouldFlush) {
             try {
               const batchStart = Date.now()
 
               const created = await prisma.repositoryNode.createMany({
                 data: nodesToCreateFinal,
-                skipDuplicates: true  // Safe now that we've deduplicated by roamNodeId
+                skipDuplicates: true
               })
               const batchDuration = Date.now() - batchStart
 
@@ -172,7 +200,7 @@ async function importMarkdownNodes(
 
               result.added += created.count
 
-              // Update uidToNodeId mapping with newly created nodes
+              // Update createdNodeIds immediately after each batch
               const createdNodesWithUids = await prisma.repositoryNode.findMany({
                 where: {
                   repositoryId,
@@ -182,7 +210,10 @@ async function importMarkdownNodes(
               })
 
               for (const createdNode of createdNodesWithUids) {
-                uidToNodeId.set(createdNode.roamNodeId, createdNode.id)
+                if (createdNode.roamNodeId) {
+                  uidToNodeId.set(createdNode.roamNodeId, createdNode.id)
+                  createdNodeIds.set(createdNode.roamNodeId, createdNode.id)
+                }
               }
 
               nodesToCreateFinal = []
@@ -191,7 +222,6 @@ async function importMarkdownNodes(
               const errorCode = (error as any)?.code || 'UNKNOWN'
               console.error(`[importMarkdownNodes] Batch error [${errorCode}]:`, errorMsg.substring(0, 500))
 
-              // Log first node that was being created for debugging
               if (nodesToCreateFinal.length > 0) {
                 console.error(`[importMarkdownNodes] First node in failed batch:`, JSON.stringify(nodesToCreateFinal[0], null, 0).substring(0, 200))
               }
