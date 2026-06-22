@@ -305,6 +305,34 @@ function ExecutionCyclesContent() {
 
   const handleRunStatusChange = async (runId: string, status: string) => {
     try {
+      // Optimistic update: Update local state immediately
+      const updatedVersions = versions.map((v) => ({
+        ...v,
+        testRuns: v.testRuns.map((run) =>
+          run.id === runId ? { ...run, status } : run
+        ),
+      }))
+      setVersions(updatedVersions)
+
+      // Optimistic update: Also update cycle testRuns if no version selected
+      if (!selectedVersionId) {
+        const updatedCycles = cycles.map((c) =>
+          c.id === selectedCycleId
+            ? {
+                ...c,
+                testRuns: c.testRuns.map((run) =>
+                  run.id === runId ? { ...run, status } : run
+                ),
+              }
+            : c
+        )
+        setCycles(updatedCycles)
+      }
+
+      // Update UI immediately
+      setLastSavedAt(new Date())
+
+      // Send to server
       const response = await fetch(`/api/test-runs/${runId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -312,14 +340,22 @@ function ExecutionCyclesContent() {
       })
 
       if (response.ok) {
+        // API confirmed - fetch latest data to ensure sync
         if (selectedVersionId) {
           await fetchVersions(selectedCycleId!)
         } else {
           await fetchCycles()
         }
-        setLastSavedAt(new Date())
+      } else {
+        // If API fails, revert optimistic update
+        setVersions(versions)
+        setCycles(cycles)
+        console.error('Error updating run status:', await response.json())
       }
     } catch (error) {
+      // If error, revert optimistic update
+      setVersions(versions)
+      setCycles(cycles)
       console.error('Error updating run status:', error)
     }
   }
@@ -328,24 +364,86 @@ function ExecutionCyclesContent() {
     if (!newComment.trim()) return
 
     try {
+      const commentText = newComment
+      const commentAuthor = user?.email || 'Unknown'
+
+      // Optimistic update: Add comment to local state
+      const updatedVersions = versions.map((v) => ({
+        ...v,
+        testRuns: v.testRuns.map((run) =>
+          run.id === runId
+            ? {
+                ...run,
+                comments: [
+                  ...(run.comments || []),
+                  {
+                    id: `temp-${Date.now()}`,
+                    content: commentText,
+                    author: commentAuthor,
+                    createdAt: new Date().toISOString(),
+                  },
+                ],
+              }
+            : run
+        ),
+      }))
+      setVersions(updatedVersions)
+
+      // Optimistic update: Also update cycle if no version selected
+      if (!selectedVersionId) {
+        const updatedCycles = cycles.map((c) =>
+          c.id === selectedCycleId
+            ? {
+                ...c,
+                testRuns: c.testRuns.map((run) =>
+                  run.id === runId
+                    ? {
+                        ...run,
+                        comments: [
+                          ...(run.comments || []),
+                          {
+                            id: `temp-${Date.now()}`,
+                            content: commentText,
+                            author: commentAuthor,
+                            createdAt: new Date().toISOString(),
+                          },
+                        ],
+                      }
+                    : run
+                ),
+              }
+            : c
+        )
+        setCycles(updatedCycles)
+      }
+
+      setNewComment('')
+      setLastSavedAt(new Date())
+
+      // Send to server
       const response = await fetch(`/api/test-runs/${runId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          content: newComment,
-          author: user?.email || 'Unknown',
+          content: commentText,
+          author: commentAuthor,
         }),
       })
 
       if (response.ok) {
-        setNewComment('')
+        // API confirmed - fetch latest data to ensure sync
         if (selectedVersionId) {
           await fetchVersions(selectedCycleId!)
         } else {
           await fetchCycles()
         }
-        setLastSavedAt(new Date())
         showToast('Comment added - All changes saved', 'success')
+      } else {
+        // If API fails, revert optimistic update
+        setVersions(versions)
+        setCycles(cycles)
+        setNewComment(commentText)
+        showToast('Failed to add comment', 'error')
       }
     } catch (error) {
       showToast('Failed to add comment', 'error')
@@ -357,23 +455,82 @@ function ExecutionCyclesContent() {
     if (!newJiraKey.trim()) return
 
     try {
+      const issueKey = newJiraKey
+
+      // Optimistic update: Add Jira link to local state
+      const updatedVersions = versions.map((v) => ({
+        ...v,
+        testRuns: v.testRuns.map((run) =>
+          run.id === runId
+            ? {
+                ...run,
+                jiraLinks: [
+                  ...(run.jiraLinks || []),
+                  {
+                    id: `temp-${Date.now()}`,
+                    issueKey: issueKey,
+                    createdAt: new Date().toISOString(),
+                  },
+                ],
+              }
+            : run
+        ),
+      }))
+      setVersions(updatedVersions)
+
+      // Optimistic update: Also update cycle if no version selected
+      if (!selectedVersionId) {
+        const updatedCycles = cycles.map((c) =>
+          c.id === selectedCycleId
+            ? {
+                ...c,
+                testRuns: c.testRuns.map((run) =>
+                  run.id === runId
+                    ? {
+                        ...run,
+                        jiraLinks: [
+                          ...(run.jiraLinks || []),
+                          {
+                            id: `temp-${Date.now()}`,
+                            issueKey: issueKey,
+                            createdAt: new Date().toISOString(),
+                          },
+                        ],
+                      }
+                    : run
+                ),
+              }
+            : c
+        )
+        setCycles(updatedCycles)
+      }
+
+      setNewJiraKey('')
+      setLastSavedAt(new Date())
+
+      // Send to server
       const response = await fetch(`/api/test-runs/${runId}/jira-links`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          issueKey: newJiraKey,
+          issueKey: issueKey,
         }),
       })
 
       if (response.ok) {
-        setNewJiraKey('')
+        // API confirmed - fetch latest data to ensure sync
         if (selectedVersionId) {
           await fetchVersions(selectedCycleId!)
         } else {
           await fetchCycles()
         }
-        setLastSavedAt(new Date())
         showToast('Jira link added - All changes saved', 'success')
+      } else {
+        // If API fails, revert optimistic update
+        setVersions(versions)
+        setCycles(cycles)
+        setNewJiraKey(issueKey)
+        showToast('Failed to add Jira link', 'error')
       }
     } catch (error) {
       showToast('Failed to add Jira link', 'error')
