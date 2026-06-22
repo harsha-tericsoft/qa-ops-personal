@@ -62,7 +62,12 @@ export async function POST(req: NextRequest) {
 
       try {
         const existing = await prisma.repositoryNode.findUnique({
-          where: { roamNodeId: node.uid },
+          where: {
+            repositoryId_roamNodeId: {
+              repositoryId: repository.id,
+              roamNodeId: node.uid,
+            }
+          },
         })
 
         if (existing) {

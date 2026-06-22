@@ -2,14 +2,8 @@
 
 import { useAuth } from '@/lib/hooks/useAuth'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { HierarchicalTestCaseTree } from '@/components/test-cases/HierarchicalTestCaseTree'
 import { useState, useEffect } from 'react'
-
-interface TestCase {
-  id: string
-  title: string
-  status: string
-  sourceRoamUid: string
-}
 
 interface Project {
   id: string
@@ -20,19 +14,13 @@ function TestCasesContent() {
   const { user } = useAuth()
   const [projects, setProjects] = useState<Project[]>([])
   const [currentProjectId, setCurrentProjectId] = useState('default-project')
-  const [testCases, setTestCases] = useState<TestCase[]>([])
+  const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
     fetchProjects()
   }, [])
-
-  useEffect(() => {
-    if (currentProjectId !== 'default-project') {
-      fetchTestCases(currentProjectId)
-    }
-  }, [currentProjectId])
 
   const fetchProjects = async () => {
     try {
@@ -46,34 +34,8 @@ function TestCasesContent() {
       }
     } catch {
       setProjects([])
-    }
-  }
-
-  const fetchTestCases = async (projectId: string) => {
-    setLoading(true)
-    setError('')
-    try {
-      const response = await fetch(`/api/test-cases?projectId=${projectId}`)
-      if (!response.ok) {
-        throw new Error('Failed to fetch test cases')
-      }
-      const data = await response.json()
-      setTestCases(Array.isArray(data) ? data : data.testCases || [])
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
-      setTestCases([])
     } finally {
       setLoading(false)
-    }
-  }
-
-  const statusColor = (status: string) => {
-    switch (status) {
-      case 'PASSED': return 'bg-green-100 text-green-800'
-      case 'FAILED': return 'bg-red-100 text-red-800'
-      case 'BLOCKED': return 'bg-yellow-100 text-yellow-800'
-      case 'IN_PROGRESS': return 'bg-blue-100 text-blue-800'
-      default: return 'bg-gray-100 text-gray-800'
     }
   }
 
@@ -113,40 +75,26 @@ function TestCasesContent() {
           </div>
         )}
 
-        {loading ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600">Loading test cases...</p>
-          </div>
-        ) : testCases.length === 0 ? (
-          <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-            <div className="text-4xl mb-4">✅</div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">No test cases imported yet</h2>
-            <p className="text-gray-600 mb-6">Import test cases from Roam in the Roam Integration section</p>
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Title</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Roam UID</th>
-                </tr>
-              </thead>
-              <tbody>
-                {testCases.map((test) => (
-                  <tr key={test.id} className="border-b border-gray-200 hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm text-gray-900">{test.title}</td>
-                    <td className="px-6 py-4 text-sm">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColor(test.status)}`}>
-                        {test.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm font-mono text-gray-600">{test.sourceRoamUid}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {currentProjectId !== 'default-project' && (
+          <div className="mb-8">
+            <div className="flex items-center gap-4 mb-4">
+              <input
+                type="text"
+                placeholder="Search test cases..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-lg"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+            <HierarchicalTestCaseTree projectId={currentProjectId} search={search} />
           </div>
         )}
 

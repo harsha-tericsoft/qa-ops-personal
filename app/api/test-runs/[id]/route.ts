@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { RunStatus } from '@/app/generated/prisma'
+import { TestRunStatus } from '@prisma/client'
 import { updateRunStatus } from '@/lib/services/execution.service'
 import { prisma } from '@/lib/prisma'
 
@@ -44,7 +44,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     const run = await prisma.testRun.update({
       where: { id },
       data: {
-        status: status as RunStatus,
+        status: status as TestRunStatus,
         executedAt: new Date(),
         durationMs,
       },

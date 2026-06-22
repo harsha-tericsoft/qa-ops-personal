@@ -33,8 +33,13 @@ export async function syncViaMCPSimple(projectId: string, graphName: string) {
 
       // Find or create node in this project
       let node = await prisma.repositoryNode.findUnique({
-        where: { roamNodeId: uid },
-      });
+        where: {
+          repositoryId_roamNodeId: {
+            repositoryId: repo.id,
+            roamNodeId: uid,
+          }
+        },
+      }).catch(() => null);
 
       if (node && node.projectId !== projectId) {
         // Node exists but for different project - create a separate one

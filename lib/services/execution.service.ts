@@ -1,6 +1,6 @@
 import { createExecutionCycle, getExecutionCycles, getExecutionCycle } from '@/lib/db'
 import { prisma } from '@/lib/prisma'
-import { RunStatus } from '@prisma/client'
+import { TestRunStatus } from '@prisma/client'
 
 export interface CreateCycleInput {
   projectId: string
@@ -32,21 +32,35 @@ export async function createCycle(input: CreateCycleInput) {
     endDate?.toISOString()
   )
 
-  // Create test runs for each test case
+  // Create initial ExecutionVersion with default build version
+  const version = await prisma.executionVersion.create({
+    data: {
+      cycleId: cycle.id,
+      versionNumber: 1,
+      buildVersion: `v1.0.0`,
+      status: 'DRAFT',
+    },
+  })
+
+  // Create test runs for each test case linked to the version
   if (testCaseIds && testCaseIds.length > 0) {
     await prisma.testRun.createMany({
       data: testCaseIds.map((testCaseId) => ({
         cycleId: cycle.id,
+        versionId: version.id,
         testCaseId,
         status: 'NOT_EXECUTED',
       })),
     })
   }
 
-  // Return cycle with test runs included
+  // Return cycle with test runs and versions included
   const fullCycle = await prisma.executionCycle.findUniqueOrThrow({
     where: { id: cycle.id },
-    include: { testRuns: { include: { testCase: true } } },
+    include: {
+      testRuns: { include: { testCase: true } },
+      versions: true,
+    },
   })
 
   return fullCycle
@@ -76,7 +90,7 @@ export async function updateCycleStatus(cycleId: string, status: string) {
   return cycle
 }
 
-export async function updateRunStatus(runId: string, status: RunStatus) {
+export async function updateRunStatus(runId: string, status: TestRunStatus) {
   const run = await prisma.testRun.update({
     where: { id: runId },
     data: {

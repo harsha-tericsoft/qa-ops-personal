@@ -43,7 +43,12 @@ async function importPage(
     let nodeId: string
 
     const existing = await prisma.repositoryNode.findUnique({
-      where: { roamNodeId: page.uid },
+      where: {
+        repositoryId_roamNodeId: {
+          repositoryId,
+          roamNodeId: page.uid,
+        }
+      },
     })
 
     if (existing) {
@@ -108,7 +113,12 @@ async function importBlock(
     let nodeId: string
 
     const existing = await prisma.repositoryNode.findUnique({
-      where: { roamNodeId: block.uid },
+      where: {
+        repositoryId_roamNodeId: {
+          repositoryId,
+          roamNodeId: block.uid,
+        }
+      },
     })
 
     if (existing) {
