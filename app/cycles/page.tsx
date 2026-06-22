@@ -205,7 +205,7 @@ function ExecutionCyclesContent() {
               <tbody>
                 {selectedCycle.testRuns.map((run) => (
                   <tr key={run.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-4 px-6">{run.testCase.name}</td>
+                    <td className="py-4 px-6">{run.testCase?.title || 'Unknown'}</td>
                     <td className="py-4 px-6">
                       <select
                         value={run.status}

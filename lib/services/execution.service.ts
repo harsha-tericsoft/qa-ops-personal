@@ -46,7 +46,7 @@ export async function createCycle(input: CreateCycleInput) {
   // Return cycle with test runs included
   const fullCycle = await prisma.executionCycle.findUniqueOrThrow({
     where: { id: cycle.id },
-    include: { testRuns: true },
+    include: { testRuns: { include: { testCase: true } } },
   })
 
   return fullCycle
@@ -55,14 +55,14 @@ export async function createCycle(input: CreateCycleInput) {
 export async function getCycle(cycleId: string) {
   return prisma.executionCycle.findUnique({
     where: { id: cycleId },
-    include: { testRuns: true },
+    include: { testRuns: { include: { testCase: true } } },
   })
 }
 
 export async function listCycles(projectId: string) {
   return prisma.executionCycle.findMany({
     where: { projectId },
-    include: { testRuns: true },
+    include: { testRuns: { include: { testCase: true } } },
     orderBy: { createdAt: 'desc' },
   })
 }
