@@ -426,7 +426,8 @@ function ExecutionCyclesContent() {
           {selectedCycle.description && <p className="text-gray-600 mb-6">{selectedCycle.description}</p>}
 
           {/* Build Version Input */}
-          {!selectedVersion || selectedVersion.status === 'DRAFT' ? (
+          {!selectedVersion ? (
+            /* No version selected - show Create Version form */
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <div className="space-y-3">
                 <div>
@@ -437,7 +438,6 @@ function ExecutionCyclesContent() {
                     onChange={(e) => setBuildVersion(e.target.value)}
                     placeholder="e.g., 2.4.3"
                     className="w-full md:w-96 px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    disabled={isVersionCompleted}
                   />
                 </div>
                 <div>
@@ -450,13 +450,12 @@ function ExecutionCyclesContent() {
                     placeholder="Document any release notes or changes..."
                     rows={2}
                     className="w-full px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    disabled={isVersionCompleted}
                   />
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={handleCreateVersion}
-                    disabled={isSavingVersion || !buildVersion.trim() || (selectedVersion && selectedVersion.status !== 'DRAFT')}
+                    disabled={isSavingVersion || !buildVersion.trim()}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 text-sm"
                   >
                     {isSavingVersion ? 'Creating...' : 'Create Version'}
@@ -464,7 +463,25 @@ function ExecutionCyclesContent() {
                 </div>
               </div>
             </div>
+          ) : selectedVersion.status === 'COMPLETED' ? (
+            /* Version is COMPLETED - show read-only banner */
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-green-900">
+                    Build Version: {selectedVersion.buildVersion}
+                  </h3>
+                  <p className="text-sm text-green-800">Status: COMPLETED (Read-only)</p>
+                  {selectedVersion.completedAt && (
+                    <p className="text-xs text-green-700 mt-1">
+                      Completed: {new Date(selectedVersion.completedAt).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
           ) : (
+            /* Version is DRAFT or IN_PROGRESS - show Save Draft and Complete buttons */
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -476,14 +493,12 @@ function ExecutionCyclesContent() {
                 <div className="flex gap-2">
                   <button
                     onClick={handleSaveDraft}
-                    disabled={isVersionCompleted}
                     className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:bg-gray-400 text-sm"
                   >
                     Save Draft
                   </button>
                   <button
                     onClick={handleCompleteExecution}
-                    disabled={isVersionCompleted}
                     className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 text-sm"
                   >
                     Complete Execution

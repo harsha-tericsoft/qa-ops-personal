@@ -57,17 +57,15 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Validate: Check for active DRAFT or IN_PROGRESS version
-    const activeVersion = await prisma.executionVersion.findFirst({
+    // Validate: Check for active DRAFT version only
+    const draftVersion = await prisma.executionVersion.findFirst({
       where: {
         cycleId: id,
-        status: {
-          in: ['DRAFT', 'IN_PROGRESS'],
-        },
+        status: 'DRAFT',
       },
     })
 
-    if (activeVersion) {
+    if (draftVersion) {
       return NextResponse.json(
         { error: 'Complete or delete the current draft before creating a new version.' },
         { status: 409 }
