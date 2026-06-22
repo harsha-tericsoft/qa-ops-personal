@@ -9,8 +9,8 @@
     "lint": "eslint",
     "verify:execution-versioning:db": "npx ts-node scripts/verify-execution-versioning-db.ts",
     "verify:execution-versioning:api": "npx ts-node scripts/verify-execution-versioning-api.ts",
-    "verify:execution-versioning:regressions": "npx ts-node scripts/verify-regressions.ts",
-    "verify:execution-versioning": "npm run verify:execution-versioning:db && npm run verify:execution-versioning:regressions && npm run verify:execution-versioning:api"
+    "verify:execution-versioning:regression": "npx ts-node scripts/verify-regressions.ts",
+    "verify:execution-versioning": "npx ts-node scripts/verify-master.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",

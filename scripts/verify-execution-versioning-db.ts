@@ -204,7 +204,8 @@ async function verify() {
 
   const passed = results.filter((r) => r.status === 'PASS').length
   const total = results.length
-  console.log(`\nResult: ${passed}/${total} PASSED\n`)
+  console.log(`\nResult: ${passed}/${total} PASSED`)
+  console.log(`Status: ${passed === total ? 'PASS' : 'FAIL'}\n`)
 
   process.exit(passed === total ? 0 : 1)
 }
