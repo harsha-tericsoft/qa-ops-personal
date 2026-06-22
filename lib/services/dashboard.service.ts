@@ -145,13 +145,15 @@ export async function getCycleMetrics(cycleId: string): Promise<CycleMetrics> {
 }
 
 // Version Scope - Execution metrics for a specific version
-export async function getVersionMetrics(versionId: string): Promise<VersionMetrics> {
-  const version = await prisma.executionVersion.findUniqueOrThrow({
+export async function getVersionMetrics(versionId: string): Promise<VersionMetrics | null> {
+  const version = await prisma.executionVersion.findUnique({
     where: { id: versionId },
     include: {
       testRuns: true,
     },
   })
+
+  if (!version) return null
 
   const testRuns = version.testRuns
   const total = testRuns.length

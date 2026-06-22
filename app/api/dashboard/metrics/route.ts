@@ -24,6 +24,12 @@ export async function GET(req: NextRequest) {
 
     if (scope === 'version' && versionId) {
       const metrics = await getVersionMetrics(versionId)
+      if (!metrics) {
+        return NextResponse.json(
+          { error: 'Version not found' },
+          { status: 404 }
+        )
+      }
       return NextResponse.json(metrics)
     }
 
