@@ -96,6 +96,8 @@ function ExecutionCyclesContent() {
   const [executionNotes, setExecutionNotes] = useState('')
   const [isEditingNotes, setIsEditingNotes] = useState(false)
   const [isSavingVersion, setIsSavingVersion] = useState(false)
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
+  const [autoSaveTimeout, setAutoSaveTimeout] = useState<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -220,9 +222,10 @@ function ExecutionCyclesContent() {
         const newVersion = await response.json()
         setBuildVersion('')
         setReleaseNotes('')
-        await fetchVersions(selectedCycleId)
         setSelectedVersionId(newVersion.id)
-        showToast('Version created successfully', 'success')
+        await fetchVersions(selectedCycleId)
+        setLastSavedAt(new Date())
+        showToast('Version created - Active version auto-selected', 'success')
 
       } else {
         const error = await response.json()
@@ -251,7 +254,8 @@ function ExecutionCyclesContent() {
 
       if (response.ok) {
         await fetchVersions(selectedCycleId!)
-        showToast('Draft saved successfully', 'success')
+        setLastSavedAt(new Date())
+        showToast('All changes saved', 'success')
       }
     } catch (error) {
       showToast('Error saving draft', 'error')
@@ -274,7 +278,8 @@ function ExecutionCyclesContent() {
 
       if (response.ok) {
         await fetchVersions(selectedCycleId!)
-        showToast('Execution completed', 'success')
+        setLastSavedAt(new Date())
+        showToast('Execution completed - All changes saved', 'success')
       }
     } catch (error) {
       showToast('Error completing execution', 'error')
@@ -296,6 +301,7 @@ function ExecutionCyclesContent() {
         } else {
           await fetchCycles()
         }
+        setLastSavedAt(new Date())
       }
     } catch (error) {
       console.error('Error updating run status:', error)
@@ -322,7 +328,8 @@ function ExecutionCyclesContent() {
         } else {
           await fetchCycles()
         }
-        showToast('Comment added successfully', 'success')
+        setLastSavedAt(new Date())
+        showToast('Comment added - All changes saved', 'success')
       }
     } catch (error) {
       showToast('Failed to add comment', 'error')
@@ -349,7 +356,8 @@ function ExecutionCyclesContent() {
         } else {
           await fetchCycles()
         }
-        showToast('Jira link added successfully', 'success')
+        setLastSavedAt(new Date())
+        showToast('Jira link added - All changes saved', 'success')
       }
     } catch (error) {
       showToast('Failed to add Jira link', 'error')
@@ -423,7 +431,21 @@ function ExecutionCyclesContent() {
           </button>
 
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{selectedCycle.name}</h1>
-          {selectedCycle.description && <p className="text-gray-600 mb-6">{selectedCycle.description}</p>}
+          {selectedCycle.description && <p className="text-gray-600 mb-4">{selectedCycle.description}</p>}
+
+          {/* Active Version Indicator */}
+          {selectedVersion && (
+            <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 mb-6">
+              <p className="text-sm text-indigo-900">
+                <span className="font-semibold">Active Version:</span> {selectedVersion.buildVersion} ({selectedVersion.status})
+              </p>
+              {lastSavedAt && (
+                <p className="text-xs text-indigo-700 mt-1">
+                  ✓ All changes saved at {lastSavedAt.toLocaleTimeString()}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Build Version Input */}
           {!selectedVersion ? (
@@ -549,10 +571,23 @@ function ExecutionCyclesContent() {
                         <td className="px-4 py-2">
                           <button
                             onClick={() => setSelectedVersionId(v.id)}
-                            disabled={selectedVersionId === v.id}
-                            className="text-blue-600 hover:text-blue-800 disabled:text-gray-400 text-sm font-medium"
+                            className={`text-sm font-medium px-2 py-1 rounded ${
+                              selectedVersionId === v.id
+                                ? 'bg-blue-100 text-blue-700'
+                                : v.status === 'DRAFT'
+                                  ? 'text-blue-600 hover:text-blue-800 hover:bg-blue-50'
+                                  : v.status === 'IN_PROGRESS'
+                                    ? 'text-amber-600 hover:text-amber-800 hover:bg-amber-50'
+                                    : 'text-green-600 hover:text-green-800 hover:bg-green-50'
+                            }`}
                           >
-                            {selectedVersionId === v.id ? 'Selected' : 'Select'}
+                            {selectedVersionId === v.id
+                              ? 'Active'
+                              : v.status === 'DRAFT'
+                                ? 'Resume Draft'
+                                : v.status === 'IN_PROGRESS'
+                                  ? 'Continue'
+                                  : 'View Results'}
                           </button>
                         </td>
                       </tr>
