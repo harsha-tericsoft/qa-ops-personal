@@ -1056,8 +1056,7 @@ function ExecutionCyclesContent() {
                     </div>
                   )}
 
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-3 text-sm">Jira Links</h4>
+                  <h4 className="font-semibold text-gray-900 mb-3 text-sm">Jira Links</h4>
                   <div className="space-y-2 mb-3">
                     {run.jiraLinks && run.jiraLinks.length > 0 ? (
                       run.jiraLinks.map((link) => (

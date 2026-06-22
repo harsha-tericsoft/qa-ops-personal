@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+type RouteParams = { params: Promise<{ id: string }> }
+
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: RouteParams
 ) {
   try {
+    const { id } = await params
+
     const testRun = await prisma.testRun.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         testCase: true,
         comments: {
