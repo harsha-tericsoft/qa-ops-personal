@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import {
   getProjectMetrics,
   getCycleMetrics,
+  getCycleMetricsForVersion,
   getVersionMetrics,
 } from '@/lib/services/dashboard.service'
 
@@ -18,6 +19,12 @@ export async function GET(req: NextRequest) {
     }
 
     if (scope === 'cycle' && cycleId) {
+      // If versionId is provided, return metrics for that specific version within the cycle
+      if (versionId) {
+        const metrics = await getCycleMetricsForVersion(cycleId, versionId)
+        return NextResponse.json(metrics)
+      }
+      // Otherwise return aggregate cycle metrics across all versions
       const metrics = await getCycleMetrics(cycleId)
       return NextResponse.json(metrics)
     }

@@ -105,7 +105,7 @@ export async function getProjectMetrics(projectId: string): Promise<ProjectMetri
   }
 }
 
-// Cycle Scope - Execution metrics for a specific cycle
+// Cycle Scope - Execution metrics for a specific cycle (aggregated across all versions)
 export async function getCycleMetrics(cycleId: string): Promise<CycleMetrics> {
   const cycle = await prisma.executionCycle.findUniqueOrThrow({
     where: { id: cycleId },
@@ -141,6 +141,49 @@ export async function getCycleMetrics(cycleId: string): Promise<CycleMetrics> {
     passRatePercent,
     defectCount,
     versionCount: cycle.versions.length,
+  }
+}
+
+// Cycle Scope with Version Filter - Show metrics for specific version within a cycle
+export async function getCycleMetricsForVersion(cycleId: string, versionId: string): Promise<CycleMetrics> {
+  const version = await prisma.executionVersion.findUniqueOrThrow({
+    where: { id: versionId },
+    include: {
+      testRuns: true,
+      cycle: true,
+    },
+  })
+
+  if (version.cycleId !== cycleId) {
+    throw new Error('Version does not belong to this cycle')
+  }
+
+  const testRuns = version.testRuns
+  const total = testRuns.length
+
+  const passed = testRuns.filter(r => r.status === 'PASS').length
+  const failed = testRuns.filter(r => r.status === 'FAIL').length
+  const blocked = testRuns.filter(r => r.status === 'BLOCKED').length
+  const notExecuted = testRuns.filter(r => r.status === 'NOT_EXECUTED').length
+
+  const executedCount = passed + failed + blocked
+  const executionProgressPercent = total > 0 ? Math.round((executedCount / total) * 100) : 0
+  const passRatePercent = total > 0 ? Math.round((passed / total) * 100) : 0
+  const defectCount = failed + blocked
+
+  return {
+    scope: 'cycle',
+    cycleId: version.cycleId,
+    cycleName: version.cycle.name,
+    passed,
+    failed,
+    blocked,
+    notExecuted,
+    total,
+    executionProgressPercent,
+    passRatePercent,
+    defectCount,
+    versionCount: 1,
   }
 }
 
