@@ -1,0 +1,261 @@
+
+> qa-ops@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.7 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.12:3000
+- Environments: .env.local, .env
+✓ Ready in 632ms
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\harsh\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\harsh\ClaudeCode\Assignment3\qa-ops\package-lock.json
+
+
+ GET /projects/cmqoreffq00047kgcwwqnkmzu/test-suites 404 in 1309ms (next.js: 566ms, application-code: 743ms)
+ GET /cycles 200 in 1286ms (next.js: 817ms, application-code: 470ms)
+ GET /projects/cmqoreffq00047kgcwwqnkmzu/repositories/cmqoreisg00087kgcwf0wkwoo 200 in 1859ms (next.js: 1448ms, application-code: 411ms)
+[Prisma] Initializing Prisma Client (v6)
+[Prisma] Client initialized successfully
+[Prisma] Initializing Prisma Client (v6)
+[Prisma] Client initialized successfully
+ GET /api/projects 200 in 2.0s (next.js: 86ms, application-code: 1937ms)
+ GET /api/projects 200 in 756ms (next.js: 21ms, application-code: 735ms)
+ GET /api/codeRepositories/cmqoreisg00087kgcwf0wkwoo 404 in 3.9s (next.js: 1830ms, application-code: 2.0s)
+ GET /api/projects 200 in 725ms (next.js: 5ms, application-code: 720ms)
+ GET /api/execution-cycles?projectId=cmqov3pqo00017kcg39q45x9x 200 in 2.2s (next.js: 160ms, application-code: 2.0s)
+ GET /api/test-suites?projectId=cmqov3pqo00017kcg39q45x9x 200 in 2.3s (next.js: 228ms, application-code: 2.0s)
+ GET /api/projects 200 in 745ms (next.js: 6ms, application-code: 739ms)
+ GET /api/test-cases?projectId=cmqorivor03id7kgcdbyrpt7c 200 in 1356ms (next.js: 43ms, application-code: 1313ms)
+ POST /api/test-suites?projectId=cmqorivor03id7kgcdbyrpt7c 201 in 1331ms (next.js: 4ms, application-code: 1328ms)
+ POST /api/test-cases 201 in 762ms (next.js: 2ms, application-code: 759ms)
+ POST /api/test-cases 201 in 731ms (next.js: 2ms, application-code: 729ms)
+ POST /api/test-cases 201 in 727ms (next.js: 2ms, application-code: 725ms)
+[Prisma] Initializing Prisma Client (v6)
+[Prisma] Client initialized successfully
+ PATCH /api/test-suites/cmqovv7cv00017kucsqsxij3p 200 in 2.9s (next.js: 791ms, application-code: 2.2s)
+ GET /api/test-cases?projectId=cmqorivor03id7kgcdbyrpt7c 200 in 1315ms (next.js: 3ms, application-code: 1313ms)
+ POST /api/test-suites?projectId=cmqorivor03id7kgcdbyrpt7c 201 in 1347ms (next.js: 2ms, application-code: 1344ms)
+ POST /api/test-cases 201 in 761ms (next.js: 3ms, application-code: 758ms)
+ POST /api/test-cases 201 in 731ms (next.js: 3ms, application-code: 728ms)
+ POST /api/test-cases 201 in 736ms (next.js: 7ms, application-code: 729ms)
+[Prisma] Initializing Prisma Client (v6)
+[Prisma] Client initialized successfully
+ PATCH /api/test-suites/cmqovvv3n000c7kuczk7iod27 200 in 2.2s (next.js: 13ms, application-code: 2.2s)
+ GET /cycles 200 in 72ms (next.js: 8ms, application-code: 64ms)
+ GET /api/projects 200 in 1859ms (next.js: 32ms, application-code: 1827ms)
+ GET /api/projects 200 in 751ms (next.js: 5ms, application-code: 746ms)
+ GET /api/test-suites?projectId=cmqov3pqo00017kcg39q45x9x 200 in 2.2s (next.js: 3ms, application-code: 2.2s)
+ GET /api/execution-cycles?projectId=cmqov3pqo00017kcg39q45x9x 200 in 2.2s (next.js: 5ms, application-code: 2.2s)
+ GET /projects 200 in 465ms (next.js: 371ms, application-code: 94ms)
+ GET /api/projects 200 in 974ms (next.js: 11ms, application-code: 963ms)
+ GET /api/projects 200 in 793ms (next.js: 3ms, application-code: 790ms)
+ GET /repository 200 in 329ms (next.js: 269ms, application-code: 60ms)
+[repository/tree] Query 1: Loading repository...
+ GET /api/tags?projectId=default-project 200 in 1822ms (next.js: 589ms, application-code: 1234ms)
+ GET /api/tags?projectId=default-project 200 in 165ms (next.js: 3ms, application-code: 162ms)
+ GET /api/repository/metrics?projectId=default-project 200 in 2.1s (next.js: 309ms, application-code: 1800ms)
+[repository/tree] Query 1 complete
+[repository/tree] No repository found for projectId: default-project
+ GET /api/repository/tree?projectId=default-project 200 in 2.4s (next.js: 562ms, application-code: 1801ms)
+[repository/tree] Query 1: Loading repository...
+ GET /api/repository/metrics?projectId=default-project 200 in 736ms (next.js: 4ms, application-code: 733ms)
+ GET /api/projects 200 in 2.2s (next.js: 293ms, application-code: 1939ms)
+[repository/tree] Query 1: Loading repository...
+ GET /api/tags?projectId=cmqov3pqo00017kcg39q45x9x 200 in 179ms (next.js: 8ms, application-code: 171ms)
+[repository/tree] Query 1 complete
+[repository/tree] No repository found for projectId: default-project
+ GET /api/repository/tree?projectId=default-project 200 in 789ms (next.js: 4ms, application-code: 785ms)
+ GET /api/repository/metrics?projectId=cmqov3pqo00017kcg39q45x9x 200 in 750ms (next.js: 4ms, application-code: 745ms)
+ GET /api/projects 200 in 848ms (next.js: 3ms, application-code: 845ms)
+[repository/tree] Query 1 complete
+[repository/tree] Repository found: cmqov58r200077kcg9ml75vbi
+[repository/tree] Query 2: Loading all nodes...
+ GET /projects/cmqov3pqo00017kcg39q45x9x 200 in 7.9s (next.js: 7.9s, application-code: 41ms)
+[repository/tree] Query 2 complete, loaded nodes: 3718
+[repository/tree] Building tree in memory...
+[repository/tree] Tree build complete
+[repository/tree] ───────────────────────────────────
+[repository/tree] Total nodes loaded: 3718
+[repository/tree] Root nodes (tree.length): 1
+[repository/tree] Tree build duration: 261ms
+[repository/tree] Total request duration: 4005ms
+[repository/tree] Total database queries: 2
+[repository/tree] Node type breakdown:
+[repository/tree]   FOLDER: 1293
+[repository/tree]   FILE: 2425
+[repository/tree] ───────────────────────────────────
+ GET /api/repository/tree?projectId=cmqov3pqo00017kcg39q45x9x 200 in 4.0s (next.js: 4ms, application-code: 4.0s)
+ GET /projects 200 in 40ms (next.js: 7ms, application-code: 33ms)
+ GET /api/projects 200 in 882ms (next.js: 4ms, application-code: 878ms)
+ GET /api/projects 200 in 732ms (next.js: 6ms, application-code: 726ms)
+ GET /repository 200 in 30ms (next.js: 5ms, application-code: 25ms)
+[repository/tree] Query 1: Loading repository...
+ GET /api/tags?projectId=default-project 200 in 763ms (next.js: 3ms, application-code: 760ms)
+[repository/tree] Query 1 complete
+[repository/tree] No repository found for projectId: default-project
+ GET /api/repository/tree?projectId=default-project 200 in 895ms (next.js: 12ms, application-code: 883ms)
+ GET /api/projects 200 in 880ms (next.js: 2ms, application-code: 878ms)
+[repository/tree] Query 1: Loading repository...
+ GET /api/tags?projectId=default-project 200 in 173ms (next.js: 3ms, application-code: 170ms)
+[repository/tree] Query 1: Loading repository...
+ GET /api/repository/metrics?projectId=default-project 200 in 967ms (next.js: 5ms, application-code: 963ms)
+ GET /api/projects 200 in 741ms (next.js: 14ms, application-code: 726ms)
+ GET /api/tags?projectId=cmqov3pqo00017kcg39q45x9x 200 in 726ms (next.js: 7ms, application-code: 719ms)
+[repository/tree] Query 1 complete
+[repository/tree] No repository found for projectId: default-project
+ GET /api/repository/tree?projectId=default-project 200 in 750ms (next.js: 4ms, application-code: 746ms)
+ GET /api/repository/metrics?projectId=cmqov3pqo00017kcg39q45x9x 200 in 876ms (next.js: 2ms, application-code: 874ms)
+[repository/tree] Query 1 complete
+[repository/tree] Repository found: cmqov58r200077kcg9ml75vbi
+[repository/tree] Query 2: Loading all nodes...
+ GET /api/repository/metrics?projectId=default-project 200 in 1783ms (next.js: 1998µs, application-code: 1781ms)
+[repository/tree] Query 2 complete, loaded nodes: 3718
+[repository/tree] Building tree in memory...
+[repository/tree] Tree build complete
+[repository/tree] ───────────────────────────────────
+[repository/tree] Total nodes loaded: 3718
+[repository/tree] Root nodes (tree.length): 1
+[repository/tree] Tree build duration: 286ms
+[repository/tree] Total request duration: 3821ms
+[repository/tree] Total database queries: 2
+[repository/tree] Node type breakdown:
+[repository/tree]   FOLDER: 1293
+[repository/tree]   FILE: 2425
+[repository/tree] ───────────────────────────────────
+ GET /api/repository/tree?projectId=cmqov3pqo00017kcg39q45x9x 200 in 3.8s (next.js: 1752µs, application-code: 3.8s)
+ GET /test-cases 200 in 360ms (next.js: 291ms, application-code: 69ms)
+ GET /api/projects 200 in 864ms (next.js: 3ms, application-code: 861ms)
+ GET /api/projects 200 in 718ms (next.js: 3ms, application-code: 715ms)
+ GET /api/test-cases?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1351ms (next.js: 13ms, application-code: 1338ms)
+ GET /test-suites 200 in 353ms (next.js: 302ms, application-code: 51ms)
+ GET /api/projects 200 in 941ms (next.js: 6ms, application-code: 936ms)
+ GET /api/projects 200 in 738ms (next.js: 4ms, application-code: 734ms)
+ GET /api/test-suites?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1188ms (next.js: 18ms, application-code: 1170ms)
+ GET /api/test-cases?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1333ms (next.js: 3ms, application-code: 1329ms)
+ GET /api/test-cases?projectId=cmqov3pqo00017kcg39q45x9x 200 in 752ms (next.js: 4ms, application-code: 748ms)
+ GET /api/test-suites?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1023ms (next.js: 3ms, application-code: 1020ms)
+ GET /test-cases 200 in 26ms (next.js: 3ms, application-code: 23ms)
+ GET /api/projects 200 in 729ms (next.js: 2ms, application-code: 727ms)
+ GET /api/projects 200 in 745ms (next.js: 3ms, application-code: 742ms)
+ GET /api/test-cases?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1209ms (next.js: 3ms, application-code: 1206ms)
+ GET /test-suites 200 in 26ms (next.js: 4ms, application-code: 23ms)
+ GET /api/projects 200 in 862ms (next.js: 3ms, application-code: 859ms)
+ GET /api/projects 200 in 752ms (next.js: 3ms, application-code: 749ms)
+ GET /api/test-suites?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1187ms (next.js: 3ms, application-code: 1183ms)
+ GET /api/test-cases?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1342ms (next.js: 8ms, application-code: 1334ms)
+ GET /api/test-cases?projectId=cmqov3pqo00017kcg39q45x9x 200 in 762ms (next.js: 2ms, application-code: 760ms)
+ GET /api/test-suites?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1057ms (next.js: 3ms, application-code: 1054ms)
+ GET /api/repository?projectId=cmqov3pqo00017kcg39q45x9x 200 in 2.2s (next.js: 286ms, application-code: 1868ms)
+ GET /api/repository?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1100ms (next.js: 4ms, application-code: 1096ms)
+ GET /api/test-cases?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1231ms (next.js: 2ms, application-code: 1229ms)
+ GET /api/test-cases?projectId=cmqov3pqo00017kcg39q45x9x 200 in 759ms (next.js: 1892µs, application-code: 757ms)
+ POST /api/test-suites?projectId=cmqov3pqo00017kcg39q45x9x 201 in 1458ms (next.js: 4ms, application-code: 1453ms)
+ POST /api/test-cases 201 in 729ms (next.js: 3ms, application-code: 726ms)
+ POST /api/test-cases 201 in 753ms (next.js: 2ms, application-code: 751ms)
+ POST /api/test-cases 201 in 738ms (next.js: 3ms, application-code: 735ms)
+ POST /api/test-cases 201 in 726ms (next.js: 2ms, application-code: 724ms)
+ POST /api/test-suites?projectId=cmqov3pqo00017kcg39q45x9x 201 in 1474ms (next.js: 2ms, application-code: 1472ms)
+ POST /api/test-cases 201 in 744ms (next.js: 3ms, application-code: 742ms)
+ POST /api/test-cases 201 in 725ms (next.js: 2ms, application-code: 723ms)
+ POST /api/test-cases 201 in 758ms (next.js: 2ms, application-code: 755ms)
+ POST /api/test-cases 201 in 732ms (next.js: 3ms, application-code: 729ms)
+ POST /api/test-cases 201 in 729ms (next.js: 1933µs, application-code: 727ms)
+ POST /api/test-cases 201 in 742ms (next.js: 3ms, application-code: 739ms)
+ POST /api/test-suites?projectId=cmqov3pqo00017kcg39q45x9x 201 in 1440ms (next.js: 3ms, application-code: 1437ms)
+ POST /api/test-cases 201 in 745ms (next.js: 7ms, application-code: 738ms)
+ POST /api/test-cases 201 in 748ms (next.js: 3ms, application-code: 745ms)
+ POST /api/test-cases 201 in 743ms (next.js: 3ms, application-code: 740ms)
+ POST /api/test-cases 201 in 737ms (next.js: 3ms, application-code: 734ms)
+ POST /api/test-cases 201 in 729ms (next.js: 2ms, application-code: 727ms)
+ POST /api/test-cases 201 in 756ms (next.js: 3ms, application-code: 753ms)
+ POST /api/test-cases 201 in 733ms (next.js: 2ms, application-code: 731ms)
+[Prisma] Initializing Prisma Client (v6)
+[Prisma] Client initialized successfully
+ POST /api/test-cases 201 in 745ms (next.js: 3ms, application-code: 742ms)
+ POST /api/test-cases 201 in 725ms (next.js: 3ms, application-code: 722ms)
+ POST /api/test-cases 201 in 757ms (next.js: 4ms, application-code: 753ms)
+ PATCH /api/test-suites/cmqowku3n000n7kuc3sbc3415 200 in 2.2s (next.js: 24ms, application-code: 2.2s)
+ POST /api/test-cases 201 in 727ms (next.js: 3ms, application-code: 723ms)
+ POST /api/test-cases 201 in 769ms (next.js: 3ms, application-code: 766ms)
+ POST /api/test-cases 201 in 730ms (next.js: 2ms, application-code: 728ms)
+ GET /api/test-suites?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1316ms (next.js: 3ms, application-code: 1314ms)
+ POST /api/test-cases 201 in 757ms (next.js: 6ms, application-code: 751ms)
+[Prisma] Initializing Prisma Client (v6)
+[Prisma] Client initialized successfully
+ POST /api/test-cases 201 in 738ms (next.js: 4ms, application-code: 734ms)
+ PATCH /api/test-suites/cmqowkwgq000v7kucgqya9vxt 200 in 2.2s (next.js: 15ms, application-code: 2.2s)
+ POST /api/test-cases 201 in 735ms (next.js: 5ms, application-code: 730ms)
+ POST /api/test-cases 201 in 740ms (next.js: 3ms, application-code: 737ms)
+ GET /api/test-suites?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1306ms (next.js: 4ms, application-code: 1302ms)
+[Prisma] Initializing Prisma Client (v6)
+[Prisma] Client initialized successfully
+ PATCH /api/test-suites/cmqowkynk001b7kuc4rxqur9i 200 in 2.2s (next.js: 10ms, application-code: 2.2s)
+ GET /api/test-suites?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1312ms (next.js: 2ms, application-code: 1310ms)
+ GET /cycles 200 in 61ms (next.js: 22ms, application-code: 39ms)
+ GET /api/projects 200 in 874ms (next.js: 4ms, application-code: 871ms)
+ GET /api/projects 200 in 746ms (next.js: 7ms, application-code: 739ms)
+ GET /api/execution-cycles?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1211ms (next.js: 16ms, application-code: 1194ms)
+ GET /api/test-suites?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1456ms (next.js: 2ms, application-code: 1453ms)
+ POST /api/execution-cycles?projectId=cmqov3pqo00017kcg39q45x9x 201 in 3.0s (next.js: 2ms, application-code: 3.0s)
+ GET /api/execution-cycles?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1362ms (next.js: 3ms, application-code: 1359ms)
+[Prisma] Initializing Prisma Client (v6)
+[Prisma] Client initialized successfully
+[Prisma] Initializing Prisma Client (v6)
+[Prisma] Client initialized successfully
+ PATCH /api/test-runs/cmqowlxnp00317kuc74kco36g 200 in 3.3s (next.js: 935ms, application-code: 2.4s)
+ GET /api/execution-cycles?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1325ms (next.js: 3ms, application-code: 1322ms)
+ PATCH /api/test-runs/cmqowlxnp00327kucfsjt8dtn 200 in 2.4s (next.js: 10ms, application-code: 2.4s)
+ GET /api/execution-cycles?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1354ms (next.js: 3ms, application-code: 1351ms)
+[Prisma] Initializing Prisma Client (v6)
+[Prisma] Client initialized successfully
+ PATCH /api/test-runs/cmqowlxnp00337kucxk90hy3i 200 in 2.2s (next.js: 12ms, application-code: 2.2s)
+ GET /api/execution-cycles?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1301ms (next.js: 4ms, application-code: 1298ms)
+ GET /test-suites 200 in 25ms (next.js: 3ms, application-code: 22ms)
+ GET /api/projects 200 in 754ms (next.js: 4ms, application-code: 749ms)
+ GET /api/projects 200 in 743ms (next.js: 3ms, application-code: 740ms)
+ GET /api/test-cases?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1363ms (next.js: 7ms, application-code: 1356ms)
+ GET /api/test-suites?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1481ms (next.js: 2ms, application-code: 1479ms)
+ GET /api/test-cases?projectId=cmqov3pqo00017kcg39q45x9x 200 in 911ms (next.js: 3ms, application-code: 908ms)
+ GET /api/test-suites?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1314ms (next.js: 3ms, application-code: 1311ms)
+ GET /api/repository?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1993ms (next.js: 4ms, application-code: 1989ms)
+ GET /api/test-cases?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1219ms (next.js: 3ms, application-code: 1216ms)
+ GET /api/repository?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1243ms (next.js: 4ms, application-code: 1239ms)
+ GET /api/test-cases?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1216ms (next.js: 2ms, application-code: 1214ms)
+ POST /api/test-suites?projectId=cmqov3pqo00017kcg39q45x9x 201 in 1560ms (next.js: 4ms, application-code: 1556ms)
+ POST /api/test-cases 201 in 753ms (next.js: 3ms, application-code: 750ms)
+ POST /api/test-cases 201 in 723ms (next.js: 3ms, application-code: 720ms)
+ POST /api/test-cases 201 in 724ms (next.js: 3ms, application-code: 721ms)
+ POST /api/test-cases 201 in 740ms (next.js: 2ms, application-code: 738ms)
+ POST /api/test-cases 201 in 730ms (next.js: 2ms, application-code: 727ms)
+ POST /api/test-cases 201 in 735ms (next.js: 2ms, application-code: 733ms)
+ POST /api/test-cases 201 in 736ms (next.js: 3ms, application-code: 732ms)
+[Prisma] Initializing Prisma Client (v6)
+[Prisma] Client initialized successfully
+ PATCH /api/test-suites/cmqowncoz003b7kucid3fi4ug 200 in 2.3s (next.js: 13ms, application-code: 2.3s)
+ GET /api/test-suites?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1502ms (next.js: 3ms, application-code: 1499ms)
+ GET /cycles 200 in 26ms (next.js: 3ms, application-code: 23ms)
+ GET /api/projects 200 in 757ms (next.js: 3ms, application-code: 754ms)
+ GET /api/projects 200 in 868ms (next.js: 3ms, application-code: 865ms)
+ GET /api/execution-cycles?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1464ms (next.js: 3ms, application-code: 1461ms)
+ GET /api/test-suites?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1466ms (next.js: 6ms, application-code: 1460ms)
+ POST /api/execution-cycles?projectId=cmqov3pqo00017kcg39q45x9x 201 in 2.8s (next.js: 3ms, application-code: 2.8s)
+ GET /api/execution-cycles?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1354ms (next.js: 4ms, application-code: 1350ms)
+[Prisma] Initializing Prisma Client (v6)
+[Prisma] Client initialized successfully
+ PATCH /api/test-runs/cmqownvfo003x7kuc2my53fve 200 in 2.3s (next.js: 12ms, application-code: 2.3s)
+ GET /api/execution-cycles?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1295ms (next.js: 3ms, application-code: 1292ms)
+ GET /dashboard 200 in 313ms (next.js: 248ms, application-code: 65ms)
+ GET /api/dashboard/summary?projectId=default-project 200 in 2.8s (next.js: 294ms, application-code: 2.5s)
+ GET /api/dashboard/summary?projectId=default-project 200 in 1458ms (next.js: 3ms, application-code: 1455ms)
+ GET /api/projects 200 in 1733ms (next.js: 3ms, application-code: 1730ms)
+ GET /api/roam/logs?projectId=default-project&limit=5 200 in 2.2s (next.js: 243ms, application-code: 1931ms)
+ GET /api/roam/logs?projectId=default-project&limit=5 200 in 805ms (next.js: 3ms, application-code: 802ms)
+ GET /api/roam/logs?projectId=cmqov3pqo00017kcg39q45x9x&limit=5 200 in 784ms (next.js: 3ms, application-code: 781ms)
+ GET /api/dashboard/summary?projectId=cmqov3pqo00017kcg39q45x9x 200 in 1428ms (next.js: 9ms, application-code: 1420ms)
+ GET /api/roam/logs?projectId=cmqov3pqo00017kcg39q45x9x&limit=5 200 in 714ms (next.js: 3ms, application-code: 711ms)
+ GET /api/projects 200 in 795ms (next.js: 7ms, application-code: 788ms)
+ GET /api/roam/logs?projectId=cmqov3pqo00017kcg39q45x9x&limit=5 200 in 726ms (next.js: 2ms, application-code: 723ms)

@@ -12,16 +12,22 @@ interface RepositoryFiltersProps {
   projectId: string
   onSearchChange: (search: string) => void
   onTagsChange: (tags: string[]) => void
+  onNodeTypeChange: (nodeType: string | null) => void
+  onAutomatedChange: (automated: string | null) => void
 }
 
 export function RepositoryFilters({
   projectId,
   onSearchChange,
   onTagsChange,
+  onNodeTypeChange,
+  onAutomatedChange,
 }: RepositoryFiltersProps) {
   const [search, setSearch] = useState('')
   const [tags, setTags] = useState<Tag[]>([])
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set())
+  const [selectedNodeType, setSelectedNodeType] = useState<string | null>(null)
+  const [selectedAutomated, setSelectedAutomated] = useState<string | null>(null)
   const [loadingTags, setLoadingTags] = useState(true)
 
   useEffect(() => {
@@ -58,14 +64,28 @@ export function RepositoryFilters({
     onTagsChange(Array.from(newSelected))
   }
 
+  const handleNodeTypeChange = (nodeType: string | null) => {
+    setSelectedNodeType(nodeType)
+    onNodeTypeChange(nodeType)
+  }
+
+  const handleAutomatedChange = (automated: string | null) => {
+    setSelectedAutomated(automated)
+    onAutomatedChange(automated)
+  }
+
   const handleClearFilters = () => {
     setSearch('')
     setSelectedTags(new Set())
+    setSelectedNodeType(null)
+    setSelectedAutomated(null)
     onSearchChange('')
     onTagsChange([])
+    onNodeTypeChange(null)
+    onAutomatedChange(null)
   }
 
-  const hasActiveFilters = search || selectedTags.size > 0
+  const hasActiveFilters = search || selectedTags.size > 0 || selectedNodeType || selectedAutomated
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
@@ -83,9 +103,58 @@ export function RepositoryFilters({
         />
       </div>
 
+      {/* Node Type Filter */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-900 mb-3">
+          Filter by Node Type
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {['MODULE', 'FEATURE', 'SCREEN', 'FOLDER', 'FILE'].map((type) => (
+            <button
+              key={type}
+              onClick={() => handleNodeTypeChange(selectedNodeType === type ? null : type)}
+              className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                selectedNodeType === type
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {type}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Automated/Manual Filter */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-900 mb-3">
+          Filter by Test Type
+        </label>
+        <div className="flex gap-2">
+          {[
+            { label: 'Automated', value: 'true' },
+            { label: 'Manual', value: 'false' },
+          ].map(({ label, value }) => (
+            <button
+              key={value}
+              onClick={() =>
+                handleAutomatedChange(selectedAutomated === value ? null : value)
+              }
+              className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                selectedAutomated === value
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Tags Filter */}
       {tags.length > 0 && (
-        <div>
+        <div className="mb-6">
           <label className="block text-sm font-medium text-gray-900 mb-3">
             Filter by Tags
           </label>

@@ -18,6 +18,8 @@ function RepositoryContent() {
   const [currentProjectId, setCurrentProjectId] = useState('default-project')
   const [search, setSearch] = useState('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [selectedNodeType, setSelectedNodeType] = useState<string | null>(null)
+  const [selectedAutomated, setSelectedAutomated] = useState<string | null>(null)
   const [loadingProjects, setLoadingProjects] = useState(true)
 
   useEffect(() => {
@@ -45,6 +47,8 @@ function RepositoryContent() {
     setCurrentProjectId(projectId)
     setSearch('')
     setSelectedTags([])
+    setSelectedNodeType(null)
+    setSelectedAutomated(null)
   }
 
   return (
@@ -85,6 +89,8 @@ function RepositoryContent() {
           projectId={currentProjectId}
           onSearchChange={setSearch}
           onTagsChange={setSelectedTags}
+          onNodeTypeChange={setSelectedNodeType}
+          onAutomatedChange={setSelectedAutomated}
         />
 
         {/* Tree View */}
@@ -94,6 +100,8 @@ function RepositoryContent() {
             projectId={currentProjectId}
             search={search}
             selectedTags={selectedTags}
+            nodeType={selectedNodeType}
+            isAutomated={selectedAutomated}
           />
         </div>
 

@@ -16,6 +16,8 @@ interface RepositoryTreeProps {
   parentId?: string | null
   search?: string
   selectedTags?: string[]
+  nodeType?: string | null
+  isAutomated?: string | null
 }
 
 export function RepositoryTree({
@@ -23,6 +25,8 @@ export function RepositoryTree({
   parentId = null,
   search = '',
   selectedTags = [],
+  nodeType = null,
+  isAutomated = null,
 }: RepositoryTreeProps) {
   const [nodes, setNodes] = useState<TreeNode[]>([])
   const [loading, setLoading] = useState(true)
@@ -31,7 +35,7 @@ export function RepositoryTree({
 
   useEffect(() => {
     fetchNodes()
-  }, [projectId, parentId, search, selectedTags])
+  }, [projectId, parentId, search, selectedTags, nodeType, isAutomated])
 
   const fetchNodes = async () => {
     setLoading(true)
@@ -45,6 +49,8 @@ export function RepositoryTree({
       if (parentId) params.append('parentId', parentId)
       if (search) params.append('search', search)
       selectedTags.forEach((tag) => params.append('tags', tag))
+      if (nodeType) params.append('nodeType', nodeType)
+      if (isAutomated) params.append('automated', isAutomated)
 
       const response = await fetch(`/api/repository/tree?${params}`)
 

@@ -22,6 +22,10 @@ export async function GET(req: NextRequest) {
 
   try {
     const projectId = req.nextUrl.searchParams.get('projectId')
+    const search = req.nextUrl.searchParams.get('search')
+    const tags = req.nextUrl.searchParams.getAll('tags')
+    const nodeType = req.nextUrl.searchParams.get('nodeType')
+    const isAutomated = req.nextUrl.searchParams.get('automated')
 
     if (!projectId) {
       return NextResponse.json(
@@ -29,6 +33,12 @@ export async function GET(req: NextRequest) {
         { status: 400 }
       )
     }
+
+    // Log filter parameters
+    if (search) console.log('[repository/tree] Search filter:', search)
+    if (tags.length > 0) console.log('[repository/tree] Tag filters:', tags)
+    if (nodeType) console.log('[repository/tree] Type filter:', nodeType)
+    if (isAutomated) console.log('[repository/tree] Automated filter:', isAutomated)
 
     // Query 1: Get repository
     console.log('[repository/tree] Query 1: Loading repository...')
@@ -49,13 +59,66 @@ export async function GET(req: NextRequest) {
     const repositoryId = repository.id
     console.log('[repository/tree] Repository found:', repositoryId)
 
-    // Query 2: Load ALL repository nodes at once
-    console.log('[repository/tree] Query 2: Loading all nodes...')
+    // Build WHERE clause with filters
+    const whereClause: any = {
+      repositoryId,
+      deletedAt: null,
+    }
+
+    // Add search filter (search in name or path)
+    if (search) {
+      whereClause.AND = [
+        {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { path: { contains: search, mode: 'insensitive' } },
+          ]
+        }
+      ]
+    }
+
+    // Add node type filter
+    if (nodeType) {
+      if (whereClause.AND) {
+        whereClause.AND.push({ type: nodeType })
+      } else {
+        whereClause.type = nodeType
+      }
+    }
+
+    // Add tag filter (node must have at least one of the selected tags)
+    if (tags.length > 0) {
+      if (whereClause.AND) {
+        whereClause.AND.push({ tags: { hasSome: tags } })
+      } else {
+        whereClause.tags = { hasSome: tags }
+      }
+    }
+
+    // Add manual/automated filter (based on tags containing 'Automated' or 'Manual')
+    if (isAutomated !== null && isAutomated !== '') {
+      const automatedValue = isAutomated === 'true'
+      if (automatedValue) {
+        // Filter to nodes with 'Automated' tag
+        if (whereClause.AND) {
+          whereClause.AND.push({ tags: { has: 'Automated' } })
+        } else {
+          whereClause.tags = { has: 'Automated' }
+        }
+      } else {
+        // Filter to nodes WITHOUT 'Automated' tag
+        if (whereClause.AND) {
+          whereClause.AND.push({ NOT: { tags: { has: 'Automated' } } })
+        } else {
+          whereClause.NOT = { tags: { has: 'Automated' } }
+        }
+      }
+    }
+
+    // Query 2: Load repository nodes with filters applied
+    console.log('[repository/tree] Query 2: Loading nodes with filters...')
     const allNodes = await prisma.repositoryNode.findMany({
-      where: {
-        repositoryId,
-        deletedAt: null,
-      },
+      where: whereClause,
       orderBy: [{ order: 'asc' }, { name: 'asc' }],
     })
     queryCount++
