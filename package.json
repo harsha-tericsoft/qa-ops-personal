@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "diagnose": "npx ts-node scripts/diagnose-error.ts",
     "verify:execution-versioning:db": "npx ts-node scripts/verify-execution-versioning-db.ts",
     "verify:execution-versioning:api": "npx ts-node scripts/verify-execution-versioning-api.ts",
     "verify:execution-versioning:regression": "npx ts-node scripts/verify-regressions.ts",

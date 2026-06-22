@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-type RouteParams = { params: Promise<{ cycleId: string }> }
+type RouteParams = { params: Promise<{ id: string }> }
 
-// GET /api/execution-cycles/[cycleId]/versions
+// GET /api/execution-cycles/[id]/versions
 export async function GET(req: NextRequest, { params }: RouteParams) {
-  const { cycleId } = await params
+  const { id } = await params
 
   try {
     const versions = await prisma.executionVersion.findMany({
-      where: { cycleId },
+      where: { cycleId: id },
       orderBy: { versionNumber: 'desc' },
       include: {
         testRuns: {
@@ -29,9 +29,9 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
   }
 }
 
-// POST /api/execution-cycles/[cycleId]/versions
+// POST /api/execution-cycles/[id]/versions
 export async function POST(req: NextRequest, { params }: RouteParams) {
-  const { cycleId } = await params
+  const { id } = await params
 
   try {
     const body = await req.json()
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     // Validate: Check for duplicate build version in same cycle
     const existingVersion = await prisma.executionVersion.findFirst({
       where: {
-        cycleId,
+        cycleId: id,
         buildVersion: buildVersion.trim(),
       },
     })
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     // Validate: Check for active DRAFT or IN_PROGRESS version
     const activeVersion = await prisma.executionVersion.findFirst({
       where: {
-        cycleId,
+        cycleId: id,
         status: {
           in: ['DRAFT', 'IN_PROGRESS'],
         },
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
     // Get the next version number
     const lastVersion = await prisma.executionVersion.findFirst({
-      where: { cycleId },
+      where: { cycleId: id },
       orderBy: { versionNumber: 'desc' },
     })
 
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     // Create new version
     const version = await prisma.executionVersion.create({
       data: {
-        cycleId,
+        cycleId: id,
         versionNumber: nextVersionNumber,
         buildVersion: buildVersion.trim(),
         releaseNotes,

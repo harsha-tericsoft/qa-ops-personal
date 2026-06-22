@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { ExecutionStatus } from '@prisma/client'
 
-type RouteParams = { params: Promise<{ cycleId: string; versionId: string }> }
+type RouteParams = { params: Promise<{ id: string; versionId: string }> }
 
-// GET /api/execution-cycles/[cycleId]/versions/[versionId]
+// GET /api/execution-cycles/[id]/versions/[versionId]
 export async function GET(req: NextRequest, { params }: RouteParams) {
   const { versionId } = await params
 
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
   }
 }
 
-// PATCH /api/execution-cycles/[cycleId]/versions/[versionId]
+// PATCH /api/execution-cycles/[id]/versions/[versionId]
 export async function PATCH(req: NextRequest, { params }: RouteParams) {
   const { versionId } = await params
 
