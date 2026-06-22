@@ -53,11 +53,29 @@
 
 ### 1.3 Version Scope Metrics
 
-**Endpoint:** `GET /api/dashboard/metrics?scope=version&versionId=cmqpdu1pl00337k78ipm60vly`
+**Endpoint:** `GET /api/dashboard/metrics?scope=version&versionId=cmqpda1x800277k78d7m3xbax`
 
-**Response Time:** 823ms (Server Error 500)
+**Response Time:** 412ms
 
-**Status:** Error - requires investigation
+**API Response:**
+```json
+{
+    "scope": "version",
+    "versionId": "cmqpda1x800277k78d7m3xbax",
+    "versionNumber": 1,
+    "buildVersion": "v1.0.0",
+    "status": "DRAFT",
+    "passed": 2,
+    "failed": 0,
+    "blocked": 0,
+    "notExecuted": 28,
+    "total": 30,
+    "executionProgressPercent": 7,
+    "passRatePercent": 7
+}
+```
+
+**Status:** ✅ Fixed - Now returns proper metrics
 
 ---
 
@@ -69,7 +87,7 @@
 |-----------|----------|---|---|
 | Project Metrics | `/api/dashboard/metrics?scope=project` | 1,133ms | ✅ |
 | Cycle Metrics | `/api/dashboard/metrics?scope=cycle` | 1,444ms | ✅ |
-| Version Metrics | `/api/dashboard/metrics?scope=version` | 823ms | ❌ Error |
+| Version Metrics | `/api/dashboard/metrics?scope=version` | 412ms | ✅ |
 | Get Versions List | `/api/execution-cycles/{id}/versions` | 2,407ms | ✅ |
 
 ### 2.2 Prisma Query Details
@@ -288,9 +306,8 @@ model TestRun {
 
 ### ⚠️ Known Issues
 
-1. Version Metrics Endpoint: Returns 500 error (needs versionId validation)
-2. API Response Time: All endpoints exceed 1-second target
-3. Performance Bottleneck: Including comments in responses increases latency
+1. API Response Time: Project/Cycle metrics exceed 1-second target (improvement needed)
+2. Performance Bottleneck: Including comments in responses increases latency (lazy loading recommended)
 
 ### 📊 Performance Baseline
 
