@@ -116,22 +116,45 @@ function TestSuitesContent() {
       if (response.ok) {
         const newSuite = await response.json()
 
-        // If nodes selected (hierarchy), get descendant test cases
+        // If nodes selected (hierarchy), create TestCase records and link them
         if (selectedNodeIds.length > 0) {
-          const testCasesToAdd = availableTests
-            .filter((tc: any) => selectedNodeIds.includes(tc.repositoryNodeId))
-            .map((tc: any) => tc.id)
+          const roamTestCases = availableTests.filter((tc: any) =>
+            selectedNodeIds.includes(tc.repositoryNodeId)
+          )
 
-          if (testCasesToAdd.length > 0) {
-            const patchResponse = await fetch(`/api/test-suites/${newSuite.id}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                testCaseIds: testCasesToAdd,
-              }),
-            })
-            if (!patchResponse.ok) {
-              console.error('Failed to add test cases:', await patchResponse.text())
+          if (roamTestCases.length > 0) {
+            const testCaseIds: string[] = []
+            for (const rtc of roamTestCases) {
+              try {
+                const createResponse = await fetch('/api/test-cases', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    projectId: currentProjectId,
+                    title: rtc.title,
+                    description: `Extracted from: ${rtc.sourceRoamUid}`,
+                  }),
+                })
+                if (createResponse.ok) {
+                  const testCase = await createResponse.json()
+                  testCaseIds.push(testCase.id)
+                }
+              } catch (error) {
+                console.error(`Failed to create TestCase for ${rtc.title}:`, error)
+              }
+            }
+
+            if (testCaseIds.length > 0) {
+              const patchResponse = await fetch(`/api/test-suites/${newSuite.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  testCaseIds,
+                }),
+              })
+              if (!patchResponse.ok) {
+                console.error('Failed to add test cases:', await patchResponse.text())
+              }
             }
           }
         }
@@ -153,9 +176,34 @@ function TestSuitesContent() {
     if (!editingSuiteId || !newSuiteName.trim()) return
 
     try {
-      const testCasesToAdd = availableTests
-        .filter((tc: any) => selectedNodeIds.includes(tc.repositoryNodeId))
-        .map((tc: any) => tc.id)
+      let testCaseIds: string[] = []
+
+      // If nodes selected, create TestCase records and link them
+      if (selectedNodeIds.length > 0) {
+        const roamTestCases = availableTests.filter((tc: any) =>
+          selectedNodeIds.includes(tc.repositoryNodeId)
+        )
+
+        for (const rtc of roamTestCases) {
+          try {
+            const createResponse = await fetch('/api/test-cases', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                projectId: currentProjectId,
+                title: rtc.title,
+                description: `Extracted from: ${rtc.sourceRoamUid}`,
+              }),
+            })
+            if (createResponse.ok) {
+              const testCase = await createResponse.json()
+              testCaseIds.push(testCase.id)
+            }
+          } catch (error) {
+            console.error(`Failed to create TestCase for ${rtc.title}:`, error)
+          }
+        }
+      }
 
       const response = await fetch(`/api/test-suites/${editingSuiteId}`, {
         method: 'PATCH',
@@ -164,7 +212,7 @@ function TestSuitesContent() {
           name: newSuiteName,
           description: newSuiteDesc,
           category: 'CUSTOM',
-          testCaseIds: testCasesToAdd,
+          testCaseIds: testCaseIds.length > 0 ? testCaseIds : undefined,
         }),
       })
 

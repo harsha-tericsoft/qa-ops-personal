@@ -1,0 +1,95 @@
+﻿{
+    "totalAlreadyPrefixed":  0,
+    "sampledBlocksVerified":  [
+
+                              ],
+    "totalUpdated":  557,
+    "failedBlockVerifications":  [
+                                     {
+                                         "error":  "Invalid JSON primitive: roam-mcp.",
+                                         "uid":  "I2RuJM1ie"
+                                     },
+                                     {
+                                         "error":  "Invalid JSON primitive: roam-mcp.",
+                                         "uid":  "0fd9PzjGr"
+                                     },
+                                     {
+                                         "error":  "Invalid JSON primitive: roam-mcp.",
+                                         "uid":  "3Jov6RrVJ"
+                                     },
+                                     {
+                                         "error":  "Invalid JSON primitive: roam-mcp.",
+                                         "uid":  "Oc2Iz_FkY"
+                                     },
+                                     {
+                                         "error":  "Invalid JSON primitive: roam-mcp.",
+                                         "uid":  "8qQjREXVB"
+                                     },
+                                     {
+                                         "error":  "Invalid JSON primitive: roam-mcp.",
+                                         "uid":  "8YSN08im1"
+                                     },
+                                     {
+                                         "error":  "Invalid JSON primitive: roam-mcp.",
+                                         "uid":  "66SWksMtR"
+                                     },
+                                     {
+                                         "error":  "Invalid JSON primitive: roam-mcp.",
+                                         "uid":  "p24e84-zp"
+                                     },
+                                     {
+                                         "error":  "Invalid JSON primitive: roam-mcp.",
+                                         "uid":  "7oYVb2oOB"
+                                     },
+                                     {
+                                         "error":  "Invalid JSON primitive: roam-mcp.",
+                                         "uid":  "ZjfXvTQzT"
+                                     },
+                                     {
+                                         "error":  "Invalid JSON primitive: roam-mcp.",
+                                         "uid":  "G4-jDnEbV"
+                                     },
+                                     {
+                                         "error":  "Invalid JSON primitive: roam-mcp.",
+                                         "uid":  "M2aZZp6FN"
+                                     },
+                                     {
+                                         "error":  "Invalid JSON primitive: roam-mcp.",
+                                         "uid":  "jqGw8G32H"
+                                     },
+                                     {
+                                         "error":  "Invalid JSON primitive: roam-mcp.",
+                                         "uid":  "-0lESj3-S"
+                                     },
+                                     {
+                                         "error":  "Invalid JSON primitive: roam-mcp.",
+                                         "uid":  "lGaDFWPF2"
+                                     },
+                                     {
+                                         "error":  "Invalid JSON primitive: roam-mcp.",
+                                         "uid":  "jq6q-z0Tw"
+                                     },
+                                     {
+                                         "error":  "Invalid JSON primitive: roam-mcp.",
+                                         "uid":  "XwUEOGAiP"
+                                     },
+                                     {
+                                         "error":  "Invalid JSON primitive: roam-mcp.",
+                                         "uid":  "zkPLWEFFl"
+                                     },
+                                     {
+                                         "error":  "Invalid JSON primitive: roam-mcp.",
+                                         "uid":  "WB0OBZVzT"
+                                     },
+                                     {
+                                         "error":  "Invalid JSON primitive: roam-mcp.",
+                                         "uid":  "laZa7v-vp"
+                                     }
+                                 ],
+    "failedVerifications":  20,
+    "totalCandidates":  557,
+    "successfulVerifications":  0,
+    "sampleSize":  20,
+    "verificationTime":  "2026-06-21T06:10:43.0422757Z",
+    "totalFailed":  0
+}

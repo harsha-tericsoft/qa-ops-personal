@@ -1,0 +1,96 @@
+﻿{
+    "totalAlreadyPrefixed":  0,
+    "verificationSuccess":  false,
+    "sampledBlocksVerified":  [
+
+                              ],
+    "totalUpdated":  557,
+    "failedBlockVerifications":  [
+                                     {
+                                         "error":  "Invalid object passed in, \u0027:\u0027 or \u0027}\u0027 expected. (1): {",
+                                         "uid":  "e9UUpj8L2"
+                                     },
+                                     {
+                                         "error":  "Invalid object passed in, \u0027:\u0027 or \u0027}\u0027 expected. (1): {",
+                                         "uid":  "Ei_mBxoOS"
+                                     },
+                                     {
+                                         "error":  "Invalid object passed in, \u0027:\u0027 or \u0027}\u0027 expected. (1): {",
+                                         "uid":  "tVuROaMY4"
+                                     },
+                                     {
+                                         "error":  "Invalid object passed in, \u0027:\u0027 or \u0027}\u0027 expected. (1): {",
+                                         "uid":  "F3ZGWkxrv"
+                                     },
+                                     {
+                                         "error":  "Invalid object passed in, \u0027:\u0027 or \u0027}\u0027 expected. (1): {",
+                                         "uid":  "lGaDFWPF2"
+                                     },
+                                     {
+                                         "error":  "Invalid object passed in, \u0027:\u0027 or \u0027}\u0027 expected. (1): {",
+                                         "uid":  "FL9kNrNTG"
+                                     },
+                                     {
+                                         "error":  "Invalid object passed in, \u0027:\u0027 or \u0027}\u0027 expected. (1): {",
+                                         "uid":  "HNq12D79T"
+                                     },
+                                     {
+                                         "error":  "Invalid object passed in, \u0027:\u0027 or \u0027}\u0027 expected. (1): {",
+                                         "uid":  "gmsMAMaei"
+                                     },
+                                     {
+                                         "error":  "Invalid object passed in, \u0027:\u0027 or \u0027}\u0027 expected. (1): {",
+                                         "uid":  "InY5wz1Pd"
+                                     },
+                                     {
+                                         "error":  "Invalid object passed in, \u0027:\u0027 or \u0027}\u0027 expected. (1): {",
+                                         "uid":  "XA3LmE590"
+                                     },
+                                     {
+                                         "error":  "Invalid object passed in, \u0027:\u0027 or \u0027}\u0027 expected. (1): {",
+                                         "uid":  "SPukxOYVw"
+                                     },
+                                     {
+                                         "error":  "Invalid object passed in, \u0027:\u0027 or \u0027}\u0027 expected. (1): {",
+                                         "uid":  "Km_cPjnQT"
+                                     },
+                                     {
+                                         "error":  "Invalid object passed in, \u0027:\u0027 or \u0027}\u0027 expected. (1): {",
+                                         "uid":  "sjSeVYnry"
+                                     },
+                                     {
+                                         "error":  "Invalid object passed in, \u0027:\u0027 or \u0027}\u0027 expected. (1): {",
+                                         "uid":  "Y4hPCcfv2"
+                                     },
+                                     {
+                                         "error":  "Invalid object passed in, \u0027:\u0027 or \u0027}\u0027 expected. (1): {",
+                                         "uid":  "Y_lTrkGGx"
+                                     },
+                                     {
+                                         "error":  "Invalid object passed in, \u0027:\u0027 or \u0027}\u0027 expected. (1): {",
+                                         "uid":  "iHgJipBgG"
+                                     },
+                                     {
+                                         "error":  "Invalid object passed in, \u0027:\u0027 or \u0027}\u0027 expected. (1): {",
+                                         "uid":  "xjCxChAYX"
+                                     },
+                                     {
+                                         "error":  "Invalid object passed in, \u0027:\u0027 or \u0027}\u0027 expected. (1): {",
+                                         "uid":  "eUgnOWSAn"
+                                     },
+                                     {
+                                         "error":  "Invalid object passed in, \u0027:\u0027 or \u0027}\u0027 expected. (1): {",
+                                         "uid":  "ZL-24jbSg"
+                                     },
+                                     {
+                                         "error":  "Invalid object passed in, \u0027:\u0027 or \u0027}\u0027 expected. (1): {",
+                                         "uid":  "CbxJq89Ie"
+                                     }
+                                 ],
+    "failedVerifications":  20,
+    "totalCandidates":  557,
+    "successfulVerifications":  0,
+    "sampleSize":  20,
+    "verificationTime":  "2026-06-21T06:15:23.0352514Z",
+    "totalFailed":  0
+}

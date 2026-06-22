@@ -1,0 +1,116 @@
+{
+  "verificationTime": "2026-06-21T06:18:23.198Z",
+  "totalCandidates": 557,
+  "totalUpdated": 557,
+  "totalAlreadyPrefixed": 0,
+  "totalFailed": 0,
+  "sampleSize": 20,
+  "successfulVerifications": 14,
+  "failedVerifications": 6,
+  "verificationSuccess": false,
+  "expectedTestBlockCount": 559,
+  "sampledBlocksVerified": [
+    {
+      "uid": "oyOlnQ5Z4",
+      "text": "Test:: When I click on all the tabs then I must be able to navigate between three tabs and all data ",
+      "verified": true
+    },
+    {
+      "uid": "jjGUKPFMw",
+      "text": "Test:: When I answer any one question in Musculoskeletal History, all remaining questions must becom",
+      "verified": true
+    },
+    {
+      "uid": "NrNQ2DYnG",
+      "text": "Test:: When I click the X symbol in the search bar, the search must reset and display all products. ",
+      "verified": true
+    },
+    {
+      "uid": "bx5YkKdIp",
+      "text": "Test:: When I send a grant request, it must be visible as pending approval. #Manual",
+      "verified": true
+    },
+    {
+      "uid": "JMPqqgAxQ",
+      "text": "Test:: When I filter by status, only appointments matching the selected status must be displayed. #M",
+      "verified": true
+    },
+    {
+      "uid": "_yuFFVz8s",
+      "text": "Test:: When I modify a one-way access request as the requester, the changes must be reflected correc",
+      "verified": true
+    },
+    {
+      "uid": "s-4vIxWQm",
+      "text": "Test:: When I unlink profiles from the Linked Profiles section, the action must complete successfull",
+      "verified": true
+    },
+    {
+      "uid": "ZqC1nCXJt",
+      "text": "Test:: When I add or remove sides while editing a special test, the changes must be saved correctly.",
+      "verified": true
+    },
+    {
+      "uid": "xpVZWom5P",
+      "text": "Test:: When a provider works in multiple facilities and overlapping time slots are assigned across f",
+      "verified": true
+    },
+    {
+      "uid": "VHO9qle0M",
+      "text": "Test:: When I modify an access request and create a new entry, the modification must be recorded cor",
+      "verified": true
+    },
+    {
+      "uid": "Km_cPjnQT",
+      "text": "Test:: When I log in as a user and the message has passed its configured expiration period, then the",
+      "verified": true
+    },
+    {
+      "uid": "ntKhaZVna",
+      "text": "Test:: When I create a receipt for an appointment with completed status and receipt creation date is",
+      "verified": true
+    },
+    {
+      "uid": "S3I441mkR",
+      "text": "Test:: When I edit the cancellation email template again and cancel another appointment, then the ca",
+      "verified": true
+    },
+    {
+      "uid": "mjTJlXeyr",
+      "text": "Test:: When I search for a product using the product name, the matching products must be displayed. ",
+      "verified": true
+    }
+  ],
+  "failedBlockVerifications": [
+    {
+      "uid": "Cx9suGpSP",
+      "text": "**Test::**  When I filter by \"Medical Record\" in the Documents tab, all documents under medical reco",
+      "error": "Does not start with 'Test::'"
+    },
+    {
+      "uid": "5MNG77Z-O",
+      "text": "When I check the \"Do not send onboarding email\" checkbox and proceed, no onboarding email must be se",
+      "error": "Does not start with 'Test::'"
+    },
+    {
+      "uid": "se9ucZMlc",
+      "text": "When a facility is selected, the \"New Clients\" card must only count new clients whose first complete",
+      "error": "Does not start with 'Test::'"
+    },
+    {
+      "uid": "3suYsIBXa",
+      "text": "**Test::  **When I select \"Add Documents\" from the \"Select Action\" dropdown, I must be redirected to",
+      "error": "Does not start with 'Test::'"
+    },
+    {
+      "uid": "WYn2llSBa",
+      "text": "When I click on \"Upload Signature\" button and upload \"PNG or JPG\" files and click on sign then the s",
+      "error": "Does not start with 'Test::'"
+    },
+    {
+      "uid": "FBfP7hf9J",
+      "text": "When a referred client’s first appointment is cancelled, no-show, or pending, the \"Referred Clients\"",
+      "error": "Does not start with 'Test::'"
+    }
+  ]
+}

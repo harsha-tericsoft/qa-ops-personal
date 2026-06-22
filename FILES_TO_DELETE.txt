@@ -1,0 +1,156 @@
+COMPLETE LIST OF FILES TO DELETE (89 total)
+═══════════════════════════════════════════════════════════════════════════════
+
+VERIFICATION SCRIPTS (19 files) - Delete all verify-*.js
+───────────────────────────────────────────────────────────
+verify-aggregation.js
+verify-all.js
+verify-configure-api.js
+verify-cycles.js
+verify-dashboard-metrics.js
+verify-dashboard-ui.js
+verify-depth-fix.js
+verify-execution-cycles.js
+verify-final.js
+verify-fresh-project.js
+verify-import-fresh.js
+verify-migration.js
+verify-phase2.js
+verify-pool-status.js
+verify-project-nodes.js
+verify-specific-cycle.js
+verify-step-1.js
+verify-step-3-sync.js
+verify-testcase-data.js
+
+CHECK/AUDIT/CREATE/DIAGNOSE SCRIPTS (28+ files)
+───────────────────────────────────────────────────────────
+analyze-roam-structure.js
+api-verify-cycles.js
+architecture-analysis.js
+audit-all-repositories.js
+browser-verification.js
+check-data.js
+check-extraction.js
+check-kinergy-id.js
+check-new-project.js
+check-repo-association.js
+check-repo.js
+check-sync-status.js
+check-synced-project.js
+check-test-case-nodes.js
+cleanup-db.js
+create-audit-report.js
+create-fresh-cycle.js
+create-suite-cycle.js
+diagnose-import.js
+e2e-file-import.js
+e2e-verification.js
+final-dashboard.js
+final-dashboard-verification.js
+final-e2e-workflow.js
+full-diagnosis.js
+get-counts.js
+investigate-hierarchy.js
+inspect-repo-hierarchy.js
+list-projects.js
+prove-fix.js
+release-verification.js
+show-hierarchy.js
+test-clean-env.js
+test-roam-connection.js
+trace-pipeline-simple.js
+trace-sync-pipeline.js
+
+POWERSHELL SCRIPTS (4 files)
+───────────────────────────────────────────────────────────
+migrate-test-cases-correct.ps1
+migrate-test-cases-v2.js
+migrate-test-cases.js
+migrate-test-cases.ps1
+verify-corrected.ps1
+verify-final.ps1
+verify-migration.ps1
+
+MIGRATION SCRIPTS (2 files)
+───────────────────────────────────────────────────────────
+migrate-test-cases-v2.js
+migrate-test-cases.js
+
+REPORT FILES - JSON (11 files)
+───────────────────────────────────────────────────────────
+audit-report.json
+migration-analysis-report.json
+migration-results-corrected.json
+migration-results.json
+roam-page-analysis.json
+roam-page-audit.json
+verification-report-corrected.json
+verification-report-final.json
+verification-report.json
+
+CSV REPORTS (1 file)
+───────────────────────────────────────────────────────────
+migration-analysis-report.csv
+
+INVESTIGATION DOCUMENTATION (5 files)
+───────────────────────────────────────────────────────────
+CLEAN_ENV_TEST_RESULTS.md
+CONNECTION_POOL_EVIDENCE.md
+DIAGNOSTIC_REPORT.md
+MCP_INVESTIGATION_REPORT.md
+TECHNICAL_INVESTIGATION_COMPLETE.md
+
+CONNECTION POOL REPORTS (1 file - already counted above)
+───────────────────────────────────────────────────────────
+connection-pool-investigation.md
+
+SCREENSHOTS (14 files)
+───────────────────────────────────────────────────────────
+cycles-page-working.png
+fresh-project-main.png
+fresh-project-repos.png
+screenshot-project-page.png
+screenshot-repo-final.png
+screenshot-repo-nodes.png
+screenshot-repository-2.png
+screenshot-repository-3.png
+screenshot-repository.png
+screenshot-test-suites.png
+verify-cycles-page-alt.png
+verify-cycles-page.png
+verify-cycles-page-working.png
+fresh-project-final-evidence.js
+
+SUPPORTING SCRIPTS (2 files)
+───────────────────────────────────────────────────────────
+fresh-project-suite-cycle.js
+fresh-project-final-evidence.js
+
+LOG FILES (1 file)
+───────────────────────────────────────────────────────────
+dev-server-clean.log
+
+MIGRATION SUMMARY (1 file)
+───────────────────────────────────────────────────────────
+MIGRATION_SUMMARY.md
+
+CLEANUP AUDIT REPORTS (1 file - these are created now)
+───────────────────────────────────────────────────────────
+CLEANUP_AUDIT.md
+
+OTHER FILES (1 file)
+───────────────────────────────────────────────────────────
+Available (directory?)
+
+═══════════════════════════════════════════════════════════════════════════════
+TOTAL: 89 files to delete
+
+All these files are:
+✓ Untracked (not in git)
+✓ Not staged for commit
+✓ Investigation/verification artifacts only
+✓ Safe to delete without affecting production code
+✓ Do not contain any production logic or configuration
+
+═══════════════════════════════════════════════════════════════════════════════

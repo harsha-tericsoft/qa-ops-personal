@@ -18,7 +18,7 @@ interface TestSuite {
 interface TestRun {
   id: string
   testCaseId: string
-  testCase: { id: string; name: string }
+  testCase: { id: string; title: string }
   status: 'PASS' | 'FAIL' | 'BLOCKED' | 'NOT_EXECUTED'
   executedAt?: string
 }

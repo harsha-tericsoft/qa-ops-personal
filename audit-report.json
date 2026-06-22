@@ -1,0 +1,336 @@
+{
+  "timestamp": "2026-06-21T18:30:51.391Z",
+  "graphName": "Project_Kinergy",
+  "rootPage": "TestSuite : Kinergy",
+  "totalBlocksInGraph": 1336,
+  "prefixPatternCounts": {
+    "Test::": 2,
+    "Test:: Test::": 0,
+    "Test:": 1,
+    "Test: Test:": 0,
+    "Other": 1333
+  },
+  "statistics": {
+    "correctPrefixCount": 2,
+    "duplicatePrefixCount": 0,
+    "wrongFormatCount": 1,
+    "unprefixedCount": 1333,
+    "correctPercentage": "0.15",
+    "duplicateErrorRate": "0.00"
+  },
+  "examples": {
+    "duplicatePrefixes": [],
+    "duplicatePrefixCount": 0,
+    "wrongFormatTestColon": [
+      {
+        "uid": "ltFrb1l8U",
+        "text": "Test:",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Admin > System Settings > Other Settings > Screen 1 > Test Cases > Waiver > Test:"
+      }
+    ],
+    "wrongFormatCount": 1,
+    "nonPrefixedUnderTestCases": [
+      {
+        "uid": "iXsNX118g",
+        "text": "When I enter a valid email address in the email field, it must be accepted. #Manual",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Login > Screen 1 > Test Cases > When I enter a valid email address in the email field, it must be accepted. #Manual",
+        "parentSection": "Test Cases"
+      },
+      {
+        "uid": "y_G87XxKn",
+        "text": "When I enter an invalid email format in the email field, an error message must be displayed. #Manual",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Login > Screen 1 > Test Cases > When I enter an invalid email format in the email field, an error message must be displayed. #Manual",
+        "parentSection": "Test Cases"
+      },
+      {
+        "uid": "FL9kNrNTG",
+        "text": "When I enter a valid password in the password field, it must be accepted. #Manual",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Login > Screen 1 > Test Cases > When I enter a valid password in the password field, it must be accepted. #Manual",
+        "parentSection": "Test Cases"
+      },
+      {
+        "uid": "Sff6V9xcG",
+        "text": "When I enter an invalid password (e.g., less than 8 characters, or missing required elements), it must be rejected. #Man",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Login > Screen 1 > Test Cases > When I enter an invalid password (e.g., less than 8 characters, or missing required elements), it must be rejected. #Manual",
+        "parentSection": "Test Cases"
+      },
+      {
+        "uid": "mcgynluqf",
+        "text": "When I use the \"Forgot Password\" flow with a valid OTP, the system must allow me to reset the password. #Manual",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Login > Screen 1 > Screen 2 > Test cases > When I use the \"Forgot Password\" flow with a valid OTP, the system must allow me to reset the password. #Manual",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "MVLmMHMab",
+        "text": "When I enter an invalid OTP during the \"Forgot Password\" process, the system must show an error message such as \"Invalid",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Login > Screen 1 > Screen 2 > Test cases > When I enter an invalid OTP during the \"Forgot Password\" process, the system must show an error message such as \"Invalid OTP. Please try again\" and I must not be redirected to the password reset page. #Manual",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "1wQIhRKOE",
+        "text": "When I enter an OTP after the 5-minute timer has expired, the system must show an error message such as \"OTP has expired",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Login > Screen 1 > Screen 2 > Test cases > When I enter an OTP after the 5-minute timer has expired, the system must show an error message such as \"OTP has expired. Please request a new one\" and I must not be redirected to the password reset page. #Manual",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "tQXf5Eajr",
+        "text": "When I enter a blank OTP, the system must show an error message such as \"OTP is required\". #Manual",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Login > Screen 1 > Screen 2 > Test cases > When I enter a blank OTP, the system must show an error message such as \"OTP is required\". #Manual",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "1aNhnkzj4",
+        "text": "When I click on \"Resend OTP\" after the 2-minute timer or original one expires or becomes invalid, the system must send a",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Login > Screen 1 > Screen 2 > Test cases > When I click on \"Resend OTP\" after the 2-minute timer or original one expires or becomes invalid, the system must send a new OTP to the registered email address and the new OTP must allow me to proceed to the password reset page. #Manual",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "M7r7vKrUn",
+        "text": "When I enter multiple invalid OTPs consecutively, after a predefined number of attempts the system must display an error",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Login > Screen 1 > Screen 2 > Test cases > When I enter multiple invalid OTPs consecutively, after a predefined number of attempts the system must display an error such as \"Too many invalid attempts. Please request a new OTP\" and I must be prompted to click \"Resend OTP\" or restart the process. #Manual",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "WBOm8hd-W",
+        "text": "When I request an OTP using an unregistered email address, the system must show an error message and no OTP must be sent",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Login > Screen 1 > Screen 2 > Test cases > When I request an OTP using an unregistered email address, the system must show an error message and no OTP must be sent. #Manual",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "HodfhkeO2",
+        "text": "When I enter a valid OTP received on the registered email and click **Submit**, I must be successfully logged in and red",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Login > Screen 1 > Screen 3 > Test cases > When I enter a valid OTP received on the registered email and click **Submit**, I must be successfully logged in and redirected to the dashboard. #Manual",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "sLZOM3xKT",
+        "text": "When I enter an invalid OTP and click **Submit**, the system must show an error such as *\"Invalid OTP\"* and I must not b",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Login > Screen 1 > Screen 3 > Test cases > When I enter an invalid OTP and click **Submit**, the system must show an error such as *\"Invalid OTP\"* and I must not be logged in. #Manual",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "lmzfc9o4n",
+        "text": "When I leave the OTP fields blank and click **Submit**, the system must show a validation error such as *\"OTP is require",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Login > Screen 1 > Screen 3 > Test cases > When I leave the OTP fields blank and click **Submit**, the system must show a validation error such as *\"OTP is required\"*. #Manual",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "6Ce9mjkkz",
+        "text": "When I enter a valid OTP after the timer ( 5 minutes) has expired, the system must reject it and display an error such a",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Login > Screen 1 > Screen 3 > Test cases > When I enter a valid OTP after the timer ( 5 minutes) has expired, the system must reject it and display an error such as *\"OTP expired. Please request a new one\"*. #Manual",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "1vlWAhn3P",
+        "text": "When I click **Resend OTP**, a new OTP must be sent to my registered email and only the latest OTP must be valid. #Manua",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Login > Screen 1 > Screen 3 > Test cases > When I click **Resend OTP**, a new OTP must be sent to my registered email and only the latest OTP must be valid. #Manual",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "d-fxPSFch",
+        "text": "When I try to log in without OTP verification (e.g., by refreshing or going back in the browser), the system must preven",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Login > Screen 1 > Screen 3 > Test cases > When I try to log in without OTP verification (e.g., by refreshing or going back in the browser), the system must prevent access and redirect me to the OTP page. #Manual",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "0fd9PzjGr",
+        "text": "When I open the Financial Summary graph, by default the current year must be selected in the year dropdown if data exist",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Financial Summary Graph > Screen 1: > Test cases > When I open the Financial Summary graph, by default the current year must be selected in the year dropdown if data exists for the current year, otherwise the most recent year with data must be selected.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "sEQBrXznb",
+        "text": "When I click the year dropdown, all years that have invoice data must be shown (e.g., if invoices exist from 2022–2025, ",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Financial Summary Graph > Screen 1: > Test cases > When I click the year dropdown, all years that have invoice data must be shown (e.g., if invoices exist from 2022–2025, the dropdown must show 2022, 2023, 2024, 2025).",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "DlnV9sW1w",
+        "text": "When I create an invoice for an appointment on **Dec 20, 2024** with invoice creation date **Dec 20, 2024** and do not p",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Financial Summary Graph > Screen 1: > Test cases > When I create an invoice for an appointment on **Dec 20, 2024** with invoice creation date **Dec 20, 2024** and do not pay it, the full amount must be shown in the **Unpaid** bar of 2024.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "_el_z6VD-",
+        "text": "When I pay that same invoice in **Jan 2025**, the **Paid** bar of 2024 must increase by that amount, and the **Unpaid** ",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Financial Summary Graph > Screen 1: > Test cases > When I pay that same invoice in **Jan 2025**, the **Paid** bar of 2024 must increase by that amount, and the **Unpaid** bar of 2024 must decrease accordingly, because the invoice creation date belongs to 2024.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "NvsCkcxyB",
+        "text": "When I create an invoice on **Dec 31, 2024** with amount $200 and move it to **Bad Debt** in **Feb 2025**, the $200 must",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Financial Summary Graph > Screen 1: > Test cases > When I create an invoice on **Dec 31, 2024** with amount $200 and move it to **Bad Debt** in **Feb 2025**, the $200 must still be shown in the **Bad Debt** bar of 2024, not 2025, because the invoice creation date is Dec 2024.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "opnzeSJR-",
+        "text": "When I create an invoice on **Jan 15, 2025** with amount $300 and leave it unpaid, the $300 must be reflected in the **U",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Financial Summary Graph > Screen 1: > Test cases > When I create an invoice on **Jan 15, 2025** with amount $300 and leave it unpaid, the $300 must be reflected in the **Unpaid** bar of 2025.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "IS9IYnj1W",
+        "text": "When I later pay that **Jan 15, 2025** invoice in **March 2025**, the $300 must move from the **Unpaid** bar of 2025 int",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Financial Summary Graph > Screen 1: > Test cases > When I later pay that **Jan 15, 2025** invoice in **March 2025**, the $300 must move from the **Unpaid** bar of 2025 into the **Paid** bar of 2025.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "7oYVb2oOB",
+        "text": "When I create an invoice on **Nov 2023** with $500 and never pay it, the $500 must remain in the **Unpaid** bar of 2023 ",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Financial Summary Graph > Screen 1: > Test cases > When I create an invoice on **Nov 2023** with $500 and never pay it, the $500 must remain in the **Unpaid** bar of 2023 even when I view the graph in later years.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "ydCi-pmRB",
+        "text": "When I move that same **Nov 2023** invoice of $500 to **Bad Debt** in **2024**, the $500 must be removed from the **Unpa",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Financial Summary Graph > Screen 1: > Test cases > When I move that same **Nov 2023** invoice of $500 to **Bad Debt** in **2024**, the $500 must be removed from the **Unpaid** bar of 2023 and added to the **Bad Debt** bar of 2023.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "NdnKit1vr",
+        "text": "When I move a Bad Debt invoice back to Billing in the same year, its amount must be moved out of the **Bad Debt** bar an",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Financial Summary Graph > Screen 1: > Test cases > When I move a Bad Debt invoice back to Billing in the same year, its amount must be moved out of the **Bad Debt** bar and placed back into **Unpaid** (or **Paid** if it was already paid).",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "XwUEOGAiP",
+        "text": "When I view the bar graph for **2025**, only invoices with **creation dates in 2025** must contribute to Paid, Unpaid, a",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Financial Summary Graph > Screen 1: > Test cases > When I view the bar graph for **2025**, only invoices with **creation dates in 2025** must contribute to Paid, Unpaid, and Bad Debt amounts.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "2C21ZEX5z",
+        "text": "When I sum the amounts across **Paid + Unpaid + Bad Debt bars** for any given year, the total must equal the total invoi",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Financial Summary Graph > Screen 1: > Test cases > When I sum the amounts across **Paid + Unpaid + Bad Debt bars** for any given year, the total must equal the total invoice amount created in that year.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "-S4zqiSNN",
+        "text": "When no invoices exist for a particular year, the year must not be shown in the dropdown, and no bars must be displayed ",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Financial Summary Graph > Screen 1: > Test cases > When no invoices exist for a particular year, the year must not be shown in the dropdown, and no bars must be displayed for that year.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "y6WVo4tX5",
+        "text": "When I hover over the Paid, Unpaid, or Bad Debt bar for any month, then a tooltip must be displayed showing the respecti",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Financial Summary Graph > Screen 1: > Test cases > When I hover over the Paid, Unpaid, or Bad Debt bar for any month, then a tooltip must be displayed showing the respective amount for that category.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "I0RE4M--g",
+        "text": "When I view the Revenue Source Analytics pie chart by default, it must show YTD revenue percentage split between appoint",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Revenue Source Analytics Graph > Screen 1: > Test cases > When I view the Revenue Source Analytics pie chart by default, it must show YTD revenue percentage split between appointments and products, calculated using receipt creation date.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "UMgnEpr7D",
+        "text": "When I complete an appointment, generate a receipt for it, and the receipt creation date falls in the selected date rang",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Revenue Source Analytics Graph > Screen 1: > Test cases > When I complete an appointment, generate a receipt for it, and the receipt creation date falls in the selected date range, the amount must be included under Appointment Revenue.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "Ei_mBxoOS",
+        "text": "When I create a receipt for an appointment that is not completed, the amount must not be included in Appointment Revenue",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Revenue Source Analytics Graph > Screen 1: > Test cases > When I create a receipt for an appointment that is not completed, the amount must not be included in Appointment Revenue.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "ntKhaZVna",
+        "text": "When I create a receipt for an appointment with completed status and receipt creation date is today, the amount must be ",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Revenue Source Analytics Graph > Screen 1: > Test cases > When I create a receipt for an appointment with completed status and receipt creation date is today, the amount must be included under Appointment Revenue when I apply the Today filter.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "9gAULll5l",
+        "text": "When an appointment was scheduled for October 1 but its receipt was created on September 25, if I apply the Today filter",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Revenue Source Analytics Graph > Screen 1: > Test cases > When an appointment was scheduled for October 1 but its receipt was created on September 25, if I apply the Today filter on September 25, the amount must appear under Appointment Revenue.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "JvP5UVwX8",
+        "text": "When I apply the Last Month filter on October 1, the same appointment must still appear under Appointment Revenue for Se",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Revenue Source Analytics Graph > Screen 1: > Test cases > When I apply the Last Month filter on October 1, the same appointment must still appear under Appointment Revenue for September because its receipt was created in September.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "PZBy6gtJN",
+        "text": "When I apply the Today filter on October 1, that appointment must not be included because the receipt was created in Sep",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Revenue Source Analytics Graph > Screen 1: > Test cases > When I apply the Today filter on October 1, that appointment must not be included because the receipt was created in September.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "gPFJpXMTt",
+        "text": "When I create a receipt for a product and its receipt creation date falls in the selected date range, the amount must be",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Revenue Source Analytics Graph > Screen 1: > Test cases > When I create a receipt for a product and its receipt creation date falls in the selected date range, the amount must be included under Product Revenue.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "vqZoaGvxU",
+        "text": "When I create a receipt for a product today, the amount must be included under Product Revenue when I apply the Today fi",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Revenue Source Analytics Graph > Screen 1: > Test cases > When I create a receipt for a product today, the amount must be included under Product Revenue when I apply the Today filter.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "STzzhspAx",
+        "text": "When I create a receipt for a product in September and apply the Last Month filter on October 1, the amount must be incl",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Revenue Source Analytics Graph > Screen 1: > Test cases > When I create a receipt for a product in September and apply the Last Month filter on October 1, the amount must be included under Product Revenue for September.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "4zSomOpzC",
+        "text": "When I generate invoices for products or appointments but do not generate receipts, no revenue must be shown in the pie ",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Revenue Source Analytics Graph > Screen 1: > Test cases > When I generate invoices for products or appointments but do not generate receipts, no revenue must be shown in the pie chart, because only receipt creation date is considered.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "qADzLKl-V",
+        "text": "When I generate direct receipts for products, those amounts must be reflected in Product Revenue as per the receipt crea",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Revenue Source Analytics Graph > Screen 1: > Test cases > When I generate direct receipts for products, those amounts must be reflected in Product Revenue as per the receipt creation date.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "qYnJ52iQ7",
+        "text": "When I generate direct receipts for completed appointments, those amounts must be reflected in Appointment Revenue as pe",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Revenue Source Analytics Graph > Screen 1: > Test cases > When I generate direct receipts for completed appointments, those amounts must be reflected in Appointment Revenue as per the receipt creation date.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "7DRqfMRBJ",
+        "text": "When I generate receipts across multiple dates, the pie chart must split amounts correctly into their respective date ra",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Revenue Source Analytics Graph > Screen 1: > Test cases > When I generate receipts across multiple dates, the pie chart must split amounts correctly into their respective date ranges when I apply filters like Today, Last Week, Last Month, or Prior Year.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "ao0FwhH2_",
+        "text": "When I apply the Facility filter, the pie chart must show only Appointment Revenue and Product Revenue generated by rece",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Revenue Source Analytics Graph > Screen 1: > Test cases > When I apply the Facility filter, the pie chart must show only Appointment Revenue and Product Revenue generated by receipts linked to that facility.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "jFOog5zE6",
+        "text": "When I apply the Provider filter, the pie chart must show only Appointment Revenue generated by receipts for completed a",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Revenue Source Analytics Graph > Screen 1: > Test cases > When I apply the Provider filter, the pie chart must show only Appointment Revenue generated by receipts for completed appointments linked to that provider.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "52GvPbdxL",
+        "text": "When I apply a combination of Facility and Provider filters, the pie chart must reflect only the Appointment Revenue and",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Revenue Source Analytics Graph > Screen 1: > Test cases > When I apply a combination of Facility and Provider filters, the pie chart must reflect only the Appointment Revenue and Product Revenue for the selected facility and provider.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "VW_uobG_L",
+        "text": "When I validate the pie chart percentages, the total Appointment Revenue + Product Revenue must equal 100%.",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Revenue Source Analytics Graph > Screen 1: > Test cases > When I validate the pie chart percentages, the total Appointment Revenue + Product Revenue must equal 100%.",
+        "parentSection": "Test cases"
+      },
+      {
+        "uid": "_v7Gx4a3Z",
+        "text": "When no receipts exist in the selected date range, both Appointment Revenue and Product Revenue must be zero in the pie ",
+        "path": "CodeGen/TestSuite:: for p/Client/Kinergy/Kinergy > ### TestType/Web > Admin Portal > Dashboard > Dashboard Analytics > Revenue Source Analytics Graph > Screen 1: > Test cases > When no receipts exist in the selected date range, both Appointment Revenue and Product Revenue must be zero in the pie chart.",
+        "parentSection": "Test cases"
+      }
+    ],
+    "nonPrefixedCount": 50
+  }
+}
