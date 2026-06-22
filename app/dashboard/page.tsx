@@ -63,13 +63,13 @@ function DashboardContent() {
       const response = await fetch(`/api/dashboard/summary?projectId=${projectId}`)
       if (response.ok) {
         const summaryData = await response.json()
-        // Transform to legacy format
+        // Transform to legacy format - now using actual API values
         const data: DashboardMetrics = {
           totalTests: summaryData.totalTests,
           repositoryTests: summaryData.totalTests,
-          testSuites: 0,
-          tagCount: 0,
-          activeCycles: 0,
+          testSuites: summaryData.testSuites || 0,
+          tagCount: summaryData.tagCount || 0,
+          activeCycles: summaryData.activeCycles || 0,
           passRate: summaryData.totalTests > 0 ? summaryData.passRate : null,
           failRate: summaryData.totalTests > 0 ? ((summaryData.failed / summaryData.totalTests) * 100) : null,
           blockedRate: summaryData.totalTests > 0 ? ((summaryData.blocked / summaryData.totalTests) * 100) : null,
@@ -82,7 +82,7 @@ function DashboardContent() {
           hasExecutionData: (summaryData.passed + summaryData.failed) > 0,
           roamConfig: {
             isConfigured: true,
-            lastSyncAt: new Date(),
+            lastSyncAt: new Date(summaryData.timestamp),
             lastSyncStatus: 'SUCCESS',
           },
           executionCycles: summaryData.executionCycles,

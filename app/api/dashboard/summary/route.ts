@@ -75,6 +75,26 @@ export async function GET(request: NextRequest) {
     const passRate = roamExecuted > 0 ? Math.round((passed / roamExecuted) * 100) : 0
     const executionRate = totalTests > 0 ? Math.round((roamExecuted / totalTests) * 100) : 0
 
+    // Query actual metrics from database
+    const testSuitesCount = await prisma.testSuite.count({
+      where: { projectId },
+    })
+
+    const activeCyclesCount = await prisma.executionCycle.count({
+      where: {
+        projectId,
+        status: 'IN_PROGRESS',
+      },
+    })
+
+    const distinctTagsCount = (
+      await prisma.tag.findMany({
+        where: { projectId },
+        distinct: ['name'],
+        select: { name: true },
+      })
+    ).length
+
     return NextResponse.json({
       totalTests,
       passed,
@@ -84,6 +104,9 @@ export async function GET(request: NextRequest) {
       notRun,
       passRate,
       executionRate,
+      testSuites: testSuitesCount,
+      tagCount: distinctTagsCount,
+      activeCycles: activeCyclesCount,
       // Execution cycle metrics
       executionCycles: {
         total: totalExecutionTests,
