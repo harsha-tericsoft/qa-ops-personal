@@ -15,6 +15,10 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
         testRuns: {
           include: {
             testCase: true,
+            comments: {
+              orderBy: { createdAt: 'asc' },
+            },
+            jiraLinks: true,
           },
         },
       },
@@ -93,6 +97,10 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         testRuns: {
           include: {
             testCase: true,
+            comments: {
+              orderBy: { createdAt: 'asc' },
+            },
+            jiraLinks: true,
           },
         },
       },

@@ -58,7 +58,15 @@ export async function createCycle(input: CreateCycleInput) {
   const fullCycle = await prisma.executionCycle.findUniqueOrThrow({
     where: { id: cycle.id },
     include: {
-      testRuns: { include: { testCase: true } },
+      testRuns: {
+        include: {
+          testCase: true,
+          comments: {
+            orderBy: { createdAt: 'asc' },
+          },
+          jiraLinks: true,
+        },
+      },
       versions: true,
     },
   })
@@ -69,14 +77,34 @@ export async function createCycle(input: CreateCycleInput) {
 export async function getCycle(cycleId: string) {
   return prisma.executionCycle.findUnique({
     where: { id: cycleId },
-    include: { testRuns: { include: { testCase: true } } },
+    include: {
+      testRuns: {
+        include: {
+          testCase: true,
+          comments: {
+            orderBy: { createdAt: 'asc' },
+          },
+          jiraLinks: true,
+        },
+      },
+    },
   })
 }
 
 export async function listCycles(projectId: string) {
   return prisma.executionCycle.findMany({
     where: { projectId },
-    include: { testRuns: { include: { testCase: true } } },
+    include: {
+      testRuns: {
+        include: {
+          testCase: true,
+          comments: {
+            orderBy: { createdAt: 'asc' },
+          },
+          jiraLinks: true,
+        },
+      },
+    },
     orderBy: { createdAt: 'desc' },
   })
 }
