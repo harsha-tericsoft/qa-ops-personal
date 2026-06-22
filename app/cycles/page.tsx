@@ -124,6 +124,12 @@ function ExecutionCyclesContent() {
     }
   }, [currentProjectId])
 
+  useEffect(() => {
+    if (selectedCycleId) {
+      fetchVersions(selectedCycleId)
+    }
+  }, [selectedCycleId])
+
   const fetchCycles = async () => {
     setLoading(true)
     try {
@@ -222,8 +228,18 @@ function ExecutionCyclesContent() {
         const newVersion = await response.json()
         setBuildVersion('')
         setReleaseNotes('')
-        setSelectedVersionId(newVersion.id)
-        await fetchVersions(selectedCycleId)
+        // Fetch versions first to ensure new version is in the list
+        const versionsResponse = await fetch(`/api/execution-cycles/${selectedCycleId}/versions`)
+        if (versionsResponse.ok) {
+          const allVersions = await versionsResponse.json()
+          setVersions(Array.isArray(allVersions) ? allVersions : [])
+          // NOW set the selected version so it's found in the updated list
+          setSelectedVersionId(newVersion.id)
+        } else {
+          // Fallback to old fetch method if direct fetch fails
+          await fetchVersions(selectedCycleId)
+          setSelectedVersionId(newVersion.id)
+        }
         setLastSavedAt(new Date())
         showToast('Version created - Active version auto-selected', 'success')
 
@@ -430,6 +446,48 @@ function ExecutionCyclesContent() {
             ← Back to Cycles
           </button>
 
+          {/* Cycle and Version Selectors */}
+          <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Select Cycle</label>
+                <select
+                  value={selectedCycleId || ''}
+                  onChange={(e) => {
+                    setSelectedCycleId(e.target.value)
+                    setSelectedVersionId(null)
+                    setVersions([])
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">-- Select a cycle --</option>
+                  {cycles.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {versions.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Select Version</label>
+                  <select
+                    value={selectedVersionId || ''}
+                    onChange={(e) => setSelectedVersionId(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">-- Select a version --</option>
+                    {versions.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        v{v.versionNumber}: {v.buildVersion} ({v.status})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+          </div>
+
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{selectedCycle.name}</h1>
           {selectedCycle.description && <p className="text-gray-600 mb-4">{selectedCycle.description}</p>}
 
@@ -459,7 +517,7 @@ function ExecutionCyclesContent() {
                     value={buildVersion}
                     onChange={(e) => setBuildVersion(e.target.value)}
                     placeholder="e.g., 2.4.3"
-                    className="w-full md:w-96 px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full md:w-96 px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-500 bg-white"
                   />
                 </div>
                 <div>
@@ -471,7 +529,7 @@ function ExecutionCyclesContent() {
                     onChange={(e) => setReleaseNotes(e.target.value)}
                     placeholder="Document any release notes or changes..."
                     rows={2}
-                    className="w-full px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-500 bg-white"
                   />
                 </div>
                 <div className="flex gap-2">
