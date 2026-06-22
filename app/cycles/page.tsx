@@ -98,6 +98,8 @@ function ExecutionCyclesContent() {
   const [isSavingVersion, setIsSavingVersion] = useState(false)
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
   const [autoSaveTimeout, setAutoSaveTimeout] = useState<NodeJS.Timeout | null>(null)
+  const [expandedTestRunIds, setExpandedTestRunIds] = useState<Set<string>>(new Set())
+  const [loadingTestRunIds, setLoadingTestRunIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -578,6 +580,71 @@ function ExecutionCyclesContent() {
     }
   }
 
+  const handleToggleTestRunDetails = async (runId: string) => {
+    if (expandedTestRunIds.has(runId)) {
+      setExpandedTestRunIds((prev) => {
+        const next = new Set(prev)
+        next.delete(runId)
+        return next
+      })
+      return
+    }
+
+    setLoadingTestRunIds((prev) => new Set([...prev, runId]))
+
+    try {
+      const response = await fetch(`/api/test-runs/${runId}/details`)
+      if (response.ok) {
+        const fullTestRun = await response.json()
+
+        const updatedVersions = versions.map((v) => ({
+          ...v,
+          testRuns: v.testRuns.map((run) =>
+            run.id === runId
+              ? {
+                  ...run,
+                  comments: fullTestRun.comments,
+                  jiraLinks: fullTestRun.jiraLinks,
+                }
+              : run
+          ),
+        }))
+        setVersions(updatedVersions)
+
+        if (!selectedVersionId) {
+          const updatedCycles = cycles.map((c) =>
+            c.id === selectedCycleId
+              ? {
+                  ...c,
+                  testRuns: c.testRuns.map((run) =>
+                    run.id === runId
+                      ? {
+                          ...run,
+                          comments: fullTestRun.comments,
+                          jiraLinks: fullTestRun.jiraLinks,
+                        }
+                      : run
+                  ),
+                }
+              : c
+          )
+          setCycles(updatedCycles)
+        }
+
+        setExpandedTestRunIds((prev) => new Set([...prev, runId]))
+      }
+    } catch (error) {
+      showToast('Failed to load test run details', 'error')
+      console.error('Error loading test run details:', error)
+    } finally {
+      setLoadingTestRunIds((prev) => {
+        const next = new Set(prev)
+        next.delete(runId)
+        return next
+      })
+    }
+  }
+
   const selectedCycle = cycles.find((c) => c.id === selectedCycleId)
   const selectedVersion = versions.find((v) => v.id === selectedVersionId)
   const testRuns = (selectedVersion?.testRuns && selectedVersion.testRuns.length > 0) ? selectedVersion.testRuns : (selectedCycle?.testRuns || [])
@@ -872,36 +939,47 @@ function ExecutionCyclesContent() {
           </div>
 
           <div className="grid grid-cols-4 gap-4 mb-8">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="text-2xl font-bold text-green-600">{passCount}</div>
-              <div className="text-sm text-green-700">Passed</div>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-5">
+              <div className="text-3xl font-bold text-green-700">{passCount}</div>
+              <div className="text-xs font-semibold text-green-800 mt-2 uppercase tracking-wide">Passed</div>
             </div>
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="text-2xl font-bold text-red-600">{failCount}</div>
-              <div className="text-sm text-red-700">Failed</div>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-5">
+              <div className="text-3xl font-bold text-red-700">{failCount}</div>
+              <div className="text-xs font-semibold text-red-800 mt-2 uppercase tracking-wide">Failed</div>
             </div>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div className="text-2xl font-bold text-yellow-600">{blockedCount}</div>
-              <div className="text-sm text-yellow-700">Blocked</div>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-5">
+              <div className="text-3xl font-bold text-yellow-700">{blockedCount}</div>
+              <div className="text-xs font-semibold text-yellow-800 mt-2 uppercase tracking-wide">Blocked</div>
             </div>
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <div className="text-2xl font-bold text-gray-600">{notExecutedCount}</div>
-              <div className="text-sm text-gray-700">Not Executed</div>
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
+              <div className="text-3xl font-bold text-gray-700">{notExecutedCount}</div>
+              <div className="text-xs font-semibold text-gray-800 mt-2 uppercase tracking-wide">Not Executed</div>
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             {testRuns.map((run) => (
               <div
                 key={run.id}
-                className="bg-white rounded-lg border border-gray-200 p-6 space-y-4"
+                className="bg-white rounded-lg border border-gray-200 p-5"
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-lg text-gray-900">
+                    <h3 className="font-semibold text-base text-gray-900">
                       {run.testCase?.title || 'Unknown'}
                     </h3>
                   </div>
+                  <button
+                    onClick={() => handleToggleTestRunDetails(run.id)}
+                    disabled={loadingTestRunIds.has(run.id)}
+                    className="text-sm text-gray-600 hover:text-gray-900 mr-3"
+                  >
+                    {loadingTestRunIds.has(run.id)
+                      ? 'Loading...'
+                      : expandedTestRunIds.has(run.id)
+                        ? '▼ Details'
+                        : '▶ Details'}
+                  </button>
                   <select
                     value={run.status}
                     onChange={(e) => handleRunStatusChange(run.id, e.target.value)}
@@ -924,25 +1002,24 @@ function ExecutionCyclesContent() {
                 </div>
 
                 {(run.executedAt || run.executedBy) && (
-                  <div className="text-sm text-gray-600 space-y-1">
+                  <div className="text-xs text-gray-600 space-y-0.5 mb-3">
                     {run.executedAt && <div>Executed: {new Date(run.executedAt).toLocaleString()}</div>}
                     {run.executedBy && <div>By: {run.executedBy}</div>}
                     {run.durationMs && <div>Duration: {run.durationMs}ms</div>}
                   </div>
                 )}
 
-                <hr className="border-gray-200" />
-
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-2">Comments</h4>
+                {expandedTestRunIds.has(run.id) && (
+                <div className="space-y-4 border-t border-gray-200 pt-4">
+                  <h4 className="font-semibold text-gray-900 mb-3 text-sm">Comments</h4>
                   <div className="space-y-2 mb-3">
                     {run.comments && run.comments.length > 0 ? (
                       run.comments.map((comment) => (
-                        <div key={comment.id} className="bg-gray-50 rounded p-3">
+                        <div key={comment.id} className="bg-gray-50 rounded p-3 border border-gray-200">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <p className="text-sm text-gray-900">{comment.content}</p>
-                              <p className="text-xs text-gray-600 mt-1">
+                              <p className="text-sm text-gray-900 font-medium">{comment.content}</p>
+                              <p className="text-xs text-gray-700 mt-1">
                                 {comment.author} • {new Date(comment.createdAt).toLocaleString()}
                               </p>
                             </div>
@@ -958,7 +1035,7 @@ function ExecutionCyclesContent() {
                         </div>
                       ))
                     ) : (
-                      <p className="text-sm text-gray-600">No comments yet</p>
+                      <p className="text-sm text-gray-700">No comments yet</p>
                     )}
                   </div>
                   {user?.role === 'LEAD' && !isVersionCompleted && (
@@ -968,20 +1045,19 @@ function ExecutionCyclesContent() {
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
                         placeholder="Add a comment..."
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm text-gray-900 placeholder:text-gray-500 bg-white"
                       />
                       <button
                         onClick={() => handleAddComment(run.id)}
-                        className="px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                        className="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700"
                       >
                         Add
                       </button>
                     </div>
                   )}
-                </div>
 
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-2">Jira Links</h4>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-3 text-sm">Jira Links</h4>
                   <div className="space-y-2 mb-3">
                     {run.jiraLinks && run.jiraLinks.length > 0 ? (
                       run.jiraLinks.map((link) => (
@@ -1013,7 +1089,7 @@ function ExecutionCyclesContent() {
                         </div>
                       ))
                     ) : (
-                      <p className="text-sm text-gray-600">No Jira links yet</p>
+                      <p className="text-sm text-gray-700">No Jira links yet</p>
                     )}
                   </div>
                   {user?.role === 'LEAD' && !isVersionCompleted && (
@@ -1023,17 +1099,18 @@ function ExecutionCyclesContent() {
                         value={newJiraKey}
                         onChange={(e) => setNewJiraKey(e.target.value)}
                         placeholder="e.g., PROJ-123"
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm text-gray-900 placeholder:text-gray-500 bg-white"
                       />
                       <button
                         onClick={() => handleAddJiraLink(run.id)}
-                        className="px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                        className="px-4 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700"
                       >
                         Add
                       </button>
                     </div>
                   )}
                 </div>
+                )}
               </div>
             ))}
           </div>
