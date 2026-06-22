@@ -4,6 +4,8 @@ import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { RepositoryTreeSelector } from '@/components/test-suites/RepositoryTreeSelector'
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/hooks/useAuth'
+import { showToast } from '@/lib/toast'
+import { Spinner } from '@/components/ui/Spinner'
 
 interface TestSuite {
   id: string
@@ -35,6 +37,9 @@ function TestSuitesContent() {
   const [selectedTestCount, setSelectedTestCount] = useState(0)
   const [availableTests, setAvailableTests] = useState<any[]>([])
   const [loadingTests, setLoadingTests] = useState(false)
+  const [isCreatingSuite, setIsCreatingSuite] = useState(false)
+  const [creationStep, setCreationStep] = useState('')
+  const [isEditingSuite, setIsEditingSuite] = useState(false)
 
   // Fetch projects
   useEffect(() => {
@@ -102,7 +107,12 @@ function TestSuitesContent() {
   const handleCreateSuite = async () => {
     if (!newSuiteName.trim()) return
 
+    setIsCreatingSuite(true)
+    let createdTestCount = 0
+    let failedTestCount = 0
+
     try {
+      setCreationStep('Creating suite...')
       const response = await fetch(`/api/test-suites?projectId=${currentProjectId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -124,7 +134,9 @@ function TestSuitesContent() {
 
           if (roamTestCases.length > 0) {
             const testCaseIds: string[] = []
-            for (const rtc of roamTestCases) {
+            for (let i = 0; i < roamTestCases.length; i++) {
+              setCreationStep(`Adding test cases (${i + 1}/${roamTestCases.length})`)
+              const rtc = roamTestCases[i]
               try {
                 const createResponse = await fetch('/api/test-cases', {
                   method: 'POST',
@@ -138,13 +150,16 @@ function TestSuitesContent() {
                 if (createResponse.ok) {
                   const testCase = await createResponse.json()
                   testCaseIds.push(testCase.id)
+                  createdTestCount++
                 }
               } catch (error) {
+                failedTestCount++
                 console.error(`Failed to create TestCase for ${rtc.title}:`, error)
               }
             }
 
             if (testCaseIds.length > 0) {
+              setCreationStep(`Linking test cases...`)
               const patchResponse = await fetch(`/api/test-suites/${newSuite.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
@@ -153,10 +168,20 @@ function TestSuitesContent() {
                 }),
               })
               if (!patchResponse.ok) {
+                failedTestCount += testCaseIds.length
                 console.error('Failed to add test cases:', await patchResponse.text())
               }
             }
           }
+        }
+
+        // Show appropriate toast
+        if (failedTestCount === 0) {
+          showToast(`Suite "${newSuiteName}" created successfully with ${createdTestCount} test cases`, 'success')
+        } else if (createdTestCount === 0) {
+          showToast(`Failed to create test cases for suite "${newSuiteName}"`, 'error')
+        } else {
+          showToast(`Suite created with ${createdTestCount} test cases (${failedTestCount} failed)`, 'info')
         }
 
         // Reset and refresh
@@ -166,14 +191,23 @@ function TestSuitesContent() {
         setSelectedTestCount(0)
         setShowCreateModal(false)
         await fetchSuites()
+      } else {
+        showToast('Failed to create test suite', 'error')
       }
     } catch (error) {
+      showToast(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
       console.error('Error creating suite:', error)
+    } finally {
+      setIsCreatingSuite(false)
+      setCreationStep('')
     }
   }
 
   const handleEditSuite = async () => {
     if (!editingSuiteId || !newSuiteName.trim()) return
+
+    setIsEditingSuite(true)
+    let testCaseCount = 0
 
     try {
       let testCaseIds: string[] = []
@@ -184,7 +218,8 @@ function TestSuitesContent() {
           selectedNodeIds.includes(tc.repositoryNodeId)
         )
 
-        for (const rtc of roamTestCases) {
+        for (let i = 0; i < roamTestCases.length; i++) {
+          const rtc = roamTestCases[i]
           try {
             const createResponse = await fetch('/api/test-cases', {
               method: 'POST',
@@ -198,6 +233,7 @@ function TestSuitesContent() {
             if (createResponse.ok) {
               const testCase = await createResponse.json()
               testCaseIds.push(testCase.id)
+              testCaseCount++
             }
           } catch (error) {
             console.error(`Failed to create TestCase for ${rtc.title}:`, error)
@@ -217,6 +253,7 @@ function TestSuitesContent() {
       })
 
       if (response.ok) {
+        showToast(`Suite "${newSuiteName}" updated successfully`, 'success')
         setEditingSuiteId(null)
         setNewSuiteName('')
         setNewSuiteDesc('')
@@ -224,9 +261,14 @@ function TestSuitesContent() {
         setSelectedTestCount(0)
         setShowEditModal(false)
         await fetchSuites()
+      } else {
+        showToast('Failed to update suite', 'error')
       }
     } catch (error) {
+      showToast(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
       console.error('Error editing suite:', error)
+    } finally {
+      setIsEditingSuite(false)
     }
   }
 
@@ -422,10 +464,17 @@ function TestSuitesContent() {
                 </button>
                 <button
                   onClick={handleCreateSuite}
-                  disabled={!newSuiteName.trim()}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400"
+                  disabled={!newSuiteName.trim() || isCreatingSuite}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  Create Suite
+                  {isCreatingSuite ? (
+                    <>
+                      <Spinner />
+                      <span>{creationStep || 'Creating...'}</span>
+                    </>
+                  ) : (
+                    'Create Suite'
+                  )}
                 </button>
               </div>
             </div>
@@ -496,10 +545,17 @@ function TestSuitesContent() {
                 </button>
                 <button
                   onClick={handleEditSuite}
-                  disabled={!newSuiteName.trim()}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400"
+                  disabled={!newSuiteName.trim() || isEditingSuite}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  Save Changes
+                  {isEditingSuite ? (
+                    <>
+                      <Spinner />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
                 </button>
               </div>
             </div>

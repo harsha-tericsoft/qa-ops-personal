@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { AppHeader } from '@/components/layout/AppHeader'
 import { AppSidebar } from '@/components/layout/AppSidebar'
+import { ToastContainer } from '@/components/ui/ToastContainer'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -35,6 +36,7 @@ export default function RootLayout({
           <AppSidebar />
           <main className="flex-1 overflow-auto">{children}</main>
         </div>
+        <ToastContainer />
       </body>
     </html>
   )
