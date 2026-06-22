@@ -84,6 +84,15 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
     const nextVersionNumber = (lastVersion?.versionNumber ?? 0) + 1
 
+    // Get all test cases associated with this cycle (from existing test runs)
+    const existingTestRuns = await prisma.testRun.findMany({
+      where: { cycleId: id },
+      distinct: ['testCaseId'],
+      select: { testCaseId: true },
+    })
+
+    const testCaseIds = existingTestRuns.map((tr) => tr.testCaseId)
+
     // Create new version
     const version = await prisma.executionVersion.create({
       data: {
@@ -93,6 +102,23 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
         releaseNotes,
         status: 'DRAFT',
       },
+    })
+
+    // Create test runs for the new version with the same test cases as V1
+    if (testCaseIds.length > 0) {
+      await prisma.testRun.createMany({
+        data: testCaseIds.map((testCaseId) => ({
+          cycleId: id,
+          versionId: version.id,
+          testCaseId,
+          status: 'NOT_EXECUTED',
+        })),
+      })
+    }
+
+    // Fetch the version with its test runs
+    const versionWithTestRuns = await prisma.executionVersion.findUniqueOrThrow({
+      where: { id: version.id },
       include: {
         testRuns: {
           include: {
@@ -106,7 +132,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       },
     })
 
-    return NextResponse.json(version, { status: 201 })
+    return NextResponse.json(versionWithTestRuns, { status: 201 })
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json({ error: msg }, { status: 500 })
