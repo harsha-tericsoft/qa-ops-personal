@@ -1,0 +1,10 @@
+[
+  {
+    "type": "info",
+    "message": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "log",
+    "message": "[HMR] connected"
+  }
+]
