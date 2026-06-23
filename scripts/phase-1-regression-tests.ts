@@ -142,7 +142,7 @@ async function regressionTests() {
     // Test 6: Comments still persist
     console.log('6️⃣  Testing Comment Persistence...')
     try {
-      const comments = await prisma.testRunComment.findMany({
+      const comments = await prisma.runComment.findMany({
         take: 5,
       })
       testResults.push({
@@ -161,16 +161,13 @@ async function regressionTests() {
     // Test 7: Jira links still work
     console.log('7️⃣  Testing Jira Links...')
     try {
-      const testRuns = await prisma.testRun.findMany({
-        where: {
-          jiraLink: { not: null },
-        },
+      const jiraLinks = await prisma.jiraLink.findMany({
         take: 5,
       })
       testResults.push({
         name: 'Jira Links',
         status: 'PASS',
-        message: `Found ${testRuns.length} test runs with Jira links`,
+        message: `Found ${jiraLinks.length} Jira links`,
       })
     } catch (e) {
       testResults.push({
