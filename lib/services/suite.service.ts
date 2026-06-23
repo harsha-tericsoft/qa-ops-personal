@@ -3,6 +3,13 @@ import { selectBySuite } from './test-selector.service'
 import { createCycle } from './execution.service'
 import { prisma } from '@/lib/prisma'
 
+export interface FilterCriteria {
+  modules?: string[]
+  types?: string[]
+  tags?: string[]
+  search?: string
+}
+
 export async function getSuite(suiteId: string) {
   const suite = await prisma.testSuite.findUniqueOrThrow({
     where: { id: suiteId },
@@ -131,4 +138,140 @@ export async function createCycleFromSuite(
   })
 
   return linkedCycle
+}
+
+// Filter-based suite creation (Phase 1 feature)
+
+export async function previewSuiteFromFilters(
+  projectId: string,
+  filters: FilterCriteria
+) {
+  // Build where clause for test cases
+  let whereClause: any = {
+    projectId,
+  }
+
+  // Tag filter
+  if (filters.tags && filters.tags.length > 0) {
+    whereClause.tags = {
+      some: {
+        tag: {
+          name: {
+            in: filters.tags,
+          },
+        },
+      },
+    }
+  }
+
+  // Search filter
+  if (filters.search && filters.search.trim()) {
+    whereClause.OR = [
+      {
+        title: {
+          contains: filters.search,
+          mode: 'insensitive',
+        },
+      },
+      {
+        description: {
+          contains: filters.search,
+          mode: 'insensitive',
+        },
+      },
+    ]
+  }
+
+  // Get matching test cases
+  const testCases = await prisma.testCase.findMany({
+    where: whereClause,
+    select: {
+      id: true,
+      title: true,
+    },
+    orderBy: {
+      title: 'asc',
+    },
+  })
+
+  return {
+    matchingTests: testCases,
+    count: testCases.length,
+  }
+}
+
+export async function createSuiteFromFilters(
+  projectId: string,
+  name: string,
+  description: string | undefined,
+  filters: FilterCriteria
+) {
+  // Get matching test case IDs
+  let whereClause: any = {
+    projectId,
+  }
+
+  if (filters.tags && filters.tags.length > 0) {
+    whereClause.tags = {
+      some: {
+        tag: {
+          name: {
+            in: filters.tags,
+          },
+        },
+      },
+    }
+  }
+
+  if (filters.search && filters.search.trim()) {
+    whereClause.OR = [
+      {
+        title: {
+          contains: filters.search,
+          mode: 'insensitive',
+        },
+      },
+      {
+        description: {
+          contains: filters.search,
+          mode: 'insensitive',
+        },
+      },
+    ]
+  }
+
+  const testCases = await prisma.testCase.findMany({
+    where: whereClause,
+    select: { id: true },
+    orderBy: { title: 'asc' },
+  })
+
+  const testCaseIds = testCases.map((tc) => tc.id)
+
+  // Create the suite with filter-based selection method
+  const suite = await prisma.testSuite.create({
+    data: {
+      projectId,
+      name,
+      description,
+      selectionMethod: 'FILTER',
+      selectionConfig: filters,
+      testCases: {
+        createMany: {
+          data: testCaseIds.map((testCaseId, order) => ({
+            testCaseId,
+            order,
+          })),
+        },
+      },
+    },
+    include: {
+      testCases: {
+        include: { testCase: true },
+        orderBy: { order: 'asc' },
+      },
+    },
+  })
+
+  return suite
 }
