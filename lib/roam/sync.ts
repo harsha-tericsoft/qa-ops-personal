@@ -8,7 +8,7 @@ import { prisma } from '@/lib/prisma'
  * Import markdown nodes directly from Roam hierarchy
  * Uses recursive tree traversal to ensure parents are created before children
  */
-async function importMarkdownNodes(
+export async function importMarkdownNodes(
   nodes: Array<any>,
   repositoryId: string,
   projectId: string
@@ -190,18 +190,45 @@ async function importMarkdownNodes(
             try {
               const batchStart = Date.now()
 
+              // IMPORTANT: Before creating, verify these nodes don't already exist in THIS repository
+              // This prevents race conditions and duplicate creation
+              const existingInBatch = await prisma.repositoryNode.findMany({
+                where: {
+                  repositoryId,
+                  roamNodeId: { in: nodesToCreateFinal.map(n => n.roamNodeId) }
+                },
+                select: { roamNodeId: true, id: true }
+              })
+
+              const existingRoamNodeIds = new Set(existingInBatch.map(n => n.roamNodeId).filter(Boolean))
+              const nodesToCreateFiltered = nodesToCreateFinal.filter(n => !existingRoamNodeIds.has(n.roamNodeId))
+
+              console.log(`[importMarkdownNodes] Batch pre-check: ${nodesToCreateFinal.length} queued, ${existingRoamNodeIds.size} already exist, ${nodesToCreateFiltered.length} to create`)
+
+              if (nodesToCreateFiltered.length === 0) {
+                // All nodes in this batch already exist
+                for (const existing of existingInBatch) {
+                  if (existing.roamNodeId) {
+                    uidToNodeId.set(existing.roamNodeId, existing.id)
+                    createdNodeIds.set(existing.roamNodeId, existing.id)
+                  }
+                }
+                nodesToCreateFinal = []
+                continue
+              }
+
               const created = await prisma.repositoryNode.createMany({
-                data: nodesToCreateFinal,
+                data: nodesToCreateFiltered,
                 skipDuplicates: true
               })
               const batchDuration = Date.now() - batchStart
 
-              console.log(`[importMarkdownNodes] Batch: ${nodesToCreateFinal.length} queued, ${created.count} created in ${batchDuration}ms`)
+              console.log(`[importMarkdownNodes] Batch: ${nodesToCreateFiltered.length} queued, ${created.count} created in ${batchDuration}ms`)
 
               result.added += created.count
 
-              // Update createdNodeIds immediately after each batch
-              const createdNodesWithUids = await prisma.repositoryNode.findMany({
+              // Update createdNodeIds for both newly created and already existing nodes
+              const allNodesInBatch = await prisma.repositoryNode.findMany({
                 where: {
                   repositoryId,
                   roamNodeId: { in: nodesToCreateFinal.map(n => n.roamNodeId) }
@@ -209,10 +236,10 @@ async function importMarkdownNodes(
                 select: { id: true, roamNodeId: true }
               })
 
-              for (const createdNode of createdNodesWithUids) {
-                if (createdNode.roamNodeId) {
-                  uidToNodeId.set(createdNode.roamNodeId, createdNode.id)
-                  createdNodeIds.set(createdNode.roamNodeId, createdNode.id)
+              for (const node of allNodesInBatch) {
+                if (node.roamNodeId) {
+                  uidToNodeId.set(node.roamNodeId, node.id)
+                  createdNodeIds.set(node.roamNodeId, node.id)
                 }
               }
 
@@ -524,13 +551,18 @@ export async function refreshSync(projectId: string): Promise<{
       throw new Error('No repository found. Run initial sync first.')
     }
 
-    // Create Roam client with encrypted local API token
-    const client = new RoamClient(config.graphName, config.apiToken)
+    // Use roam-cli directly without token encryption
+    // roam-cli reads credentials from ~/.roam-tools.json automatically
+    const { exec } = await import('child_process')
+    const { promisify } = await import('util')
+    const execAsync = promisify(exec)
 
-    // Test connection first
-    const canConnect = await client.testConnection()
-    if (!canConnect) {
-      throw new Error('Cannot connect to Roam API')
+    // Test connection using roam-cli (no token needed - reads from ~/.roam-tools.json)
+    console.log('[refreshSync] Testing roam-cli connection to graph:', config.graphName)
+    try {
+      await execAsync(`roam search --graph "${config.graphName}" --query=""`, { timeout: 30000 })
+    } catch (err) {
+      throw new Error(`Cannot connect to Roam graph "${config.graphName}". Ensure roam-cli is configured with credentials in ~/.roam-tools.json`)
     }
 
     // Validate configuration
@@ -541,15 +573,36 @@ export async function refreshSync(projectId: string): Promise<{
       )
     }
 
-    // Fetch repository subtree
-    console.log('[refreshSync] Fetching repository subtree:', config.repositoryRootPage)
-    const tree = await client.fetchRepositorySubtree(config.repositoryRootPage)
-
-    if (!tree) {
+    // Fetch repository root page using roam-cli
+    console.log('[refreshSync] Fetching repository root page:', config.repositoryRootPage)
+    let pageData: any
+    try {
+      const { stdout } = await execAsync(
+        `roam search --graph "${config.graphName}" --query="${config.repositoryRootPage}"`,
+        { timeout: 30000 }
+      )
+      const searchResult = JSON.parse(stdout)
+      if (!searchResult.results || searchResult.results.length === 0) {
+        throw new Error('Root page not found')
+      }
+      pageData = searchResult.results[0]
+    } catch (err) {
       throw new Error(
         `Repository root page not found: "${config.repositoryRootPage}". ` +
         'Verify the page title matches exactly in your Roam graph.'
       )
+    }
+
+    // Parse the markdown response from roam-cli
+    console.log('[refreshSync] Parsing Roam response')
+    const tree = MarkdownRoamParser.parseMarkdown(
+      pageData.markdown || '',
+      config.repositoryRootPage,
+      pageData.uid
+    )
+
+    if (!tree) {
+      throw new Error('Failed to parse Roam page')
     }
 
     // Flatten and import (handles updates via importMarkdownNodes)

@@ -146,44 +146,28 @@ export async function previewSuiteFromFilters(
   projectId: string,
   filters: FilterCriteria
 ) {
-  // Build where clause for test cases
+  // Build where clause for RoamTestCase
   let whereClause: any = {
     projectId,
   }
 
-  // Tag filter
+  // Tag filter - use tags array
   if (filters.tags && filters.tags.length > 0) {
     whereClause.tags = {
-      some: {
-        tag: {
-          name: {
-            in: filters.tags,
-          },
-        },
-      },
+      hasSome: filters.tags,
     }
   }
 
   // Search filter
   if (filters.search && filters.search.trim()) {
-    whereClause.OR = [
-      {
-        title: {
-          contains: filters.search,
-          mode: 'insensitive',
-        },
-      },
-      {
-        description: {
-          contains: filters.search,
-          mode: 'insensitive',
-        },
-      },
-    ]
+    whereClause.title = {
+      contains: filters.search,
+      mode: 'insensitive',
+    }
   }
 
-  // Get matching test cases
-  const testCases = await prisma.testCase.findMany({
+  // Get matching RoamTestCase records
+  const testCases = await prisma.roamTestCase.findMany({
     where: whereClause,
     select: {
       id: true,
@@ -206,47 +190,44 @@ export async function createSuiteFromFilters(
   description: string | undefined,
   filters: FilterCriteria
 ) {
-  // Get matching test case IDs
+  // Get matching RoamTestCase records
   let whereClause: any = {
     projectId,
   }
 
   if (filters.tags && filters.tags.length > 0) {
     whereClause.tags = {
-      some: {
-        tag: {
-          name: {
-            in: filters.tags,
-          },
-        },
-      },
+      hasSome: filters.tags,
     }
   }
 
   if (filters.search && filters.search.trim()) {
-    whereClause.OR = [
-      {
-        title: {
-          contains: filters.search,
-          mode: 'insensitive',
-        },
-      },
-      {
-        description: {
-          contains: filters.search,
-          mode: 'insensitive',
-        },
-      },
-    ]
+    whereClause.title = {
+      contains: filters.search,
+      mode: 'insensitive',
+    }
   }
 
-  const testCases = await prisma.testCase.findMany({
+  const roamTestCases = await prisma.roamTestCase.findMany({
     where: whereClause,
-    select: { id: true },
+    select: { id: true, title: true },
     orderBy: { title: 'asc' },
   })
 
-  const testCaseIds = testCases.map((tc) => tc.id)
+  // For each RoamTestCase, create a corresponding TestCase if needed
+  // This bridges the execution pipeline which currently uses TestCase
+  const testCaseIds: string[] = []
+
+  for (const rtc of roamTestCases) {
+    // Create a TestCase record for this RoamTestCase
+    const testCase = await prisma.testCase.create({
+      data: {
+        projectId,
+        title: rtc.title,
+      },
+    })
+    testCaseIds.push(testCase.id)
+  }
 
   // Create the suite with filter-based selection method
   const suite = await prisma.testSuite.create({
@@ -255,7 +236,7 @@ export async function createSuiteFromFilters(
       name,
       description,
       selectionMethod: 'FILTER',
-      selectionConfig: filters,
+      selectionConfig: filters as any,
       testCases: {
         createMany: {
           data: testCaseIds.map((testCaseId, order) => ({

@@ -3,14 +3,6 @@ import { requireFeatureFlag } from '@/lib/feature-flags'
 import { findTestCasesByFilters } from '@/lib/services/test-cases.service'
 
 export async function GET(request: NextRequest) {
-  // Feature flag guard
-  if (!requireFeatureFlag('enableFilterBasedSuites')) {
-    return NextResponse.json(
-      { error: 'Feature not enabled' },
-      { status: 403 }
-    )
-  }
-
   try {
     const searchParams = request.nextUrl.searchParams
     const projectId = searchParams.get('projectId')

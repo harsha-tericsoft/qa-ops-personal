@@ -3,14 +3,6 @@ import { requireFeatureFlag } from '@/lib/feature-flags'
 import { previewSuiteFromFilters } from '@/lib/services/suite.service'
 
 export async function POST(request: NextRequest) {
-  // Feature flag guard
-  if (!requireFeatureFlag('enableFilterBasedSuites')) {
-    return NextResponse.json(
-      { error: 'Feature not enabled' },
-      { status: 403 }
-    )
-  }
-
   try {
     const body = await request.json()
     const { projectId, filters } = body

@@ -38,61 +38,33 @@ export async function findTestCasesByFilters(
     projectId,
   }
 
-  // Tag filter - use TagTestCase relationships
+  // Tag filter - check if tags array contains the filter tags
   if (filters.tags && filters.tags.length > 0) {
     whereClause.tags = {
-      some: {
-        tag: {
-          name: {
-            in: filters.tags,
-          },
-        },
-      },
+      hasSome: filters.tags,
     }
   }
 
-  // Search filter - search title and description
+  // Search filter - search title only (RoamTestCase doesn't have description)
   if (filters.search && filters.search.trim()) {
-    whereClause.OR = [
-      {
-        title: {
-          contains: filters.search,
-          mode: 'insensitive',
-        },
-      },
-      {
-        description: {
-          contains: filters.search,
-          mode: 'insensitive',
-        },
-      },
-    ]
+    whereClause.title = {
+      contains: filters.search,
+      mode: 'insensitive',
+    }
   }
 
   // Get total count for pagination
-  const total = await prisma.testCase.count({ where: whereClause })
+  const total = await prisma.roamTestCase.count({ where: whereClause })
 
   // Get paginated results
-  const testCases = await prisma.testCase.findMany({
+  const roamTestCases = await prisma.roamTestCase.findMany({
     where: whereClause,
     select: {
       id: true,
       title: true,
-      description: true,
-      tags: {
-        select: {
-          tag: {
-            select: {
-              name: true,
-            },
-          },
-        },
-      },
-      testRuns: {
-        select: {
-          id: true,
-        },
-      },
+      tags: true,
+      repositoryNodeId: true,
+      sourceRoamUid: true,
     },
     orderBy: {
       title: 'asc',
@@ -101,14 +73,49 @@ export async function findTestCasesByFilters(
     take: pagination.limit,
   })
 
+  // Enrich with repository node information (module/feature)
+  const enrichedTestCases = await Promise.all(
+    roamTestCases.map(async (rtc) => {
+      let module = ''
+      let feature = ''
+
+      if (rtc.repositoryNodeId) {
+        const node = await prisma.repositoryNode.findUnique({
+          where: { id: rtc.repositoryNodeId },
+          select: {
+            name: true,
+            parent: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        })
+
+        if (node) {
+          // Assume parent is module, current is feature
+          if (node.parent) {
+            module = node.parent.name
+            feature = node.name
+          } else {
+            module = node.name
+          }
+        }
+      }
+
+      return {
+        id: rtc.id,
+        title: rtc.title,
+        tags: rtc.tags || [],
+        module,
+        feature,
+        sourceRoamUid: rtc.sourceRoamUid,
+      }
+    })
+  )
+
   return {
-    testCases: testCases.map((tc) => ({
-      id: tc.id,
-      title: tc.title,
-      description: tc.description,
-      tags: tc.tags.map((t) => t.tag.name),
-      testRuns: tc.testRuns.length,
-    })),
+    testCases: enrichedTestCases,
     total,
     page: pagination.page,
     limit: pagination.limit,
@@ -117,32 +124,36 @@ export async function findTestCasesByFilters(
 }
 
 export async function getFilterOptions(projectId: string): Promise<FilterOptions> {
-  // Get all tags used in this project
-  const tags = await prisma.tag.findMany({
-    where: {
-      projectId,
-      testCases: {
-        some: {}, // Only tags that are used
-      },
-    },
+  // Get all RoamTestCase records to extract unique tags
+  const allRoamTests = await prisma.roamTestCase.findMany({
+    where: { projectId },
     select: {
-      name: true,
-      _count: {
-        select: {
-          testCases: true,
-        },
-      },
-    },
-    orderBy: {
-      name: 'asc',
+      tags: true,
     },
   })
 
-  // Get module values from RepositoryNode (placeholder - can be enhanced)
+  // Count tag occurrences
+  const tagCounts: Record<string, number> = {}
+  allRoamTests.forEach((test) => {
+    if (test.tags && Array.isArray(test.tags)) {
+      test.tags.forEach((tag) => {
+        tagCounts[tag] = (tagCounts[tag] || 0) + 1
+      })
+    }
+  })
+
+  const tags = Object.entries(tagCounts)
+    .map(([name, count]) => ({
+      name,
+      count,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name))
+
+  // Get module values from RepositoryNode
   const modules = await prisma.repositoryNode.findMany({
     where: {
       projectId,
-      type: 'MODULE',
+      type: { in: ['MODULE', 'FEATURE'] },
     },
     distinct: ['name'],
     select: {
@@ -153,58 +164,68 @@ export async function getFilterOptions(projectId: string): Promise<FilterOptions
     },
   })
 
+  // Count tests by manual/automated based on tags
+  const manualCount = allRoamTests.filter((t) =>
+    t.tags?.includes('Manual')
+  ).length
+  const automatedCount = allRoamTests.filter((t) =>
+    t.tags?.includes('Automated')
+  ).length
+
   return {
-    tags: tags.map((t) => ({
-      name: t.name,
-      count: t._count.testCases,
-    })),
+    tags,
     types: [
-      { name: 'Manual', count: 0 }, // Placeholder - can be populated from tags
-      { name: 'Automated', count: 0 },
+      { name: 'Manual', count: manualCount },
+      { name: 'Automated', count: automatedCount },
     ],
     modules: modules.map((m) => ({
       name: m.name,
-      count: 0, // Could be enhanced with test case counts
+      count: allRoamTests.filter((t) =>
+        t.tags?.some((tag) => tag === m.name)
+      ).length,
     })),
   }
 }
 
 export async function getTestCaseSummary(projectId: string): Promise<TestCaseSummary> {
-  const total = await prisma.testCase.count({
+  const total = await prisma.roamTestCase.count({
     where: { projectId },
+  })
+
+  // Get all RoamTestCase records to count by tags/type
+  const allRoamTests = await prisma.roamTestCase.findMany({
+    where: { projectId },
+    select: {
+      tags: true,
+    },
   })
 
   // Count by tag
   const byTag: Record<string, number> = {}
-  const tags = await prisma.tag.findMany({
-    where: {
-      projectId,
-      testCases: {
-        some: {},
-      },
-    },
-    select: {
-      name: true,
-      _count: {
-        select: {
-          testCases: true,
-        },
-      },
-    },
+  allRoamTests.forEach((test) => {
+    if (test.tags && Array.isArray(test.tags)) {
+      test.tags.forEach((tag) => {
+        byTag[tag] = (byTag[tag] || 0) + 1
+      })
+    }
   })
 
-  tags.forEach((t) => {
-    byTag[t.name] = t._count.testCases
-  })
+  // Count by type
+  const manualCount = allRoamTests.filter((t) =>
+    t.tags?.includes('Manual')
+  ).length
+  const automatedCount = allRoamTests.filter((t) =>
+    t.tags?.includes('Automated')
+  ).length
 
   return {
     total,
     byType: {
-      Manual: 0, // Placeholder
-      Automated: 0,
+      Manual: manualCount,
+      Automated: automatedCount,
     },
     byTag,
-    byModule: {}, // Placeholder
+    byModule: {}, // Placeholder for future enhancement
   }
 }
 

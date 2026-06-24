@@ -8,6 +8,8 @@ interface TestCase {
   description?: string
   tags?: string[]
   testRuns?: number
+  module?: string
+  feature?: string
 }
 
 interface TestCaseGridProps {
@@ -109,7 +111,7 @@ export function TestCaseGrid({
         <div className="divide-y divide-gray-200">
           {testCases.map((testCase) => {
             const isSelected = selectedIds.has(testCase.id)
-            const module = extractModule(testCase.title)
+            const module = testCase.module || extractModule(testCase.title)
 
             return (
               <div

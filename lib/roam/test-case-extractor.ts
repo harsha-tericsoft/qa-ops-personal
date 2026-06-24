@@ -56,9 +56,17 @@ export class TestCaseExtractor {
             continue
           }
 
-          // Check if test case already exists
+          // Extract priority from tags
+          let priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' = 'MEDIUM'
+          if (node.tags?.includes('Critical')) priority = 'CRITICAL'
+          else if (node.tags?.includes('High')) priority = 'HIGH'
+          else if (node.tags?.includes('Low')) priority = 'LOW'
+
+          // Check if RoamTestCase already exists - CRITICAL: use transaction isolation
+          // The unique constraint will prevent duplicates, but we need to skip if it already exists
           const existing = await prisma.roamTestCase.findUnique({
             where: { repositoryNodeId: node.id },
+            select: { id: true },
           })
 
           if (existing) {
@@ -66,26 +74,30 @@ export class TestCaseExtractor {
             continue
           }
 
-          // Extract priority from tags
-          let priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' = 'MEDIUM'
-          if (node.tags?.includes('Critical')) priority = 'CRITICAL'
-          else if (node.tags?.includes('High')) priority = 'HIGH'
-          else if (node.tags?.includes('Low')) priority = 'LOW'
-
-          // Create test case record
-          await prisma.roamTestCase.create({
-            data: {
-              projectId,
-              repositoryNodeId: node.id,
-              title: node.name,
-              status: 'NOT_RUN',
-              priority,
-              tags: node.tags || [],
-              sourceRoamUid: node.roamNodeId || undefined,
-            },
-          })
-
-          result.created++
+          // Only create if absolutely certain it doesn't exist (double-check with OR logic)
+          try {
+            await prisma.roamTestCase.create({
+              data: {
+                projectId,
+                repositoryNodeId: node.id,
+                title: node.name,
+                status: 'NOT_RUN',
+                priority,
+                tags: node.tags || [],
+                sourceRoamUid: node.roamNodeId || undefined,
+              },
+            })
+            result.created++
+          } catch (error: any) {
+            // Unique constraint violation means it already exists
+            // This is expected and acceptable
+            if (error.code === 'P2002') {
+              result.skipped++
+            } else {
+              // Re-throw other errors
+              throw error
+            }
+          }
         } catch (error) {
           result.errors.push(
             `Error processing node "${node.name}": ${error instanceof Error ? error.message : 'Unknown error'}`

@@ -311,7 +311,7 @@ function ExecutionCyclesContent() {
       const updatedVersions = versions.map((v) => ({
         ...v,
         testRuns: v.testRuns.map((run) =>
-          run.id === runId ? { ...run, status } : run
+          run.id === runId ? { ...run, status: status as any } : run
         ),
       }))
       setVersions(updatedVersions)
@@ -323,12 +323,12 @@ function ExecutionCyclesContent() {
             ? {
                 ...c,
                 testRuns: c.testRuns.map((run) =>
-                  run.id === runId ? { ...run, status } : run
+                  run.id === runId ? { ...run, status: status as any } : run
                 ),
               }
             : c
         )
-        setCycles(updatedCycles)
+        setCycles(updatedCycles as any)
       }
 
       // Update UI immediately

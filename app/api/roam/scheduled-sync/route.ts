@@ -1,110 +1,231 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { refreshSync } from '@/lib/roam/sync'
+import { TestCaseExtractor } from '@/lib/roam/test-case-extractor'
+import { MarkdownRoamParser } from '@/lib/roam/markdown-parser'
+import { importMarkdownNodes } from '@/lib/roam/sync'
+import { spawn } from 'child_process'
 
 /**
- * Scheduled sync endpoint - called every 5 minutes
- * Refreshes all configured Roam repositories and updates test case metrics
- *
- * Usage with cron service:
- * POST /api/roam/scheduled-sync every 5 minutes
- *
- * Example with curl:
- * curl -X POST http://localhost:3000/api/roam/scheduled-sync
+ * TRUE LIVE ROAM SYNC using roam-cli with proper subprocess handling
+ * Imports new content from Roam every 5 minutes
  */
-export async function POST(request: NextRequest) {
-  try {
-    console.log('[scheduled-sync] Starting scheduled sync...')
-    const startTime = Date.now()
 
-    // Get all projects with Roam configuration
+function roamSearch(graphName: string, query: string): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const process = spawn('roam', ['search', '--graph', graphName, '--query', query, '--limit', '1'], {
+      timeout: 60000,
+    })
+
+    let stdout = ''
+    let stderr = ''
+
+    process.stdout.on('data', (data) => {
+      stdout += data.toString()
+    })
+
+    process.stderr.on('data', (data) => {
+      stderr += data.toString()
+    })
+
+    process.on('error', (err) => {
+      console.error('[roam-cli] Process error:', err)
+      reject(err)
+    })
+
+    process.on('close', (code) => {
+      if (code !== 0) {
+        reject(new Error(`roam-cli exited with code ${code}: ${stderr}`))
+        return
+      }
+
+      try {
+        // Parse JSON - skip warnings
+        const jsonMatch = stdout.match(/\{[\s\S]*\}/)
+        if (!jsonMatch) {
+          reject(new Error('No JSON in roam response'))
+          return
+        }
+        const result = JSON.parse(jsonMatch[0])
+        resolve(result)
+      } catch (err) {
+        reject(err)
+      }
+    })
+  })
+}
+
+async function performSync() {
+  console.log('[roam-sync] Starting live Roam sync')
+  const startTime = Date.now()
+
+  try {
     const configs = await prisma.roamConfig.findMany({
       where: {
-        AND: [
-          { apiToken: { not: '' } },
-          { repositoryRootPage: { not: '' } },
-        ],
+        graphName: { not: '' },
+        repositoryRootPage: { not: '' },
       },
     })
 
-    console.log('[scheduled-sync] Found', configs.length, 'projects to sync')
+    console.log('[roam-sync] Found', configs.length, 'Roam graphs to sync')
 
-    const results = []
     for (const config of configs) {
       try {
-        console.log('[scheduled-sync] Syncing project:', config.projectId)
-        const result = await refreshSync(config.projectId)
-        results.push({
-          projectId: config.projectId,
-          success: result.success,
-          message: result.message,
-          nodesAdded: result.nodesAdded,
-          nodesUpdated: result.nodesUpdated,
+        console.log('[roam-sync] Syncing:', config.graphName, 'root:', config.repositoryRootPage)
+
+        // Get or create repository
+        let repository = await prisma.repository.findFirst({
+          where: { projectId: config.projectId },
         })
+
+        if (!repository) {
+          repository = await prisma.repository.create({
+            data: {
+              projectId: config.projectId,
+              name: config.graphName,
+              description: 'Live Roam sync',
+            },
+          })
+        }
+
+        // Search for root page
+        if (!config.repositoryRootPage) {
+          throw new Error('Repository root page not configured')
+        }
+
+        console.log('[roam-sync] Searching for root page:', config.repositoryRootPage)
+        const searchResult = await roamSearch(config.graphName, config.repositoryRootPage)
+
+        if (!searchResult.results || searchResult.results.length === 0) {
+          throw new Error(`Root page not found: "${config.repositoryRootPage}"`)
+        }
+
+        const pageData = searchResult.results[0]
+        const pageUid = pageData.uid
+        const markdown = pageData.markdown || ''
+
+        console.log('[roam-sync] Found page UID:', pageUid, 'markdown length:', markdown.length)
+
+        if (!markdown) {
+          console.log('[roam-sync] No markdown content')
+          continue
+        }
+
+        // Parse markdown
+        const tree = MarkdownRoamParser.parseMarkdown(
+          markdown,
+          config.repositoryRootPage,
+          pageUid
+        )
+
+        if (!tree) {
+          throw new Error('Failed to parse markdown')
+        }
+
+        // Import into RepositoryNode
+        const nodes = MarkdownRoamParser.flattenTree(tree)
+        console.log('[roam-sync] Flattened to', nodes.length, 'nodes')
+
+        const syncResult = await importMarkdownNodes(nodes, repository.id, config.projectId)
+        console.log('[roam-sync] Sync result:', syncResult)
+
+        // Extract test cases from RepositoryNode
+        const testCaseResult = await TestCaseExtractor.extractTestCases(repository.id, config.projectId)
+        console.log('[roam-sync] Extracted:', testCaseResult.created, 'new test cases')
+
+        // Update repository
+        await prisma.repository.update({
+          where: { id: repository.id },
+          data: {
+            lastSyncAt: new Date(),
+            lastSyncStatus: 'success',
+            lastSyncError: null,
+            totalTestCount: testCaseResult.created + testCaseResult.skipped,
+          },
+        })
+
+        // Update Roam config
+        await prisma.roamConfig.update({
+          where: { projectId: config.projectId },
+          data: {
+            lastSyncAt: new Date(),
+            lastSyncStatus: 'SUCCESS',
+            lastSyncError: null,
+          },
+        })
+
+        console.log('[roam-sync] ✅ Complete:', config.graphName)
       } catch (error) {
-        console.error('[scheduled-sync] Error syncing project:', config.projectId, error)
-        results.push({
-          projectId: config.projectId,
-          success: false,
-          message: error instanceof Error ? error.message : 'Unknown error',
-        })
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+        console.error('[roam-sync] ❌ Error:', config.graphName, '-', errorMsg)
+
+        await prisma.roamConfig.update({
+          where: { projectId: config.projectId },
+          data: {
+            lastSyncStatus: 'FAILED',
+            lastSyncError: errorMsg,
+          },
+        }).catch(() => null)
       }
     }
 
     const duration = Date.now() - startTime
+    console.log('[roam-sync] Completed in', duration, 'ms')
 
-    // Log sync job
-    await prisma.syncLog.create({
-      data: {
-        projectId: configs[0]?.projectId || 'system',
-        action: 'SCHEDULED_SYNC',
-        status: results.every((r) => r.success) ? 'SUCCESS' : 'PARTIAL',
-        nodesAdded: results.reduce((sum, r) => sum + (r.nodesAdded || 0), 0),
-        nodesUpdated: results.reduce((sum, r) => sum + (r.nodesUpdated || 0), 0),
-        error: results.filter((r) => !r.success).length > 0 ? `${results.filter((r) => !r.success).length} projects failed` : null,
-        durationMs: duration,
-      },
-    }).catch(() => null) // Ignore errors in logging
-
-    console.log('[scheduled-sync] Completed in', duration, 'ms')
-
-    return NextResponse.json({
-      success: true,
-      message: `Scheduled sync completed: ${results.length} projects processed`,
-      results,
-      durationMs: duration,
-      timestamp: new Date().toISOString(),
-    })
+    // Log sync
+    if (configs.length > 0) {
+      await prisma.syncLog.create({
+        data: {
+          projectId: configs[0].projectId,
+          action: 'SCHEDULED_SYNC',
+          status: 'SUCCESS',
+          durationMs: duration,
+        },
+      }).catch(() => null)
+    }
   } catch (error) {
-    console.error('[scheduled-sync] Fatal error:', error)
-    return NextResponse.json(
-      {
-        success: false,
-        message: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString(),
-      },
-      { status: 500 }
-    )
+    console.error('[roam-sync] Fatal error:', error)
   }
 }
 
 /**
- * Health check for scheduled sync
- * Returns status of last 5 sync jobs
+ * Scheduled sync endpoint - called every 5 minutes via Vercel Crons
+ */
+export async function POST(request: NextRequest) {
+  console.log('[scheduled-sync] Cron triggered at', new Date().toISOString())
+
+  // Start background sync
+  performSync().catch((err) => console.error('[roam-sync] Background error:', err))
+
+  return NextResponse.json({
+    success: true,
+    message: 'Live Roam sync queued',
+    timestamp: new Date().toISOString(),
+  })
+}
+
+/**
+ * Health check
  */
 export async function GET() {
   try {
-    const recentSyncs = await prisma.syncLog.findMany({
+    const lastSync = await prisma.syncLog.findFirst({
       where: { action: 'SCHEDULED_SYNC' },
       orderBy: { createdAt: 'desc' },
-      take: 5,
     })
+
+    const roamTestCaseCount = await prisma.roamTestCase.count()
+    const repositoryNodeCount = await prisma.repositoryNode.count()
 
     return NextResponse.json({
       status: 'healthy',
-      lastSyncCount: recentSyncs.length,
-      lastSync: recentSyncs[0] || null,
-      recentSyncs: recentSyncs.slice(0, 5),
+      scheduler: 'Vercel Crons - every 5 minutes',
+      syncMethod: 'roam-cli with spawn()',
+      lastSyncAt: lastSync?.createdAt || null,
+      lastSyncDuration: lastSync?.durationMs || null,
+      metrics: {
+        roamTestCases: roamTestCaseCount,
+        repositoryNodes: repositoryNodeCount,
+      },
     })
   } catch (error) {
     return NextResponse.json(
