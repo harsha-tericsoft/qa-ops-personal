@@ -6,14 +6,16 @@ import { importMarkdownNodes } from '@/lib/roam/sync'
 import { spawn } from 'child_process'
 
 /**
- * TRUE LIVE ROAM SYNC using roam-cli with proper subprocess handling
- * Imports new content from Roam every 5 minutes
+ * FIXED LIVE ROAM SYNC - Gets full page content including nested children
+ * Uses: roam get-page (returns complete markdown tree)
+ * NOT: roam search (returns only page header with hiddenChildren="1")
  */
 
-function roamSearch(graphName: string, query: string): Promise<any> {
+function roamGetPage(graphName: string, pageTitle: string): Promise<any> {
   return new Promise((resolve, reject) => {
-    const process = spawn('roam', ['search', '--graph', graphName, '--query', query, '--limit', '1'], {
+    const process = spawn('roam', ['get-page', '--graph', graphName, '--title', pageTitle], {
       timeout: 60000,
+      maxBuffer: 50 * 1024 * 1024, // 50MB for large pages with many blocks
     })
 
     let stdout = ''
@@ -40,7 +42,7 @@ function roamSearch(graphName: string, query: string): Promise<any> {
 
       try {
         // Parse JSON - skip warnings
-        const jsonMatch = stdout.match(/\{[\s\S]*\}/)
+        const jsonMatch = stdout.match(/\{[\s\S]*\}/s)
         if (!jsonMatch) {
           reject(new Error('No JSON in roam response'))
           return
@@ -87,21 +89,20 @@ async function performSync() {
           })
         }
 
-        // Search for root page
+        // Get full page content (including all nested children)
         if (!config.repositoryRootPage) {
           throw new Error('Repository root page not configured')
         }
 
-        console.log('[roam-sync] Searching for root page:', config.repositoryRootPage)
-        const searchResult = await roamSearch(config.graphName, config.repositoryRootPage)
+        console.log('[roam-sync] Fetching root page:', config.repositoryRootPage)
+        const pageResult = await roamGetPage(config.graphName, config.repositoryRootPage)
 
-        if (!searchResult.results || searchResult.results.length === 0) {
+        if (!pageResult || !pageResult.uid) {
           throw new Error(`Root page not found: "${config.repositoryRootPage}"`)
         }
 
-        const pageData = searchResult.results[0]
-        const pageUid = pageData.uid
-        const markdown = pageData.markdown || ''
+        const pageUid = pageResult.uid
+        const markdown = pageResult.markdown || ''
 
         console.log('[roam-sync] Found page UID:', pageUid, 'markdown length:', markdown.length)
 
