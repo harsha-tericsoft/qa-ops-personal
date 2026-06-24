@@ -1,0 +1,761 @@
+{
+  "timestamp": "2026-06-24T18:02:21.171Z",
+  "totalInvestigated": 50,
+  "summary": {
+    "successful": 0,
+    "corrupted": 50,
+    "notUpdated": 0
+  },
+  "corruptedBlocks": [
+    {
+      "uid": "aFD_aJS0g",
+      "original": "17. When there are clients with completed appointments but none with an “Active” status, the *Active Clients* card must display **0**. #Manual",
+      "expected": "Test:: 17. When there are clients with completed appointments but none with an “Active” status, the *Active Clients* card must display **0**. #Manual",
+      "actual": "17. Test:: 17. When there are clients with completed appointments but none with an “Active” status, the *Active Clients* card must display **0**. #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 142,
+        "length_expected": 149,
+        "length_actual": 153
+      }
+    },
+    {
+      "uid": "jEUw06QD8",
+      "original": "16. When there are no clients with completed appointments in the selected date range, the *Active Clients* card must display **0**. #Manual",
+      "expected": "Test:: 16. When there are no clients with completed appointments in the selected date range, the *Active Clients* card must display **0**. #Manual",
+      "actual": "16. Test:: 16. When there are no clients with completed appointments in the selected date range, the *Active Clients* card must display **0**. #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 139,
+        "length_expected": 146,
+        "length_actual": 150
+      }
+    },
+    {
+      "uid": "rWzmN4QKu",
+      "original": "15. When a client has completed appointments across multiple facilities or providers, the card must still count that client only once if they are Active. #Manual",
+      "expected": "Test:: 15. When a client has completed appointments across multiple facilities or providers, the card must still count that client only once if they are Active. #Manual",
+      "actual": "15. Test:: 15. When a client has completed appointments across multiple facilities or providers, the card must still count that client only once if they are Active. #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 161,
+        "length_expected": 168,
+        "length_actual": 172
+      }
+    },
+    {
+      "uid": "Y5tbdVZcr",
+      "original": "14. Example: Clients matching all filters — Client 1 (Active), Client 2 (Inactive) → Total Active Clients = 1. #Manual",
+      "expected": "Test:: 14. Example: Clients matching all filters — Client 1 (Active), Client 2 (Inactive) → Total Active Clients = 1. #Manual",
+      "actual": "14. Test:: 14. Example: Clients matching all filters — Client 1 (Active), Client 2 (Inactive) → Total Active Clients = 1. #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 118,
+        "length_expected": 125,
+        "length_actual": 129
+      }
+    },
+    {
+      "uid": "T_1PQMJoo",
+      "original": "12. Example: Service Y — Client 10 (Active), Client 11 (Inactive) → Total Active Clients = 1. #Manual",
+      "expected": "Test:: 12. Example: Service Y — Client 10 (Active), Client 11 (Inactive) → Total Active Clients = 1. #Manual",
+      "actual": "12. Test:: 12. Example: Service Y — Client 10 (Active), Client 11 (Inactive) → Total Active Clients = 1. #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 101,
+        "length_expected": 108,
+        "length_actual": 112
+      }
+    },
+    {
+      "uid": "ZoiGM_1Md",
+      "original": "10. Example: Service Category X — Client 7 (Active), Client 8 (Active), Client 9 (Inactive) → Total Active Clients = 2. #Manual",
+      "expected": "Test:: 10. Example: Service Category X — Client 7 (Active), Client 8 (Active), Client 9 (Inactive) → Total Active Clients = 2. #Manual",
+      "actual": "10. Test:: 10. Example: Service Category X — Client 7 (Active), Client 8 (Active), Client 9 (Inactive) → Total Active Clients = 2. #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 127,
+        "length_expected": 134,
+        "length_actual": 138
+      }
+    },
+    {
+      "uid": "8JpY152jF",
+      "original": "8. Example: Provider 1 — Client 4 (Active, 2 completed), Client 5 (Active, 1 completed), Client 6 (Inactive, 1 completed) → Total Active Clients = 2. #Manual",
+      "expected": "Test:: 8. Example: Provider 1 — Client 4 (Active, 2 completed), Client 5 (Active, 1 completed), Client 6 (Inactive, 1 completed) → Total Active Clients = 2. #Manual",
+      "actual": "8. Test:: 8. Example: Provider 1 — Client 4 (Active, 2 completed), Client 5 (Active, 1 completed), Client 6 (Inactive, 1 completed) → Total Active Clients = 2. #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 157,
+        "length_expected": 164,
+        "length_actual": 167
+      }
+    },
+    {
+      "uid": "QzibWdZjN",
+      "original": "6. Example: At Facility A — Client 1 (Active), Client 2 (Inactive), Client 3 (Active) → Total Active Clients = 2. #Manual",
+      "expected": "Test:: 6. Example: At Facility A — Client 1 (Active), Client 2 (Inactive), Client 3 (Active) → Total Active Clients = 2. #Manual",
+      "actual": "6. Test:: 6. Example: At Facility A — Client 1 (Active), Client 2 (Inactive), Client 3 (Active) → Total Active Clients = 2. #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 121,
+        "length_expected": 128,
+        "length_actual": 131
+      }
+    },
+    {
+      "uid": "v-s7Gf0zW",
+      "original": "4. Example: Client 1 (Active, 2 completed appointments), Client 2 (Inactive, 1 completed appointment), Client 3 (Active, 1 completed appointment) → Total Active Clients = 2. #Manual",
+      "expected": "Test:: 4. Example: Client 1 (Active, 2 completed appointments), Client 2 (Inactive, 1 completed appointment), Client 3 (Active, 1 completed appointment) → Total Active Clients = 2. #Manual",
+      "actual": "4. Test:: 4. Example: Client 1 (Active, 2 completed appointments), Client 2 (Inactive, 1 completed appointment), Client 3 (Active, 1 completed appointment) → Total Active Clients = 2. #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 181,
+        "length_expected": 188,
+        "length_actual": 191
+      }
+    },
+    {
+      "uid": "Rz203ky6Y",
+      "original": "2. When I open the *Active Clients* card, the default filter must be set to *YTD*. #Manual",
+      "expected": "Test:: 2. When I open the *Active Clients* card, the default filter must be set to *YTD*. #Manual",
+      "actual": "2. Test:: 2. When I open the *Active Clients* card, the default filter must be set to *YTD*. #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 90,
+        "length_expected": 97,
+        "length_actual": 100
+      }
+    },
+    {
+      "uid": "AnZTrrn9Z",
+      "original": "1. When I enable the *Management View* toggle, the *Active Clients* card must be visible under the *Facility Metrics* tab. #Manual",
+      "expected": "Test:: 1. When I enable the *Management View* toggle, the *Active Clients* card must be visible under the *Facility Metrics* tab. #Manual",
+      "actual": "1. Test:: 1. When I enable the *Management View* toggle, the *Active Clients* card must be visible under the *Facility Metrics* tab. #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 130,
+        "length_expected": 137,
+        "length_actual": 140
+      }
+    },
+    {
+      "uid": "KbPv3WwjC",
+      "original": "18. When I change the date range filter (e.g., Today ,Last week , prior year), both Prior and Recent windows must automatically recalculate (maintaining 6-month split). #Manual",
+      "expected": "Test:: 18. When I change the date range filter (e.g., Today ,Last week , prior year), both Prior and Recent windows must automatically recalculate (maintaining 6-month split). #Manual",
+      "actual": "18. Test:: 18. When I change the date range filter (e.g., Today ,Last week , prior year), both Prior and Recent windows must automatically recalculate (maintaining 6-month split). #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 176,
+        "length_expected": 183,
+        "length_actual": 187
+      }
+    },
+    {
+      "uid": "47dVOtw1e",
+      "original": "17. When a client appears in multiple facilities, providers, or services, they must only be counted once per context (depending on the applied filter). #Manual",
+      "expected": "Test:: 17. When a client appears in multiple facilities, providers, or services, they must only be counted once per context (depending on the applied filter). #Manual",
+      "actual": "17. Test:: 17. When a client appears in multiple facilities, providers, or services, they must only be counted once per context (depending on the applied filter). #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 159,
+        "length_expected": 166,
+        "length_actual": 170
+      }
+    },
+    {
+      "uid": "9RkIU5swC",
+      "original": "16. When all clients from the prior window also have recent completed appointments, the card must display **0**. #Manual",
+      "expected": "Test:: 16. When all clients from the prior window also have recent completed appointments, the card must display **0**. #Manual",
+      "actual": "16. Test:: 16. When all clients from the prior window also have recent completed appointments, the card must display **0**. #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 120,
+        "length_expected": 127,
+        "length_actual": 131
+      }
+    },
+    {
+      "uid": "UKp_w_b4Z",
+      "original": "15. When there are no open cases as of the end date of the selected date range, the card must display **0**. #Manual",
+      "expected": "Test:: 15. When there are no open cases as of the end date of the selected date range, the card must display **0**. #Manual",
+      "actual": "15. Test:: 15. When there are no open cases as of the end date of the selected date range, the card must display **0**. #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 116,
+        "length_expected": 123,
+        "length_actual": 127
+      }
+    },
+    {
+      "uid": "GsCcOM5kt",
+      "original": "**Clients Lost (Service X) = 1 (Client 1).** #Manual",
+      "expected": "Test:: **Clients Lost (Service X) = 1 (Client 1).** #Manual",
+      "actual": "- Test:: **Clients Lost (Service X) = 1 (Client 1).** #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 52,
+        "length_expected": 59,
+        "length_actual": 61
+      }
+    },
+    {
+      "uid": "BcrkCnsaz",
+      "original": "**Clients Lost (Provider 1) = 1 (Client A).** #Manual",
+      "expected": "Test:: **Clients Lost (Provider 1) = 1 (Client A).** #Manual",
+      "actual": "- Test:: **Clients Lost (Provider 1) = 1 (Client A).** #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 53,
+        "length_expected": 60,
+        "length_actual": 62
+      }
+    },
+    {
+      "uid": "ZRac77odr",
+      "original": "**Clients Lost (Facility A) = 1 (Client 1).** #Manual",
+      "expected": "Test:: **Clients Lost (Facility A) = 1 (Client 1).** #Manual",
+      "actual": "- Test:: **Clients Lost (Facility A) = 1 (Client 1).** #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 53,
+        "length_expected": 60,
+        "length_actual": 62
+      }
+    },
+    {
+      "uid": "sn0UJOdAN",
+      "original": "Compute **Clients Lost = ALPHA – GAMMA.**#Manual",
+      "expected": "Test:: Compute **Clients Lost = ALPHA – GAMMA.**#Manual",
+      "actual": "- Test:: Compute **Clients Lost = ALPHA – GAMMA.**#Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 48,
+        "length_expected": 55,
+        "length_actual": 57
+      }
+    },
+    {
+      "uid": "0HWNYnpHP",
+      "original": "11. 5. Use the formula: **Clients Lost = ALPHA – GAMMA.** #Manual",
+      "expected": "Test:: 11. 5. Use the formula: **Clients Lost = ALPHA – GAMMA.** #Manual",
+      "actual": "11. Test:: 11. 5. Use the formula: **Clients Lost = ALPHA – GAMMA.** #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 65,
+        "length_expected": 72,
+        "length_actual": 76
+      }
+    },
+    {
+      "uid": "CvwRwfq19",
+      "original": "These window dates must adjust dynamically if the end date of the selected date range changes. #Manual",
+      "expected": "Test:: These window dates must adjust dynamically if the end date of the selected date range changes. #Manual",
+      "actual": "- Test:: These window dates must adjust dynamically if the end date of the selected date range changes. #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 102,
+        "length_expected": 109,
+        "length_actual": 111
+      }
+    },
+    {
+      "uid": "nB9AFbzsu",
+      "original": "2. When I open the *Clients Lost* card, the default filter must be *YTD*. #Manual",
+      "expected": "Test:: 2. When I open the *Clients Lost* card, the default filter must be *YTD*. #Manual",
+      "actual": "2. Test:: 2. When I open the *Clients Lost* card, the default filter must be *YTD*. #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 81,
+        "length_expected": 88,
+        "length_actual": 91
+      }
+    },
+    {
+      "uid": "sZgPxxOK4",
+      "original": "1. When I enable the *Management View* toggle, the *Clients Lost* card must be visible under *Provider Metrics*. #Manual",
+      "expected": "Test:: 1. When I enable the *Management View* toggle, the *Clients Lost* card must be visible under *Provider Metrics*. #Manual",
+      "actual": "1. Test:: 1. When I enable the *Management View* toggle, the *Clients Lost* card must be visible under *Provider Metrics*. #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 120,
+        "length_expected": 127,
+        "length_actual": 130
+      }
+    },
+    {
+      "uid": "RLv2DwFCj",
+      "original": "13. When I change the date range (e.g., from *YTD* to *Last Month*), the card must recalculate based on clients whose first completed appointment date falls within the new date range. #Manual",
+      "expected": "Test:: 13. When I change the date range (e.g., from *YTD* to *Last Month*), the card must recalculate based on clients whose first completed appointment date falls within the new date range. #Manual",
+      "actual": "13. Test:: 13. When I change the date range (e.g., from *YTD* to *Last Month*), the card must recalculate based on clients whose first completed appointment date falls within the new date range. #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 191,
+        "length_expected": 198,
+        "length_actual": 202
+      }
+    },
+    {
+      "uid": "4v2IqZri6",
+      "original": "12. When no clients have their first completed appointment within the selected date range, the *New Clients* card must display **0**. #Manual",
+      "expected": "Test:: 12. When no clients have their first completed appointment within the selected date range, the *New Clients* card must display **0**. #Manual",
+      "actual": "12. Test:: 12. When no clients have their first completed appointment within the selected date range, the *New Clients* card must display **0**. #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 141,
+        "length_expected": 148,
+        "length_actual": 152
+      }
+    },
+    {
+      "uid": "jmiVj1W2Y",
+      "original": "11. When a client has multiple appointments after their first completion, those later appointments must not cause them to be counted again. Each client is counted only once — on their first completed appointment. #Manual",
+      "expected": "Test:: 11. When a client has multiple appointments after their first completion, those later appointments must not cause them to be counted again. Each client is counted only once — on their first completed appointment. #Manual",
+      "actual": "11. Test:: 11. When a client has multiple appointments after their first completion, those later appointments must not cause them to be counted again. Each client is counted only once — on their first completed appointment. #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 220,
+        "length_expected": 227,
+        "length_actual": 231
+      }
+    },
+    {
+      "uid": "61Cx-0FsB",
+      "original": "**Total New Clients = 1.** #Manual",
+      "expected": "Test:: **Total New Clients = 1.** #Manual",
+      "actual": "- Test:: **Total New Clients = 1.** #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 34,
+        "length_expected": 41,
+        "length_actual": 43
+      }
+    },
+    {
+      "uid": "54SWSA2Ud",
+      "original": "**Total New Clients (Service Y) = 1.** #Manual",
+      "expected": "Test:: **Total New Clients (Service Y) = 1.** #Manual",
+      "actual": "- Test:: **Total New Clients (Service Y) = 1.** #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 46,
+        "length_expected": 53,
+        "length_actual": 55
+      }
+    },
+    {
+      "uid": "JqCYB9aMp",
+      "original": "**Total New Clients (Service Category X) = 2.** #Manual",
+      "expected": "Test:: **Total New Clients (Service Category X) = 2.** #Manual",
+      "actual": "- Test:: **Total New Clients (Service Category X) = 2.** #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 55,
+        "length_expected": 62,
+        "length_actual": 64
+      }
+    },
+    {
+      "uid": "1q-BSDtuk",
+      "original": "**Total New Clients (Provider 1) = 2.** #Manual",
+      "expected": "Test:: **Total New Clients (Provider 1) = 2.** #Manual",
+      "actual": "- Test:: **Total New Clients (Provider 1) = 2.** #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 47,
+        "length_expected": 54,
+        "length_actual": 56
+      }
+    },
+    {
+      "uid": "RbBm5mnZI",
+      "original": "**Total New Clients (Facility A) = 2.** #Manual",
+      "expected": "Test:: **Total New Clients (Facility A) = 2.** #Manual",
+      "actual": "- Test:: **Total New Clients (Facility A) = 2.** #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 47,
+        "length_expected": 54,
+        "length_actual": 56
+      }
+    },
+    {
+      "uid": "CrAk2VCUN",
+      "original": "**Total New Clients = 2.** #Manual",
+      "expected": "Test:: **Total New Clients = 2.** #Manual",
+      "actual": "- Test:: **Total New Clients = 2.** #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 34,
+        "length_expected": 41,
+        "length_actual": 43
+      }
+    },
+    {
+      "uid": "ANLU_gGDy",
+      "original": "2. When I open the *New Clients* card, the default filter must be set to *YTD*. #Manual",
+      "expected": "Test:: 2. When I open the *New Clients* card, the default filter must be set to *YTD*. #Manual",
+      "actual": "2. Test:: 2. When I open the *New Clients* card, the default filter must be set to *YTD*. #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 87,
+        "length_expected": 94,
+        "length_actual": 97
+      }
+    },
+    {
+      "uid": "lOyRxASKC",
+      "original": "1. When I enable the *Management View* toggle, the *New Clients* card must be visible under the *Provider Metrics* tab. #Manual",
+      "expected": "Test:: 1. When I enable the *Management View* toggle, the *New Clients* card must be visible under the *Provider Metrics* tab. #Manual",
+      "actual": "1. Test:: 1. When I enable the *Management View* toggle, the *New Clients* card must be visible under the *Provider Metrics* tab. #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 127,
+        "length_expected": 134,
+        "length_actual": 137
+      }
+    },
+    {
+      "uid": "pYgA-IgjW",
+      "original": "11. When applying **Today** filter, the card must count all canceled appointments for today. Example: 1 canceled appointment → Card shows 1 #Manual",
+      "expected": "Test:: 11. When applying **Today** filter, the card must count all canceled appointments for today. Example: 1 canceled appointment → Card shows 1 #Manual",
+      "actual": "11. Test:: 11. When applying **Today** filter, the card must count all canceled appointments for today. Example: 1 canceled appointment → Card shows 1 #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 147,
+        "length_expected": 154,
+        "length_actual": 158
+      }
+    },
+    {
+      "uid": "pMfrv01hN",
+      "original": "10. When applying **Prior Year** filter, the card must count all canceled appointments in the previous calendar year. Example: 8 canceled appointments → Card shows 8 #Manual",
+      "expected": "Test:: 10. When applying **Prior Year** filter, the card must count all canceled appointments in the previous calendar year. Example: 8 canceled appointments → Card shows 8 #Manual",
+      "actual": "10. Test:: 10. When applying **Prior Year** filter, the card must count all canceled appointments in the previous calendar year. Example: 8 canceled appointments → Card shows 8 #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 173,
+        "length_expected": 180,
+        "length_actual": 184
+      }
+    },
+    {
+      "uid": "xObfPdiUz",
+      "original": "9. When applying **YTD** filter (default), the card must count all canceled appointments from Jan 1 to current date. Example: 10 canceled appointments → Card shows 10 #Manual",
+      "expected": "Test:: 9. When applying **YTD** filter (default), the card must count all canceled appointments from Jan 1 to current date. Example: 10 canceled appointments → Card shows 10 #Manual",
+      "actual": "9. Test:: 9. When applying **YTD** filter (default), the card must count all canceled appointments from Jan 1 to current date. Example: 10 canceled appointments → Card shows 10 #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 174,
+        "length_expected": 181,
+        "length_actual": 184
+      }
+    },
+    {
+      "uid": "E77_oV2j2",
+      "original": "8. When applying **Last Month** filter, the card must count only canceled appointments in that month. Example: 3 canceled appointments → Card shows 3 #Manual",
+      "expected": "Test:: 8. When applying **Last Month** filter, the card must count only canceled appointments in that month. Example: 3 canceled appointments → Card shows 3 #Manual",
+      "actual": "8. Test:: 8. When applying **Last Month** filter, the card must count only canceled appointments in that month. Example: 3 canceled appointments → Card shows 3 #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 157,
+        "length_expected": 164,
+        "length_actual": 167
+      }
+    },
+    {
+      "uid": "gOPe8wYO0",
+      "original": "7. When applying **Last Week** filter, the card must count only canceled appointments in that week. Example: 2 canceled appointments → Card shows 2 #Manual",
+      "expected": "Test:: 7. When applying **Last Week** filter, the card must count only canceled appointments in that week. Example: 2 canceled appointments → Card shows 2 #Manual",
+      "actual": "7. Test:: 7. When applying **Last Week** filter, the card must count only canceled appointments in that week. Example: 2 canceled appointments → Card shows 2 #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 155,
+        "length_expected": 162,
+        "length_actual": 165
+      }
+    },
+    {
+      "uid": "mk6EO16J1",
+      "original": "6. When there are no canceled appointments in the selected date range or filters, the card must display 0 #Manual",
+      "expected": "Test:: 6. When there are no canceled appointments in the selected date range or filters, the card must display 0 #Manual",
+      "actual": "6. Test:: 6. When there are no canceled appointments in the selected date range or filters, the card must display 0 #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 113,
+        "length_expected": 120,
+        "length_actual": 123
+      }
+    },
+    {
+      "uid": "Xq-XQYb-r",
+      "original": "5. When applying multiple filters together, the card must count all appointments with **Canceled** status that match all selected filters. Example: Facility A + Service X + Provider A has 1 canceled appointment → Card shows 1 #Manual",
+      "expected": "Test:: 5. When applying multiple filters together, the card must count all appointments with **Canceled** status that match all selected filters. Example: Facility A + Service X + Provider A has 1 canceled appointment → Card shows 1 #Manual",
+      "actual": "5. Test:: 5. When applying multiple filters together, the card must count all appointments with **Canceled** status that match all selected filters. Example: Facility A + Service X + Provider A has 1 canceled appointment → Card shows 1 #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 233,
+        "length_expected": 240,
+        "length_actual": 243
+      }
+    },
+    {
+      "uid": "3ap60M_J5",
+      "original": "4. When applying Provider filter, the card must count all appointments with **Canceled** status linked to the selected provider. Example: Provider A has 2 canceled appointments → Card shows 2 #Manual",
+      "expected": "Test:: 4. When applying Provider filter, the card must count all appointments with **Canceled** status linked to the selected provider. Example: Provider A has 2 canceled appointments → Card shows 2 #Manual",
+      "actual": "4. Test:: 4. When applying Provider filter, the card must count all appointments with **Canceled** status linked to the selected provider. Example: Provider A has 2 canceled appointments → Card shows 2 #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 199,
+        "length_expected": 206,
+        "length_actual": 209
+      }
+    },
+    {
+      "uid": "hvQBkclOH",
+      "original": "3. When applying Service/Category filter, the card must count all appointments with **Canceled** status for the selected service or category. Example: Service X has 4 canceled appointments → Card shows 4 #Manual",
+      "expected": "Test:: 3. When applying Service/Category filter, the card must count all appointments with **Canceled** status for the selected service or category. Example: Service X has 4 canceled appointments → Card shows 4 #Manual",
+      "actual": "3. Test:: 3. When applying Service/Category filter, the card must count all appointments with **Canceled** status for the selected service or category. Example: Service X has 4 canceled appointments → Card shows 4 #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 211,
+        "length_expected": 218,
+        "length_actual": 221
+      }
+    },
+    {
+      "uid": "BC7TclluG",
+      "original": "2. When applying Facility filter, the card must count all appointments with **Canceled** status in the selected facility. Example: Facility A has 3 canceled appointments → Card shows 3 #Manual",
+      "expected": "Test:: 2. When applying Facility filter, the card must count all appointments with **Canceled** status in the selected facility. Example: Facility A has 3 canceled appointments → Card shows 3 #Manual",
+      "actual": "2. Test:: 2. When applying Facility filter, the card must count all appointments with **Canceled** status in the selected facility. Example: Facility A has 3 canceled appointments → Card shows 3 #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 192,
+        "length_expected": 199,
+        "length_actual": 202
+      }
+    },
+    {
+      "uid": "lk-vbKchV",
+      "original": "1. When calculating canceled appointments without any filters, the card must count all appointments with **Canceled** status in the YTD date range. Example: 5 canceled appointments → Card shows 5 #Manual",
+      "expected": "Test:: 1. When calculating canceled appointments without any filters, the card must count all appointments with **Canceled** status in the YTD date range. Example: 5 canceled appointments → Card shows 5 #Manual",
+      "actual": "1. Test:: 1. When calculating canceled appointments without any filters, the card must count all appointments with **Canceled** status in the YTD date range. Example: 5 canceled appointments → Card shows 5 #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 203,
+        "length_expected": 210,
+        "length_actual": 213
+      }
+    },
+    {
+      "uid": "RfI2Gl-Zo",
+      "original": "14. When selecting a **custom date range**, the card must show the count of all unique cases discharged between the selected dates. Example: 4 cases discharged in the range → Card shows 4 #Manual",
+      "expected": "Test:: 14. When selecting a **custom date range**, the card must show the count of all unique cases discharged between the selected dates. Example: 4 cases discharged in the range → Card shows 4 #Manual",
+      "actual": "14. Test:: 14. When selecting a **custom date range**, the card must show the count of all unique cases discharged between the selected dates. Example: 4 cases discharged in the range → Card shows 4 #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 195,
+        "length_expected": 202,
+        "length_actual": 206
+      }
+    },
+    {
+      "uid": "gLh98frBZ",
+      "original": "13. When selecting the **“Prior Year”** time period, the card must show the count of all unique cases discharged in the previous calendar year. Example: 8 cases discharged last year → Card shows 8 #Manual",
+      "expected": "Test:: 13. When selecting the **“Prior Year”** time period, the card must show the count of all unique cases discharged in the previous calendar year. Example: 8 cases discharged last year → Card shows 8 #Manual",
+      "actual": "13. Test:: 13. When selecting the **“Prior Year”** time period, the card must show the count of all unique cases discharged in the previous calendar year. Example: 8 cases discharged last year → Card shows 8 #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 204,
+        "length_expected": 211,
+        "length_actual": 215
+      }
+    },
+    {
+      "uid": "dfK7fc57u",
+      "original": "12. When selecting the **“Year-to-Date (YTD)”** time period (default), the card must show the count of all unique cases discharged from January 1st to the current date. Example: 10 cases discharged YTD → Card shows 10 #Manual",
+      "expected": "Test:: 12. When selecting the **“Year-to-Date (YTD)”** time period (default), the card must show the count of all unique cases discharged from January 1st to the current date. Example: 10 cases discharged YTD → Card shows 10 #Manual",
+      "actual": "12. Test:: 12. When selecting the **“Year-to-Date (YTD)”** time period (default), the card must show the count of all unique cases discharged from January 1st to the current date. Example: 10 cases discharged YTD → Card shows 10 #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 225,
+        "length_expected": 232,
+        "length_actual": 236
+      }
+    },
+    {
+      "uid": "Uz5RCusMV",
+      "original": "11. When applying the **“Last Month”** filter (e.g., selected period = September 1–30), if **5 cases** were discharged during September but **one case was discharged on September 30 and reopened on the same day**, then on **October 1**, the card must show only **4 discharged cases** (the reopened case must not be counted as discharged). #Manual",
+      "expected": "Test:: 11. When applying the **“Last Month”** filter (e.g., selected period = September 1–30), if **5 cases** were discharged during September but **one case was discharged on September 30 and reopened on the same day**, then on **October 1**, the card must show only **4 discharged cases** (the reopened case must not be counted as discharged). #Manual",
+      "actual": "11. Test:: 11. When applying the **“Last Month”** filter (e.g., selected period = September 1–30), if **5 cases** were discharged during September but **one case was discharged on September 30 and reopened on the same day**, then on **October 1**, the card must show only **4 discharged cases** (the reopened case must not be counted as discharged). #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 346,
+        "length_expected": 353,
+        "length_actual": 357
+      }
+    },
+    {
+      "uid": "myFGSUXs5",
+      "original": "10. When selecting the **“Last Month”** time period, the card must show the count of all unique cases discharged last month. Example: 5 cases discharged last month → Card shows 5 #Manual",
+      "expected": "Test:: 10. When selecting the **“Last Month”** time period, the card must show the count of all unique cases discharged last month. Example: 5 cases discharged last month → Card shows 5 #Manual",
+      "actual": "10. Test:: 10. When selecting the **“Last Month”** time period, the card must show the count of all unique cases discharged last month. Example: 5 cases discharged last month → Card shows 5 #Manual",
+      "status": "CORRUPTED",
+      "analysis": {
+        "has_test_prefix": true,
+        "test_count": 1,
+        "double_prefix": false,
+        "length_original": 186,
+        "length_expected": 193,
+        "length_actual": 197
+      }
+    }
+  ]
+}
