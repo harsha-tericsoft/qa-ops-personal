@@ -210,7 +210,10 @@ function TestCasesContent() {
     }
     setSelectedIds(newSelected)
     // Persist to sessionStorage
-    sessionStorage.setItem('test-cases-selection', JSON.stringify(Array.from(newSelected)))
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('test-cases-selection', JSON.stringify(Array.from(newSelected)))
+      console.log('[Selection] Updated:', { id, selected, totalSelected: newSelected.size })
+    }
   }
 
   const handleSelectAll = (selected: boolean) => {
