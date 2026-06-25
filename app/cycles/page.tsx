@@ -342,11 +342,30 @@ function ExecutionCyclesContent() {
       })
 
       if (response.ok) {
-        // API confirmed - fetch latest data to ensure sync
+        // API confirmed - get the updated test run from response
+        const updatedRun = await response.json()
+
+        // Update only the affected test run in state (more efficient than refetching all versions)
         if (selectedVersionId) {
-          await fetchVersions(selectedCycleId!)
-        } else {
-          await fetchCycles()
+          const newVersions = versions.map((v) => ({
+            ...v,
+            testRuns: (v.testRuns || []).map((run) =>
+              run.id === runId ? updatedRun : run
+            ),
+          }))
+          setVersions(newVersions)
+        } else if (selectedCycleId) {
+          const newCycles = cycles.map((c) =>
+            c.id === selectedCycleId
+              ? {
+                  ...c,
+                  testRuns: (c.testRuns || []).map((run) =>
+                    run.id === runId ? updatedRun : run
+                  ),
+                }
+              : c
+          )
+          setCycles(newCycles as any)
         }
       } else {
         // If API fails, revert optimistic update
