@@ -73,46 +73,64 @@ export async function findTestCasesByFilters(
     take: pagination.limit,
   })
 
-  // Enrich with repository node information (module/feature)
-  const enrichedTestCases = await Promise.all(
-    roamTestCases.map(async (rtc) => {
-      let module = ''
-      let feature = ''
+  // CRITICAL FIX: Batch load all repository nodes instead of N+1 queries
+  // Extract unique repository node IDs
+  const nodeIds = [...new Set(roamTestCases
+    .map(rtc => rtc.repositoryNodeId)
+    .filter(Boolean) as string[]
+  )]
 
-      if (rtc.repositoryNodeId) {
-        const node = await prisma.repositoryNode.findUnique({
-          where: { id: rtc.repositoryNodeId },
+  // Batch load all nodes in ONE query
+  const nodeMap = new Map<string, { name: string; parentName?: string }>()
+  if (nodeIds.length > 0) {
+    const nodes = await prisma.repositoryNode.findMany({
+      where: { id: { in: nodeIds } },
+      select: {
+        id: true,
+        name: true,
+        parent: {
           select: {
             name: true,
-            parent: {
-              select: {
-                name: true,
-              },
-            },
           },
-        })
+        },
+      },
+    })
 
-        if (node) {
-          // Assume parent is module, current is feature
-          if (node.parent) {
-            module = node.parent.name
-            feature = node.name
-          } else {
-            module = node.name
-          }
+    nodes.forEach(node => {
+      nodeMap.set(node.id, {
+        name: node.name,
+        parentName: node.parent?.name,
+      })
+    })
+  }
+
+  // Enrich test cases with pre-loaded node data (no async operations)
+  const enrichedTestCases = roamTestCases.map((rtc) => {
+    let module = ''
+    let feature = ''
+
+    if (rtc.repositoryNodeId) {
+      const nodeData = nodeMap.get(rtc.repositoryNodeId)
+      if (nodeData) {
+        // Assume parent is module, current is feature
+        if (nodeData.parentName) {
+          module = nodeData.parentName
+          feature = nodeData.name
+        } else {
+          module = nodeData.name
         }
       }
+    }
 
-      return {
-        id: rtc.id,
-        title: rtc.title,
-        tags: rtc.tags || [],
-        module,
-        feature,
-        sourceRoamUid: rtc.sourceRoamUid,
-      }
-    })
-  )
+    return {
+      id: rtc.id,
+      title: rtc.title,
+      tags: rtc.tags || [],
+      module,
+      feature,
+      sourceRoamUid: rtc.sourceRoamUid,
+    }
+  })
 
   return {
     testCases: enrichedTestCases,

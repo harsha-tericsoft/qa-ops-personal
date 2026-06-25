@@ -10,6 +10,7 @@ import { ProjectSelector } from '@/components/dashboard/ProjectSelector'
 import { RepositorySection } from '@/components/dashboard/RepositorySection'
 import { RoamIntegrationStatus } from '@/components/dashboard/RoamIntegrationStatus'
 import { RecentActivity } from '@/components/dashboard/RecentActivity'
+import { ExecutionDashboard } from '@/components/dashboard/ExecutionDashboard'
 
 interface DashboardMetrics {
   totalTests: number
@@ -137,37 +138,8 @@ function DashboardContent() {
         )}
       </div>
 
-      {/* Execution Section: Test Suites, Active Cycles, Total Runs, Open Defects */}
-      <div>
-        <h2 className="text-lg font-semibold mb-3 text-gray-900">Execution</h2>
-        <MetricGrid>
-          <MetricCard
-            label="Test Suites"
-            value={metrics.testSuites}
-            color="blue"
-          />
-          <MetricCard
-            label="Active Cycles"
-            value={metrics.activeCycles}
-            color="blue"
-          />
-          <MetricCard
-            label="Total Runs"
-            value={metrics.totalRunTests}
-            subtitle={
-              metrics.hasExecutionData
-                ? `${metrics.passCount} pass, ${metrics.failCount} fail`
-                : undefined
-            }
-            color="blue"
-          />
-          <MetricCard
-            label="Open Defects"
-            value={metrics.openDefects}
-            color={metrics.openDefects === 0 ? 'green' : 'red'}
-          />
-        </MetricGrid>
-      </div>
+      {/* Execution Dashboard: Cycle-focused QA metrics */}
+      <ExecutionDashboard projectId={currentProjectId} />
 
       {/* Repository Section */}
       <RepositorySection

@@ -5,6 +5,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { TestCaseSummaryCards } from '@/components/test-cases/TestCaseSummaryCards'
 import { TestCaseFilterPanel } from '@/components/test-cases/TestCaseFilterPanel'
 import { TestCaseGrid } from '@/components/test-cases/TestCaseGrid'
+import { PreviewSelectedModal } from '@/components/test-cases/PreviewSelectedModal'
 import { useState, useEffect } from 'react'
 
 interface Project {
@@ -57,8 +58,24 @@ function TestCasesContent() {
   const [totalTests, setTotalTests] = useState(0)
   const itemsPerPage = 10
 
-  // Selection
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  // GLOBAL SELECTION: Persist across pagination, filtering, sorting
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => {
+    // Load from sessionStorage on init
+    if (typeof window !== 'undefined') {
+      const stored = sessionStorage.getItem('test-cases-selection')
+      if (stored) {
+        try {
+          return new Set(JSON.parse(stored))
+        } catch {
+          return new Set()
+        }
+      }
+    }
+    return new Set()
+  })
+
+  // Preview modal
+  const [showPreview, setShowPreview] = useState(false)
 
   useEffect(() => {
     fetchProjects()
@@ -188,15 +205,26 @@ function TestCasesContent() {
       newSelected.delete(id)
     }
     setSelectedIds(newSelected)
+    // Persist to sessionStorage
+    sessionStorage.setItem('test-cases-selection', JSON.stringify(Array.from(newSelected)))
   }
 
   const handleSelectAll = (selected: boolean) => {
+    let newSelected: Set<string>
     if (selected) {
-      const allIds = new Set(testCases.map((tc) => tc.id))
-      setSelectedIds(allIds)
+      newSelected = new Set([...selectedIds, ...testCases.map((tc) => tc.id)])
     } else {
-      setSelectedIds(new Set())
+      // Only clear from current page
+      newSelected = new Set([...selectedIds].filter(id => !testCases.map(tc => tc.id).includes(id)))
     }
+    setSelectedIds(newSelected)
+    // Persist to sessionStorage
+    sessionStorage.setItem('test-cases-selection', JSON.stringify(Array.from(newSelected)))
+  }
+
+  const handleClearSelection = () => {
+    setSelectedIds(new Set())
+    sessionStorage.removeItem('test-cases-selection')
   }
 
   if (!currentProjectId) {
@@ -281,12 +309,13 @@ function TestCasesContent() {
                     </span>
                     <div className="space-x-3">
                       <button
-                        onClick={() => setSelectedIds(new Set())}
+                        onClick={handleClearSelection}
                         className="px-4 py-2 text-sm border border-blue-300 text-blue-700 hover:bg-blue-100 rounded-lg"
                       >
                         Clear Selection
                       </button>
                       <button
+                        onClick={() => setShowPreview(true)}
                         className="px-4 py-2 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded-lg"
                       >
                         Preview Selected ({selectedIds.size})
@@ -331,6 +360,14 @@ function TestCasesContent() {
           </div>
         </div>
       </div>
+
+      {/* Preview Modal */}
+      <PreviewSelectedModal
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+        selectedCount={selectedIds.size}
+        testCases={testCases.filter(tc => selectedIds.has(tc.id))}
+      />
     </div>
   )
 }
