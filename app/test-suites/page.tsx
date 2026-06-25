@@ -112,6 +112,42 @@ function TestSuitesContent() {
     let failedTestCount = 0
 
     try {
+      let testCaseIds: string[] = []
+
+      // If nodes selected, create TestCase records FIRST
+      if (selectedNodeIds.length > 0) {
+        const roamTestCases = availableTests.filter((tc: any) =>
+          selectedNodeIds.includes(tc.repositoryNodeId)
+        )
+
+        if (roamTestCases.length > 0) {
+          for (let i = 0; i < roamTestCases.length; i++) {
+            setCreationStep(`Creating test cases (${i + 1}/${roamTestCases.length})`)
+            const rtc = roamTestCases[i]
+            try {
+              const createResponse = await fetch('/api/test-cases', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  projectId: currentProjectId,
+                  title: rtc.title,
+                  description: `Extracted from: ${rtc.sourceRoamUid}`,
+                }),
+              })
+              if (createResponse.ok) {
+                const testCase = await createResponse.json()
+                testCaseIds.push(testCase.id)
+                createdTestCount++
+              }
+            } catch (error) {
+              failedTestCount++
+              console.error(`Failed to create TestCase for ${rtc.title}:`, error)
+            }
+          }
+        }
+      }
+
+      // Create suite with testIds in bulk request (no PATCH needed)
       setCreationStep('Creating suite...')
       const response = await fetch(`/api/test-suites?projectId=${currentProjectId}`, {
         method: 'POST',
@@ -120,60 +156,12 @@ function TestSuitesContent() {
           name: newSuiteName,
           description: newSuiteDesc,
           category: 'CUSTOM',
+          testIds: testCaseIds, // Bulk insert - single request instead of PATCH
         }),
       })
 
       if (response.ok) {
         const newSuite = await response.json()
-
-        // If nodes selected (hierarchy), create TestCase records and link them
-        if (selectedNodeIds.length > 0) {
-          const roamTestCases = availableTests.filter((tc: any) =>
-            selectedNodeIds.includes(tc.repositoryNodeId)
-          )
-
-          if (roamTestCases.length > 0) {
-            const testCaseIds: string[] = []
-            for (let i = 0; i < roamTestCases.length; i++) {
-              setCreationStep(`Adding test cases (${i + 1}/${roamTestCases.length})`)
-              const rtc = roamTestCases[i]
-              try {
-                const createResponse = await fetch('/api/test-cases', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    projectId: currentProjectId,
-                    title: rtc.title,
-                    description: `Extracted from: ${rtc.sourceRoamUid}`,
-                  }),
-                })
-                if (createResponse.ok) {
-                  const testCase = await createResponse.json()
-                  testCaseIds.push(testCase.id)
-                  createdTestCount++
-                }
-              } catch (error) {
-                failedTestCount++
-                console.error(`Failed to create TestCase for ${rtc.title}:`, error)
-              }
-            }
-
-            if (testCaseIds.length > 0) {
-              setCreationStep(`Linking test cases...`)
-              const patchResponse = await fetch(`/api/test-suites/${newSuite.id}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  testCaseIds,
-                }),
-              })
-              if (!patchResponse.ok) {
-                failedTestCount += testCaseIds.length
-                console.error('Failed to add test cases:', await patchResponse.text())
-              }
-            }
-          }
-        }
 
         // Show appropriate toast
         if (failedTestCount === 0) {
@@ -212,7 +200,7 @@ function TestSuitesContent() {
     try {
       let testCaseIds: string[] = []
 
-      // If nodes selected, create TestCase records and link them
+      // If nodes selected, create TestCase records
       if (selectedNodeIds.length > 0) {
         const roamTestCases = availableTests.filter((tc: any) =>
           selectedNodeIds.includes(tc.repositoryNodeId)
@@ -241,6 +229,7 @@ function TestSuitesContent() {
         }
       }
 
+      // Update suite with testCaseIds via PATCH
       const response = await fetch(`/api/test-suites/${editingSuiteId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },

@@ -137,7 +137,7 @@ export async function importMarkdownNodes(
     // Debug: Print comparison for first node
     let debugNodePrinted = false
     let debugUpdatesPrinted = 0
-    const updateReasons = { nameChanged: 0, orderChanged: 0, tagsChanged: 0, slugChanged: 0 }
+    const updateReasons = { nameChanged: 0, tagsChanged: 0, slugChanged: 0 }
 
     for (const node of deduplicatedNodes) {
       if (!node.uid) continue
@@ -157,7 +157,6 @@ export async function importMarkdownNodes(
 
         // Normalize fields for comparison
         const nameEqual = areFieldsEqual(existing.name, node.text, 'name')
-        const orderEqual = areFieldsEqual(existing.order, node.order, 'order')
         const tagsEqual = areFieldsEqual(existing.tags, node.tags, 'tags')
 
         // Calculate slug the same way as update logic
@@ -170,11 +169,14 @@ export async function importMarkdownNodes(
         // Normalize slug for comparison using normalization function
         const slugEqual = areFieldsEqual(existing.slug, slug, 'slug')
 
+        // NOTE: Do NOT compare order - it's recalculated every sync based on sibling position
+        // If name/tags/slug haven't changed, the content is identical and order will be updated automatically
+
         // NOTE: Do NOT compare type here - type is determined by TestCaseExtractor AFTER sync
         // Comparing type would cause spurious updates when nodes are later classified as test cases
 
         // Check if update needed - only update if meaningful fields actually changed
-        const needsUpdate = !nameEqual || !orderEqual || !tagsEqual || !slugEqual
+        const needsUpdate = !nameEqual || !tagsEqual || !slugEqual
 
         if (!debugNodePrinted) {
           debugNodePrinted = true
@@ -204,6 +206,9 @@ export async function importMarkdownNodes(
           console.log('    Normalized DB:', JSON.stringify(normalizeForComparison(existing.slug, 'slug')))
           console.log('    Normalized Parsed:', JSON.stringify(normalizeForComparison(slug, 'slug')))
           console.log('    Equal?', slugEqual)
+          console.log('  --- order (NOT compared - recalculated every sync) ---')
+          console.log('    DB:', existing.order)
+          console.log('    Parsed:', node.order)
           console.log('  --- type (NOT compared - determined by TestCaseExtractor) ---')
           console.log('    DB:', existing.type)
           console.log('    Parsed:', nodeType)
@@ -215,7 +220,6 @@ export async function importMarkdownNodes(
         if (needsUpdate) {
           // Track which fields caused the update
           if (!nameEqual) updateReasons.nameChanged++
-          if (!orderEqual) updateReasons.orderChanged++
           if (!tagsEqual) updateReasons.tagsChanged++
           if (!slugEqual) updateReasons.slugChanged++
 
