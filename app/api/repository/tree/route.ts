@@ -13,15 +13,17 @@ interface TreeNode {
   children: TreeNode[]
 }
 
-// GET /api/repository/tree?projectId={id}
-// Returns full tree structure with unlimited nesting depth
-// OPTIMIZED: Loads all nodes in single query, builds tree in memory
+// GET /api/repository/tree?projectId={id}&parentId={parentId}
+// Returns tree structure with lazy loading support
+// If parentId is null, returns only root nodes
+// If parentId is provided, returns children of that node
 export async function GET(req: NextRequest) {
   const startTime = Date.now()
   let queryCount = 0
 
   try {
     const projectId = req.nextUrl.searchParams.get('projectId')
+    const parentId = req.nextUrl.searchParams.get('parentId') || null
     const search = req.nextUrl.searchParams.get('search')
     const tags = req.nextUrl.searchParams.getAll('tags')
     const nodeType = req.nextUrl.searchParams.get('nodeType')
@@ -63,6 +65,7 @@ export async function GET(req: NextRequest) {
     const whereClause: any = {
       repositoryId,
       deletedAt: null,
+      parentId: parentId, // Lazy load: only load this parent's children
     }
 
     // Add search filter (search in name or path)
@@ -115,59 +118,38 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Query 2: Load repository nodes with filters applied
-    console.log('[repository/tree] Query 2: Loading nodes with filters...')
-    const allNodes = await prisma.repositoryNode.findMany({
+    // Query 2: Load nodes for this level only (lazy loading)
+    console.log(`[repository/tree] Query 2: Loading nodes (parentId: ${parentId || 'root'})...`)
+    const nodes = await prisma.repositoryNode.findMany({
       where: whereClause,
       orderBy: [{ order: 'asc' }, { name: 'asc' }],
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        depth: true,
+        path: true,
+        metadata: true,
+        tags: true,
+        roamPageId: true,
+      },
     })
     queryCount++
-    console.log('[repository/tree] Query 2 complete, loaded nodes:', allNodes.length)
 
-    // Build tree structure in memory (zero additional database queries)
-    console.log('[repository/tree] Building tree in memory...')
-    const buildStartTime = Date.now()
-
-    function buildTreeInMemory(parentId: string | null): TreeNode[] {
-      return allNodes
-        .filter((node) => node.parentId === parentId)
-        .map((node) => ({
-          id: node.id,
-          name: node.name,
-          type: node.type,
-          depth: node.depth,
-          path: node.path,
-          metadata: node.metadata,
-          tags: node.tags || [],
-          roamPageId: node.roamPageId,
-          children: buildTreeInMemory(node.id),
-        }))
-    }
-
-    const nodes = buildTreeInMemory(null)
-    const buildDuration = Date.now() - buildStartTime
     const totalDuration = Date.now() - startTime
-
-    // Log instrumentation data
-    console.log('[repository/tree] Tree build complete')
-    console.log('[repository/tree] ───────────────────────────────────')
-    console.log('[repository/tree] Total nodes loaded:', allNodes.length)
-    console.log('[repository/tree] Root nodes (tree.length):', nodes.length)
-    console.log('[repository/tree] Tree build duration:', `${buildDuration}ms`)
+    console.log('[repository/tree] Queries complete, loaded nodes:', nodes.length)
     console.log('[repository/tree] Total request duration:', `${totalDuration}ms`)
     console.log('[repository/tree] Total database queries:', queryCount)
-    console.log('[repository/tree] Node type breakdown:')
-    const folderCount = allNodes.filter((n) => n.type === 'FOLDER').length
-    const fileCount = allNodes.filter((n) => n.type === 'FILE').length
-    console.log(`[repository/tree]   FOLDER: ${folderCount}`)
-    console.log(`[repository/tree]   FILE: ${fileCount}`)
-    console.log('[repository/tree] ───────────────────────────────────')
 
     return NextResponse.json({
       success: true,
       repositoryId: repository.id,
       repositoryName: repository.name,
-      nodes,
+      nodes: nodes.map((node) => ({
+        ...node,
+        children: [], // Children loaded on demand via separate request
+        hasMore: node.type === 'FOLDER', // FOLDER types can be expanded to load children
+      })),
     })
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error'

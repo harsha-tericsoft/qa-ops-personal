@@ -5,10 +5,15 @@ import { useState, useEffect } from 'react'
 interface TreeNode {
   id: string
   name: string
-  description: string | null
   type: string
   depth: number
+  path: string
+  metadata: any
+  tags: string[]
+  roamPageId: string | null
   children: TreeNode[]
+  hasMore?: boolean
+  loading?: boolean
 }
 
 interface RepositoryTreeProps {
@@ -34,10 +39,10 @@ export function RepositoryTree({
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchNodes()
-  }, [projectId, parentId, search, selectedTags, nodeType, isAutomated])
+    fetchNodes(null) // Load root nodes only
+  }, [projectId, search, selectedTags, nodeType, isAutomated])
 
-  const fetchNodes = async () => {
+  const fetchNodes = async (parent: string | null = null) => {
     setLoading(true)
     setError(null)
 
@@ -46,7 +51,7 @@ export function RepositoryTree({
         projectId,
       })
 
-      if (parentId) params.append('parentId', parentId)
+      if (parent) params.append('parentId', parent)
       if (search) params.append('search', search)
       selectedTags.forEach((tag) => params.append('tags', tag))
       if (nodeType) params.append('nodeType', nodeType)
@@ -81,19 +86,62 @@ export function RepositoryTree({
     }
   }
 
-  const toggleExpanded = (id: string) => {
+  const fetchChildren = async (nodeId: string) => {
+    try {
+      const params = new URLSearchParams({
+        projectId,
+        parentId: nodeId,
+      })
+
+      if (search) params.append('search', search)
+      selectedTags.forEach((tag) => params.append('tags', tag))
+      if (nodeType) params.append('nodeType', nodeType)
+      if (isAutomated) params.append('automated', isAutomated)
+
+      const response = await fetch(`/api/repository/tree?${params}`)
+      if (!response.ok) throw new Error('Failed to fetch children')
+
+      const data = await response.json()
+      return Array.isArray(data.nodes) ? data.nodes : []
+    } catch (err) {
+      console.error('[RepositoryTree] Error loading children:', err)
+      return []
+    }
+  }
+
+  const toggleExpanded = async (id: string) => {
     const newExpanded = new Set(expanded)
     if (newExpanded.has(id)) {
       newExpanded.delete(id)
+      setExpanded(newExpanded)
     } else {
+      // Load children if not already loaded
+      setNodes((prevNodes) => {
+        const node = prevNodes.find((n) => n.id === id)
+        if (node && node.children.length === 0) {
+          // Mark as loading
+          return prevNodes.map((n) =>
+            n.id === id ? { ...n, loading: true } : n
+          )
+        }
+        return prevNodes
+      })
+
+      const children = await fetchChildren(id)
+      setNodes((prevNodes) =>
+        prevNodes.map((n) =>
+          n.id === id ? { ...n, children, loading: false } : n
+        )
+      )
       newExpanded.add(id)
+      setExpanded(newExpanded)
     }
-    setExpanded(newExpanded)
   }
 
   const renderNode = (node: TreeNode, depth: number = 0) => {
-    const hasChildren = node.children && node.children.length > 0
+    const hasChildren = node.hasMore || (node.children && node.children.length > 0)
     const isExpanded = expanded.has(node.id)
+    const isLoading = node.loading
     const paddingLeft = `${depth * 20}px`
 
     return (
@@ -105,9 +153,10 @@ export function RepositoryTree({
           {hasChildren && (
             <button
               onClick={() => toggleExpanded(node.id)}
-              className="text-gray-600 hover:text-gray-900"
+              disabled={isLoading}
+              className="text-gray-600 hover:text-gray-900 disabled:opacity-50"
             >
-              {isExpanded ? '▼' : '▶'}
+              {isLoading ? '⟳' : isExpanded ? '▼' : '▶'}
             </button>
           )}
 
@@ -121,11 +170,6 @@ export function RepositoryTree({
             <div className="font-medium text-sm text-gray-900">
               {node.name}
             </div>
-            {node.description && (
-              <div className="text-xs text-gray-500 truncate">
-                {node.description}
-              </div>
-            )}
           </div>
         </div>
 
