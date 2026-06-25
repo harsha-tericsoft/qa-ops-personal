@@ -15,7 +15,7 @@ function roamGetPage(graphName: string, pageTitle: string): Promise<any> {
   return new Promise((resolve, reject) => {
     const process = spawn('roam', ['get-page', '--graph', graphName, '--title', pageTitle], {
       timeout: 60000,
-      maxBuffer: 50 * 1024 * 1024, // 50MB for large pages with many blocks
+      // Note: spawn handles large buffers differently than exec, no maxBuffer needed
     })
 
     let stdout = ''
@@ -41,8 +41,8 @@ function roamGetPage(graphName: string, pageTitle: string): Promise<any> {
       }
 
       try {
-        // Parse JSON - skip warnings
-        const jsonMatch = stdout.match(/\{[\s\S]*\}/s)
+        // Parse JSON - skip warnings (without using 's' flag for ES2017 compatibility)
+        const jsonMatch = stdout.match(/\{[\s\S]*\}/)
         if (!jsonMatch) {
           reject(new Error('No JSON in roam response'))
           return

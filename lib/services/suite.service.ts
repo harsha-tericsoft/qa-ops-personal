@@ -49,7 +49,8 @@ export async function updateSuite(
   let finalTestCaseIds = testCaseIds || []
   if (roamTestCaseIds && roamTestCaseIds.length > 0) {
     finalTestCaseIds = await prisma.$transaction(async (tx) => {
-      // Fetch RoamTestCase records
+      // Fetch suite and RoamTestCase records
+      const suite = await tx.testSuite.findUniqueOrThrow({ where: { id: suiteId } })
       const roamTestCases = await tx.roamTestCase.findMany({
         where: {
           id: { in: roamTestCaseIds },
@@ -64,7 +65,7 @@ export async function updateSuite(
       // Bulk create TestCase records
       await tx.testCase.createMany({
         data: roamTestCases.map((rtc) => ({
-          projectId: (await tx.testSuite.findUniqueOrThrow({ where: { id: suiteId } })).projectId,
+          projectId: suite.projectId,
           title: rtc.title,
           description: `Extracted from: ${rtc.sourceRoamUid}`,
         })),
@@ -72,10 +73,9 @@ export async function updateSuite(
       })
 
       // Fetch the created TestCase records
-      const project = await tx.testSuite.findUniqueOrThrow({ where: { id: suiteId } })
       const testCases = await tx.testCase.findMany({
         where: {
-          projectId: project.projectId,
+          projectId: suite.projectId,
           title: { in: roamTestCases.map((rtc) => rtc.title) },
         },
         select: { id: true },

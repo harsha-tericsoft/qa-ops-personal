@@ -193,7 +193,7 @@ export async function importMarkdownNodes(
           console.log('    Parsed:', node.order)
           console.log('    Normalized DB:', normalizeForComparison(existing.order, 'order'))
           console.log('    Normalized Parsed:', normalizeForComparison(node.order, 'order'))
-          console.log('    Equal?', orderEqual)
+          console.log('    Note: Order is NOT compared - recalculated every sync')
           console.log('  --- tags ---')
           console.log('    DB:', existing.tags)
           console.log('    Parsed:', node.tags)
@@ -223,19 +223,12 @@ export async function importMarkdownNodes(
           if (!tagsEqual) updateReasons.tagsChanged++
           if (!slugEqual) updateReasons.slugChanged++
 
-          // Log first 3 nodes that need update
+          // Log first 3 nodes that need update (for debugging why they need updates)
           if (debugUpdatesPrinted < 3) {
             debugUpdatesPrinted++
-            if (!orderEqual) {
-              console.log(`\n[DEBUG-ORDER] Node ${debugUpdatesPrinted}: uid=${node.uid.substring(0, 8)}`)
-              console.log(`  DB order: ${existing.order} (type: ${typeof existing.order})`)
-              console.log(`  Parsed order: ${node.order} (type: ${typeof node.order})`)
-              const dbNorm = normalizeForComparison(existing.order, 'order')
-              const parsedNorm = normalizeForComparison(node.order, 'order')
-              console.log(`  Normalized DB: ${dbNorm}`)
-              console.log(`  Normalized Parsed: ${parsedNorm}`)
-              console.log(`  Are equal?: ${dbNorm === parsedNorm}`)
-            }
+            console.log(`\n[DEBUG-UPDATE] Node ${debugUpdatesPrinted}: uid=${node.uid.substring(0, 8)}`)
+            console.log(`  nameEqual: ${nameEqual}, tagsEqual: ${tagsEqual}, slugEqual: ${slugEqual}`)
+            console.log(`  DB name: ${existing.name} → Parsed: ${node.text}`)
           }
           nodesToUpdate.push({
             id: existing.id,
@@ -280,7 +273,6 @@ export async function importMarkdownNodes(
     console.log(`[importMarkdownNodes] Split results: ${nodesToCreate.length} to create, ${nodesToUpdate.length} to update, ${result.skipped} skipped`)
     console.log(`[importMarkdownNodes] Update reasons breakdown:`)
     console.log(`  nameChanged: ${updateReasons.nameChanged}`)
-    console.log(`  orderChanged: ${updateReasons.orderChanged}`)
     console.log(`  tagsChanged: ${updateReasons.tagsChanged}`)
     console.log(`  slugChanged: ${updateReasons.slugChanged}`)
 
@@ -822,8 +814,8 @@ export async function refreshSync(projectId: string): Promise<{
         { timeout: 60000, maxBuffer: 50 * 1024 * 1024 }
       )
 
-      // Parse JSON from output
-      const jsonMatch = stdout.match(/\{[\s\S]*\}/s)
+      // Parse JSON from output (without 's' flag for ES2017 compatibility)
+      const jsonMatch = stdout.match(/\{[\s\S]*\}/)
       if (!jsonMatch) {
         throw new Error('No JSON in roam response')
       }
