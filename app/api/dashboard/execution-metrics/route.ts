@@ -14,35 +14,44 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get test run metrics for this version
-    const testRuns = await prisma.testRun.findMany({
-      where: {
-        versionId,
-      },
-      select: {
-        status: true,
-      },
-    })
+    try {
+      const testRuns = await prisma.testRun.findMany({
+        where: { versionId },
+        select: { status: true },
+      })
 
-    const metrics = {
-      totalTests: testRuns.length,
-      passedTests: testRuns.filter(t => t.status === 'PASS').length,
-      failedTests: testRuns.filter(t => t.status === 'FAIL').length,
-      blockedTests: testRuns.filter(t => t.status === 'BLOCKED').length,
-      skippedTests: 0,
-      notExecutedTests: testRuns.filter(t => t.status === 'NOT_EXECUTED').length,
-      executionRate: testRuns.length > 0 
-        ? ((testRuns.filter(t => t.status !== 'NOT_EXECUTED').length / testRuns.length) * 100)
-        : 0,
-      passRate: testRuns.filter(t => t.status === 'PASS' || t.status === 'FAIL').length > 0
-        ? ((testRuns.filter(t => t.status === 'PASS').length / 
-            testRuns.filter(t => t.status === 'PASS' || t.status === 'FAIL').length) * 100)
-        : 0,
+      const metrics = {
+        totalTests: testRuns.length,
+        passedTests: testRuns.filter(t => t.status === 'PASS').length,
+        failedTests: testRuns.filter(t => t.status === 'FAIL').length,
+        blockedTests: testRuns.filter(t => t.status === 'BLOCKED').length,
+        skippedTests: 0,
+        notExecutedTests: testRuns.filter(t => t.status === 'NOT_EXECUTED').length,
+        executionRate: testRuns.length > 0 
+          ? ((testRuns.filter(t => t.status !== 'NOT_EXECUTED').length / testRuns.length) * 100)
+          : 0,
+        passRate: testRuns.filter(t => t.status === 'PASS' || t.status === 'FAIL').length > 0
+          ? ((testRuns.filter(t => t.status === 'PASS').length / 
+              testRuns.filter(t => t.status === 'PASS' || t.status === 'FAIL').length) * 100)
+          : 0,
+      }
+
+      return NextResponse.json(metrics)
+    } catch (dbErr) {
+      console.error('[execution-metrics] Database error:', dbErr)
+      return NextResponse.json({
+        totalTests: 0,
+        passedTests: 0,
+        failedTests: 0,
+        blockedTests: 0,
+        skippedTests: 0,
+        notExecutedTests: 0,
+        executionRate: 0,
+        passRate: 0,
+      })
     }
-
-    return NextResponse.json(metrics)
   } catch (error) {
-    console.error('[dashboard/execution-metrics] Error:', error)
+    console.error('[execution-metrics] Error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
