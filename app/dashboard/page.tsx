@@ -95,7 +95,7 @@ export default function DashboardPage() {
         const data = await res.json()
         setMetrics(data)
       } catch (err) {
-        console.error('Failed to load metrics:', err)
+        // Silently handle fetch errors (network issues, CORS, etc.)
         setMetrics(null)
       } finally {
         setMetricsLoading(false)
@@ -121,7 +121,7 @@ export default function DashboardPage() {
           setCycles(data || [])
         }
       } catch (err) {
-        console.error('Failed to load cycles:', err)
+        // Silently handle fetch errors
       }
     }
 
@@ -144,7 +144,7 @@ export default function DashboardPage() {
           setVersions(data || [])
         }
       } catch (err) {
-        console.error('Failed to load versions:', err)
+        // Silently handle fetch errors
       }
     }
 
@@ -167,7 +167,7 @@ export default function DashboardPage() {
           setExecutionMetrics(data)
         }
       } catch (err) {
-        console.error('Failed to load execution metrics:', err)
+        // Silently handle fetch errors
       } finally {
         setExecutionLoading(false)
       }
