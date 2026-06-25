@@ -21,13 +21,14 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
   try {
     const body = await req.json()
-    const { name, description, category, testCaseIds } = body
+    const { name, description, category, testCaseIds, roamTestCaseIds } = body
 
     const suite = await updateSuite(id, {
       name,
       description,
       category,
       testCaseIds,
+      roamTestCaseIds,
     })
 
     return NextResponse.json(suite)

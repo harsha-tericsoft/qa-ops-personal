@@ -40,9 +40,50 @@ export async function updateSuite(
     description?: string
     category?: SuiteCategory
     testCaseIds?: string[]
+    roamTestCaseIds?: string[]
   }
 ) {
-  const { name, description, category, testCaseIds } = input
+  const { name, description, category, testCaseIds, roamTestCaseIds } = input
+
+  // Handle roamTestCaseIds: bulk create TestCase records in a transaction
+  let finalTestCaseIds = testCaseIds || []
+  if (roamTestCaseIds && roamTestCaseIds.length > 0) {
+    finalTestCaseIds = await prisma.$transaction(async (tx) => {
+      // Fetch RoamTestCase records
+      const roamTestCases = await tx.roamTestCase.findMany({
+        where: {
+          id: { in: roamTestCaseIds },
+        },
+        select: {
+          id: true,
+          title: true,
+          sourceRoamUid: true,
+        },
+      })
+
+      // Bulk create TestCase records
+      await tx.testCase.createMany({
+        data: roamTestCases.map((rtc) => ({
+          projectId: (await tx.testSuite.findUniqueOrThrow({ where: { id: suiteId } })).projectId,
+          title: rtc.title,
+          description: `Extracted from: ${rtc.sourceRoamUid}`,
+        })),
+        skipDuplicates: true,
+      })
+
+      // Fetch the created TestCase records
+      const project = await tx.testSuite.findUniqueOrThrow({ where: { id: suiteId } })
+      const testCases = await tx.testCase.findMany({
+        where: {
+          projectId: project.projectId,
+          title: { in: roamTestCases.map((rtc) => rtc.title) },
+        },
+        select: { id: true },
+      })
+
+      return testCases.map((tc) => tc.id)
+    })
+  }
 
   const suite = await prisma.testSuite.update({
     where: { id: suiteId },
@@ -51,11 +92,11 @@ export async function updateSuite(
       description,
       category,
       testCases:
-        testCaseIds && testCaseIds.length > 0
+        finalTestCaseIds && finalTestCaseIds.length > 0
           ? {
               deleteMany: {},
               createMany: {
-                data: testCaseIds.map((testCaseId, order) => ({
+                data: finalTestCaseIds.map((testCaseId, order) => ({
                   testCaseId,
                   order,
                 })),

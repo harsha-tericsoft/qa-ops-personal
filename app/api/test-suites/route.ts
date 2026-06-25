@@ -36,7 +36,14 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { name, description, category = 'CUSTOM', selectionMethod = 'HIERARCHY', testIds = [] } = body
+    const {
+      name,
+      description,
+      category = 'CUSTOM',
+      selectionMethod = 'HIERARCHY',
+      testIds = [],
+      roamTestCaseIds = []
+    } = body
 
     if (!name) {
       return NextResponse.json(
@@ -45,32 +52,74 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Create suite and add test cases in a single transaction
-    const suite = await prisma.testSuite.create({
-      data: {
-        projectId,
-        name,
-        description,
-        category,
-        selectionMethod,
-        // Bulk insert test cases if provided
-        testCases: testIds.length > 0
-          ? {
-              createMany: {
-                data: testIds.map((testId: string, index: number) => ({
-                  testCaseId: testId,
-                  order: index,
-                })),
-              },
-            }
-          : undefined,
-      },
-      include: {
-        testCases: {
-          include: { testCase: true },
-          orderBy: { order: 'asc' },
+    // Handle roamTestCaseIds: bulk create TestCase records and link them in a transaction
+    const suite = await prisma.$transaction(async (tx) => {
+      // Step 1: Fetch RoamTestCase records
+      let finalTestIds = testIds
+      if (roamTestCaseIds.length > 0) {
+        const roamTestCases = await tx.roamTestCase.findMany({
+          where: {
+            id: { in: roamTestCaseIds },
+            projectId,
+          },
+          select: {
+            id: true,
+            title: true,
+            sourceRoamUid: true,
+          },
+        })
+
+        // Step 2: Bulk create TestCase records
+        const createdTestCases = await tx.testCase.createMany({
+          data: roamTestCases.map((rtc) => ({
+            projectId,
+            title: rtc.title,
+            description: `Extracted from: ${rtc.sourceRoamUid}`,
+          })),
+          skipDuplicates: true,
+        })
+
+        // Step 3: Fetch the created TestCase records to get their IDs
+        const testCases = await tx.testCase.findMany({
+          where: {
+            projectId,
+            title: { in: roamTestCases.map((rtc) => rtc.title) },
+          },
+          select: { id: true },
+        })
+
+        finalTestIds = testCases.map((tc) => tc.id)
+      }
+
+      // Step 4: Create suite with test cases in a single transaction
+      const newSuite = await tx.testSuite.create({
+        data: {
+          projectId,
+          name,
+          description,
+          category,
+          selectionMethod,
+          // Bulk insert test cases if provided
+          testCases: finalTestIds.length > 0
+            ? {
+                createMany: {
+                  data: finalTestIds.map((testId: string, index: number) => ({
+                    testCaseId: testId,
+                    order: index,
+                  })),
+                },
+              }
+            : undefined,
         },
-      },
+        include: {
+          testCases: {
+            include: { testCase: true },
+            orderBy: { order: 'asc' },
+          },
+        },
+      })
+
+      return newSuite
     })
 
     return NextResponse.json(suite, { status: 201 })

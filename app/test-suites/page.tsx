@@ -108,47 +108,20 @@ function TestSuitesContent() {
     if (!newSuiteName.trim()) return
 
     setIsCreatingSuite(true)
-    let createdTestCount = 0
-    let failedTestCount = 0
 
     try {
-      let testCaseIds: string[] = []
+      setCreationStep('Creating suite...')
 
-      // If nodes selected, create TestCase records FIRST
+      // Collect selected RoamTestCase IDs
+      const roamTestCaseIds: string[] = []
       if (selectedNodeIds.length > 0) {
         const roamTestCases = availableTests.filter((tc: any) =>
           selectedNodeIds.includes(tc.repositoryNodeId)
         )
-
-        if (roamTestCases.length > 0) {
-          for (let i = 0; i < roamTestCases.length; i++) {
-            setCreationStep(`Creating test cases (${i + 1}/${roamTestCases.length})`)
-            const rtc = roamTestCases[i]
-            try {
-              const createResponse = await fetch('/api/test-cases', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  projectId: currentProjectId,
-                  title: rtc.title,
-                  description: `Extracted from: ${rtc.sourceRoamUid}`,
-                }),
-              })
-              if (createResponse.ok) {
-                const testCase = await createResponse.json()
-                testCaseIds.push(testCase.id)
-                createdTestCount++
-              }
-            } catch (error) {
-              failedTestCount++
-              console.error(`Failed to create TestCase for ${rtc.title}:`, error)
-            }
-          }
-        }
+        roamTestCaseIds.push(...roamTestCases.map((tc: any) => tc.id))
       }
 
-      // Create suite with testIds in bulk request (no PATCH needed)
-      setCreationStep('Creating suite...')
+      // SINGLE REQUEST: Backend handles all the work in a transaction
       const response = await fetch(`/api/test-suites?projectId=${currentProjectId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -156,21 +129,16 @@ function TestSuitesContent() {
           name: newSuiteName,
           description: newSuiteDesc,
           category: 'CUSTOM',
-          testIds: testCaseIds, // Bulk insert - single request instead of PATCH
+          roamTestCaseIds, // Pass RoamTestCase IDs - backend creates TestCases and links them
         }),
       })
 
       if (response.ok) {
         const newSuite = await response.json()
-
-        // Show appropriate toast
-        if (failedTestCount === 0) {
-          showToast(`Suite "${newSuiteName}" created successfully with ${createdTestCount} test cases`, 'success')
-        } else if (createdTestCount === 0) {
-          showToast(`Failed to create test cases for suite "${newSuiteName}"`, 'error')
-        } else {
-          showToast(`Suite created with ${createdTestCount} test cases (${failedTestCount} failed)`, 'info')
-        }
+        showToast(
+          `Suite "${newSuiteName}" created successfully with ${roamTestCaseIds.length} test cases`,
+          'success'
+        )
 
         // Reset and refresh
         setNewSuiteName('')
@@ -180,7 +148,8 @@ function TestSuitesContent() {
         setShowCreateModal(false)
         await fetchSuites()
       } else {
-        showToast('Failed to create test suite', 'error')
+        const error = await response.json()
+        showToast(`Failed to create suite: ${error.error || 'Unknown error'}`, 'error')
       }
     } catch (error) {
       showToast(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
@@ -195,41 +164,18 @@ function TestSuitesContent() {
     if (!editingSuiteId || !newSuiteName.trim()) return
 
     setIsEditingSuite(true)
-    let testCaseCount = 0
 
     try {
-      let testCaseIds: string[] = []
-
-      // If nodes selected, create TestCase records
+      // Collect selected RoamTestCase IDs
+      const roamTestCaseIds: string[] = []
       if (selectedNodeIds.length > 0) {
         const roamTestCases = availableTests.filter((tc: any) =>
           selectedNodeIds.includes(tc.repositoryNodeId)
         )
-
-        for (let i = 0; i < roamTestCases.length; i++) {
-          const rtc = roamTestCases[i]
-          try {
-            const createResponse = await fetch('/api/test-cases', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                projectId: currentProjectId,
-                title: rtc.title,
-                description: `Extracted from: ${rtc.sourceRoamUid}`,
-              }),
-            })
-            if (createResponse.ok) {
-              const testCase = await createResponse.json()
-              testCaseIds.push(testCase.id)
-              testCaseCount++
-            }
-          } catch (error) {
-            console.error(`Failed to create TestCase for ${rtc.title}:`, error)
-          }
-        }
+        roamTestCaseIds.push(...roamTestCases.map((tc: any) => tc.id))
       }
 
-      // Update suite with testCaseIds via PATCH
+      // Update suite with roamTestCaseIds - backend handles creation in transaction
       const response = await fetch(`/api/test-suites/${editingSuiteId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -237,7 +183,7 @@ function TestSuitesContent() {
           name: newSuiteName,
           description: newSuiteDesc,
           category: 'CUSTOM',
-          testCaseIds: testCaseIds.length > 0 ? testCaseIds : undefined,
+          roamTestCaseIds: roamTestCaseIds.length > 0 ? roamTestCaseIds : undefined,
         }),
       })
 
@@ -251,7 +197,8 @@ function TestSuitesContent() {
         setShowEditModal(false)
         await fetchSuites()
       } else {
-        showToast('Failed to update suite', 'error')
+        const error = await response.json()
+        showToast(`Failed to update suite: ${error.error || 'Unknown error'}`, 'error')
       }
     } catch (error) {
       showToast(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
