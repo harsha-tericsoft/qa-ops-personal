@@ -1,0 +1,92 @@
+[2026-06-24T17:52:10.649Z] 
+======================================================================
+[2026-06-24T17:52:10.650Z] PHASE 1: EXPORT - Backing up all candidate blocks
+[2026-06-24T17:52:10.650Z] ======================================================================
+
+[2026-06-24T17:52:10.651Z] Exporting #Manual blocks...
+[2026-06-24T17:52:33.263Z] Exporting #Automated blocks...
+[2026-06-24T17:52:34.432Z] 
+✓ Backup complete: 1546 blocks exported
+[2026-06-24T17:52:34.432Z]   File: roam-testcase-backup.json
+[2026-06-24T17:52:34.432Z] 
+Export Summary:
+[2026-06-24T17:52:34.433Z]   Total blocks: 1546
+[2026-06-24T17:52:34.434Z]   Manual: 1483
+[2026-06-24T17:52:34.434Z]   Automated: 63
+[2026-06-24T17:52:34.435Z] 
+======================================================================
+[2026-06-24T17:52:34.436Z] PHASE 2: DRY RUN - Analyzing updates (no modifications)
+[2026-06-24T17:52:34.436Z] ======================================================================
+
+[2026-06-24T17:52:34.443Z] DRY RUN SUMMARY:
+
+[2026-06-24T17:52:34.443Z]   Total candidates: 1546
+[2026-06-24T17:52:34.443Z]   Already correct: 363 (23.5%)
+[2026-06-24T17:52:34.444Z]   Require update: 1183
+[2026-06-24T17:52:34.444Z] undefined
+[2026-06-24T17:52:34.444Z]   Update breakdown:
+[2026-06-24T17:52:34.444Z]     - Add prefix: 1183
+[2026-06-24T17:52:34.445Z]     - Fix double prefix: 0
+[2026-06-24T17:52:34.445Z]     - Fix malformed prefix: 0
+[2026-06-24T17:52:34.445Z] undefined
+[2026-06-24T17:52:34.446Z] EXAMPLES (first 10 updates):
+
+[2026-06-24T17:52:34.446Z] 1. [ADD_PREFIX] #Manual
+[2026-06-24T17:52:34.446Z]    UID: aFD_aJS0g
+[2026-06-24T17:52:34.446Z]    Before: "17. When there are clients with completed appointments but n..."
+[2026-06-24T17:52:34.447Z]    After:  "Test:: 17. When there are clients with completed appointment..."
+[2026-06-24T17:52:34.447Z] undefined
+[2026-06-24T17:52:34.447Z] 2. [ADD_PREFIX] #Manual
+[2026-06-24T17:52:34.447Z]    UID: jEUw06QD8
+[2026-06-24T17:52:34.447Z]    Before: "16. When there are no clients with completed appointments in..."
+[2026-06-24T17:52:34.447Z]    After:  "Test:: 16. When there are no clients with completed appointm..."
+[2026-06-24T17:52:34.448Z] undefined
+[2026-06-24T17:52:34.448Z] 3. [ADD_PREFIX] #Manual
+[2026-06-24T17:52:34.448Z]    UID: rWzmN4QKu
+[2026-06-24T17:52:34.448Z]    Before: "15. When a client has completed appointments across multiple..."
+[2026-06-24T17:52:34.448Z]    After:  "Test:: 15. When a client has completed appointments across m..."
+[2026-06-24T17:52:34.449Z] undefined
+[2026-06-24T17:52:34.449Z] 4. [ADD_PREFIX] #Manual
+[2026-06-24T17:52:34.449Z]    UID: Y5tbdVZcr
+[2026-06-24T17:52:34.450Z]    Before: "14. Example: Clients matching all filters — Client 1 (Active..."
+[2026-06-24T17:52:34.450Z]    After:  "Test:: 14. Example: Clients matching all filters — Client 1 ..."
+[2026-06-24T17:52:34.450Z] undefined
+[2026-06-24T17:52:34.451Z] 5. [ADD_PREFIX] #Manual
+[2026-06-24T17:52:34.452Z]    UID: T_1PQMJoo
+[2026-06-24T17:52:34.452Z]    Before: "12. Example: Service Y — Client 10 (Active), Client 11 (Inac..."
+[2026-06-24T17:52:34.452Z]    After:  "Test:: 12. Example: Service Y — Client 10 (Active), Client 1..."
+[2026-06-24T17:52:34.452Z] undefined
+[2026-06-24T17:52:34.452Z] 6. [ADD_PREFIX] #Manual
+[2026-06-24T17:52:34.453Z]    UID: ZoiGM_1Md
+[2026-06-24T17:52:34.453Z]    Before: "10. Example: Service Category X — Client 7 (Active), Client ..."
+[2026-06-24T17:52:34.453Z]    After:  "Test:: 10. Example: Service Category X — Client 7 (Active), ..."
+[2026-06-24T17:52:34.453Z] undefined
+[2026-06-24T17:52:34.453Z] 7. [ADD_PREFIX] #Manual
+[2026-06-24T17:52:34.453Z]    UID: 8JpY152jF
+[2026-06-24T17:52:34.454Z]    Before: "8. Example: Provider 1 — Client 4 (Active, 2 completed), Cli..."
+[2026-06-24T17:52:34.454Z]    After:  "Test:: 8. Example: Provider 1 — Client 4 (Active, 2 complete..."
+[2026-06-24T17:52:34.454Z] undefined
+[2026-06-24T17:52:34.455Z] 8. [ADD_PREFIX] #Manual
+[2026-06-24T17:52:34.455Z]    UID: QzibWdZjN
+[2026-06-24T17:52:34.455Z]    Before: "6. Example: At Facility A — Client 1 (Active), Client 2 (Ina..."
+[2026-06-24T17:52:34.455Z]    After:  "Test:: 6. Example: At Facility A — Client 1 (Active), Client..."
+[2026-06-24T17:52:34.455Z] undefined
+[2026-06-24T17:52:34.456Z] 9. [ADD_PREFIX] #Manual
+[2026-06-24T17:52:34.456Z]    UID: v-s7Gf0zW
+[2026-06-24T17:52:34.456Z]    Before: "4. Example: Client 1 (Active, 2 completed appointments), Cli..."
+[2026-06-24T17:52:34.456Z]    After:  "Test:: 4. Example: Client 1 (Active, 2 completed appointment..."
+[2026-06-24T17:52:34.456Z] undefined
+[2026-06-24T17:52:34.456Z] 10. [ADD_PREFIX] #Manual
+[2026-06-24T17:52:34.457Z]    UID: Rz203ky6Y
+[2026-06-24T17:52:34.457Z]    Before: "2. When I open the *Active Clients* card, the default filter..."
+[2026-06-24T17:52:34.457Z]    After:  "Test:: 2. When I open the *Active Clients* card, the default..."
+[2026-06-24T17:52:34.457Z] undefined
+[2026-06-24T17:52:34.457Z] ======================================================================
+[2026-06-24T17:52:34.457Z] DRY RUN COMPLETE - No changes made to Roam
+[2026-06-24T17:52:34.458Z] ======================================================================
+
+[2026-06-24T17:52:34.458Z] Preview saved: roam-testcase-update-preview.json
+[2026-06-24T17:52:34.458Z] 
+READY FOR PHASE 3: Limited execution on 50 blocks
+[2026-06-24T17:52:34.458Z] Awaiting user approval...
+

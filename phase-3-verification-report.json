@@ -1,0 +1,514 @@
+{
+  "timestamp": "2026-06-24T17:59:14.153Z",
+  "phase": "PHASE_3_LIMITED_EXECUTION_FINAL",
+  "graph": "Project_Kinergy",
+  "blockUpdates": [],
+  "summary": {
+    "totalAttempted": 50,
+    "successfulUpdates": 0,
+    "verificationPassed": 0,
+    "verificationFailed": 50,
+    "failures": [
+      {
+        "uid": "aFD_aJS0g",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "jEUw06QD8",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "rWzmN4QKu",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "Y5tbdVZcr",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "T_1PQMJoo",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "ZoiGM_1Md",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "8JpY152jF",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "QzibWdZjN",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "v-s7Gf0zW",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "Rz203ky6Y",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "AnZTrrn9Z",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "KbPv3WwjC",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "47dVOtw1e",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "9RkIU5swC",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "UKp_w_b4Z",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "GsCcOM5kt",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "BcrkCnsaz",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "ZRac77odr",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "sn0UJOdAN",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "0HWNYnpHP",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "CvwRwfq19",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "nB9AFbzsu",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "sZgPxxOK4",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "RLv2DwFCj",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "4v2IqZri6",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "jmiVj1W2Y",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "61Cx-0FsB",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "54SWSA2Ud",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "JqCYB9aMp",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "1q-BSDtuk",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "RbBm5mnZI",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "CrAk2VCUN",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "ANLU_gGDy",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "lOyRxASKC",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "pYgA-IgjW",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "pMfrv01hN",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "xObfPdiUz",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "E77_oV2j2",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "gOPe8wYO0",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "mk6EO16J1",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "Xq-XQYb-r",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "3ap60M_J5",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "hvQBkclOH",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "BC7TclluG",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "lk-vbKchV",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "RfI2Gl-Zo",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "gLh98frBZ",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "dfK7fc57u",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "Uz5RCusMV",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "myFGSUXs5",
+        "error": "Update failed",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "aFD_aJS0g",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "jEUw06QD8",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "rWzmN4QKu",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "Y5tbdVZcr",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "T_1PQMJoo",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "ZoiGM_1Md",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "8JpY152jF",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "QzibWdZjN",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "v-s7Gf0zW",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "Rz203ky6Y",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "AnZTrrn9Z",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "KbPv3WwjC",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "47dVOtw1e",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "9RkIU5swC",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "UKp_w_b4Z",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "GsCcOM5kt",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "BcrkCnsaz",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "ZRac77odr",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "sn0UJOdAN",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "0HWNYnpHP",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "CvwRwfq19",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "nB9AFbzsu",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "sZgPxxOK4",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "RLv2DwFCj",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "4v2IqZri6",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "jmiVj1W2Y",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "61Cx-0FsB",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "54SWSA2Ud",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "JqCYB9aMp",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "1q-BSDtuk",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "RbBm5mnZI",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "CrAk2VCUN",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "ANLU_gGDy",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "lOyRxASKC",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "pYgA-IgjW",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "pMfrv01hN",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "xObfPdiUz",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "E77_oV2j2",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "gOPe8wYO0",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "mk6EO16J1",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "Xq-XQYb-r",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "3ap60M_J5",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "hvQBkclOH",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "BC7TclluG",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "lk-vbKchV",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "RfI2Gl-Zo",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "gLh98frBZ",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "dfK7fc57u",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "Uz5RCusMV",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      },
+      {
+        "uid": "myFGSUXs5",
+        "error": "Verification error",
+        "details": "spawnSync /bin/bash ENOENT"
+      }
+    ]
+  }
+}

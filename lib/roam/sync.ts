@@ -261,6 +261,56 @@ export async function importMarkdownNodes(
       }
     }
 
+    // CRITICAL FIX: Final flush for any remaining nodes
+    if (nodesToCreateFinal.length > 0) {
+      console.log(`[importMarkdownNodes] Final flush: ${nodesToCreateFinal.length} remaining nodes`)
+
+      try {
+        const existingInBatch = await prisma.repositoryNode.findMany({
+          where: {
+            repositoryId,
+            roamNodeId: { in: nodesToCreateFinal.map(n => n.roamNodeId) }
+          },
+          select: { roamNodeId: true, id: true }
+        })
+
+        const existingRoamNodeIds = new Set(existingInBatch.map(n => n.roamNodeId).filter(Boolean))
+        const nodesToCreateFiltered = nodesToCreateFinal.filter(n => !existingRoamNodeIds.has(n.roamNodeId))
+
+        if (nodesToCreateFiltered.length > 0) {
+          const created = await prisma.repositoryNode.createMany({
+            data: nodesToCreateFiltered,
+            skipDuplicates: true
+          })
+
+          console.log(`[importMarkdownNodes] Final flush created: ${created.count} nodes`)
+          result.added += created.count
+
+          // Update createdNodeIds for final batch
+          const allNodesInBatch = await prisma.repositoryNode.findMany({
+            where: {
+              repositoryId,
+              roamNodeId: { in: nodesToCreateFinal.map(n => n.roamNodeId) }
+            },
+            select: { id: true, roamNodeId: true }
+          })
+
+          for (const node of allNodesInBatch) {
+            if (node.roamNodeId) {
+              uidToNodeId.set(node.roamNodeId, node.id)
+              createdNodeIds.set(node.roamNodeId, node.id)
+            }
+          }
+        }
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+        console.error(`[importMarkdownNodes] Final flush error:`, errorMsg)
+        result.errors.push(`Final flush error: ${errorMsg}`)
+      }
+
+      nodesToCreateFinal = []
+    }
+
     const createDuration = Date.now() - createStart
     console.log(`[importMarkdownNodes] All creates completed in ${createDuration}ms`)
 

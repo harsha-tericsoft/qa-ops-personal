@@ -64,18 +64,17 @@ export class MarkdownRoamParser {
       // Extract tags (e.g., #Manual, #Automation)
       const tags = (text.match(/#(\w+)/g) || []).map((tag) => tag.substring(1))
 
-      // Classify as test case or folder
-      const isTestCase = this.isTestCaseNode(text, tags)
-      const isFolder = this.isFolderNode(text, tags, depth)
-
+      // IMPORTANT: Do NOT classify as test case here.
+      // Classification happens LATER in TestCaseExtractor, AFTER sync completes.
+      // The parser's only job is to build the hierarchy.
       const block: RoamMarkdownBlock = {
         uid,
         text,
         depth,
         children: [],
         tags,
-        isTestCase,
-        isFolder,
+        isTestCase: false,  // Will be determined by TestCaseExtractor
+        isFolder: false,  // Will be determined after tree is complete
       }
 
       // Find parent based on depth
@@ -86,6 +85,13 @@ export class MarkdownRoamParser {
       const parent = stack[stack.length - 1]
       if (parent) {
         parent.children.push(block)
+        if (uid === 'k9IcSszSC') {
+          console.log(`[DEBUG] Added item 49 as child of: ${parent.text}`)
+        }
+      } else {
+        if (uid === 'k9IcSszSC') {
+          console.log(`[DEBUG] No parent found for item 49! Stack length: ${stack.length}`)
+        }
       }
 
       stack.push(block)
@@ -95,37 +101,15 @@ export class MarkdownRoamParser {
   }
 
   /**
-   * Determine if a node represents a test case
-   * Test cases are leaf nodes under "Test Cases" or nodes starting with "Test::"
+   * IMPORTANT: Removed test case classification from parser.
+   * The parser's ONLY job is to build the hierarchy.
+   * Test case classification happens later in TestCaseExtractor.
+   *
+   * Nodes are classified as FOLDER if they have children, FILE otherwise.
    */
-  private static isTestCaseNode(text: string, tags: string[]): boolean {
-    if (text.startsWith('Test::')) return true
-    // Leaf nodes (no markdown indicators) under test sections
-    if (text.includes('When ') || text.includes('Then ') || text.includes('Given ')) return true
-    // Nodes with #Manual or #Automation tags are test cases
-    if (tags.includes('Manual') || tags.includes('Automation')) return true
-
-    return false
-  }
-
-  /**
-   * Determine if a node should be treated as a folder
-   * Folders are container nodes like test suites, test types, screens, etc.
-   */
-  private static isFolderNode(text: string, tags: string[], depth: number): boolean {
-    // Explicitly test case nodes are not folders
-    if (text.includes('When ') || text.includes('Then ') || text.includes('Given ')) return false
-
-    // Check for folder patterns
-    if (text.includes('TestType/')) return true
-    if (text.includes('Test Cases')) return true
-    if (text.includes('Screen ')) return true
-    if (text.includes('Suite')) return true
-    if (text.includes('Portal')) return true
-    if (text.match(/^##\s*\[\[/)) return true // Headers with links
-
-    // Assume non-leaf nodes are folders
-    return true
+  private static isFolderNode(block: RoamMarkdownBlock): boolean {
+    // A node is a folder if it has children
+    return block.children && block.children.length > 0
   }
 
   /**
@@ -142,6 +126,9 @@ export class MarkdownRoamParser {
     const nodePath = parentPath === '/' ? `/${block.uid}` : `${parentPath}/${block.uid}`
 
     if (block.uid) {
+      // Determine if this node is a folder based on whether it has children
+      const isFolder = block.children && block.children.length > 0
+
       // Root node (pageTitle as root)
       if (parentId === null && block.text) {
         result.push({
@@ -149,6 +136,7 @@ export class MarkdownRoamParser {
           parentId: null,
           parentPath: '/',
           nodeDepth: 0,
+          isFolder,  // Set based on actual children
         })
       } else if (parentId) {
         result.push({
@@ -156,6 +144,7 @@ export class MarkdownRoamParser {
           parentId,
           parentPath: nodePath,
           nodeDepth: block.depth,
+          isFolder,  // Set based on actual children
         })
       }
     }
