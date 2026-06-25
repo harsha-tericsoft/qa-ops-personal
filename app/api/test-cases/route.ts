@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma'
 export async function GET(request: NextRequest) {
   try {
     const projectId = request.nextUrl.searchParams.get('projectId')
+    const page = parseInt(request.nextUrl.searchParams.get('page') || '1', 10)
+    const limit = parseInt(request.nextUrl.searchParams.get('limit') || '100', 10)
 
     if (!projectId) {
       return NextResponse.json(
@@ -12,6 +14,14 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const skip = (page - 1) * limit
+
+    // Get total count
+    const total = await prisma.roamTestCase.count({
+      where: { projectId },
+    })
+
+    // Get paginated results
     const roamTestCases = await prisma.roamTestCase.findMany({
       where: { projectId },
       select: {
@@ -21,9 +31,19 @@ export async function GET(request: NextRequest) {
         repositoryNodeId: true,
       },
       orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
     })
 
-    return NextResponse.json(roamTestCases)
+    return NextResponse.json({
+      data: roamTestCases,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    })
   } catch (error) {
     console.error('[test-cases] Error:', error)
     return NextResponse.json(

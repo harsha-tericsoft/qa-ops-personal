@@ -6,7 +6,7 @@
 - Local:         http://localhost:3000
 - Network:       http://192.168.1.5:3000
 - Environments: .env.local, .env
-✓ Ready in 564ms
+✓ Ready in 514ms
 ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
  We detected multiple lockfiles and selected the directory of C:\Users\harsh\package-lock.json as the root directory.
  To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
@@ -15,12 +15,25 @@
    * C:\Users\harsh\ClaudeCode\Assignment3\qa-ops\package-lock.json
 
 
- GET /cycles 200 in 559ms (next.js: 264ms, application-code: 296ms)
+ GET /cycles 200 in 576ms (next.js: 261ms, application-code: 315ms)
 [Prisma] Initializing Prisma Client (v6)
 [Prisma] Client initialized successfully
- GET /api/projects 200 in 3.9s (next.js: 182ms, application-code: 3.8s)
- GET /api/projects 200 in 1190ms (next.js: 3ms, application-code: 1187ms)
- GET /api/execution-cycles?projectId=cmqttt49c000r7kygg73fmuqv 200 in 4.1s (next.js: 66ms, application-code: 4.0s)
- GET /api/test-suites?projectId=cmqttt49c000r7kygg73fmuqv 200 in 4.3s (next.js: 94ms, application-code: 4.2s)
-[api/admin/sync-test-cases] Starting sync for all projects
-[sync-test-cases] Found 10362 RoamTestCase records
+ GET /api/projects 200 in 6.0s (next.js: 151ms, application-code: 5.9s)
+ GET /api/projects 200 in 1958ms (next.js: 3ms, application-code: 1955ms)
+ GET /api/execution-cycles?projectId=cmqttt49c000r7kygg73fmuqv 200 in 5.7s (next.js: 67ms, application-code: 5.6s)
+ GET /api/test-suites?projectId=cmqttt49c000r7kygg73fmuqv 200 in 8.1s (next.js: 99ms, application-code: 8.0s)
+ GET /api/projects 200 in 1640ms (next.js: 3ms, application-code: 1637ms)
+ GET /api/dashboard/repository-metrics?projectId=cmqttt49c000r7kygg73fmuqv 200 in 9.3s (next.js: 39ms, application-code: 9.3s)
+ GET /api/execution-cycles?projectId=cmqttt49c000r7kygg73fmuqv 200 in 6.2s (next.js: 3ms, application-code: 6.2s)
+ GET /api/test-cases?projectId=cmqttt49c000r7kygg73fmuqv 200 in 6.4s (next.js: 42ms, application-code: 6.4s)
+ GET /api/test-suites?projectId=cmqttt49c000r7kygg73fmuqv 200 in 4.3s (next.js: 3ms, application-code: 4.3s)
+ GET /api/repository?projectId=cmqttt49c000r7kygg73fmuqv 200 in 10.0s (next.js: 36ms, application-code: 10.0s)
+[repository/tree] Query 1: Loading repository...
+[repository/tree] Query 1 complete
+[repository/tree] Repository found: cmqttuyy4000x7kyg9z0ptdvn
+[repository/tree] Query 2: Loading nodes (parentId: null)...
+[repository/tree] Queries complete, loaded nodes: 0
+[repository/tree] Total request duration: 3142ms
+[repository/tree] Total database queries: 2
+ GET /api/repository/tree?projectId=cmqttt49c000r7kygg73fmuqv&parentId=null 200 in 3.2s (next.js: 39ms, application-code: 3.1s)
+ GET /api/tags?projectId=cmqttt49c000r7kygg73fmuqv 200 in 2.0s (next.js: 38ms, application-code: 1962ms)

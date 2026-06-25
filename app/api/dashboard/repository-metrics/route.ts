@@ -9,28 +9,36 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-      // Count test cases
-      const testCases = await prisma.roamTestCase.findMany({
+      // Count test cases efficiently - use direct count queries
+      const totalTests = await prisma.roamTestCase.count({
         where: { projectId },
-        select: { id: true, tags: true },
       })
 
-      const totalTests = testCases.length
-      const automatedTests = testCases.filter(t => t.tags?.includes('Automated')).length
+      // Count automated tests (those with 'Automated' tag)
+      const automatedTests = await prisma.roamTestCase.count({
+        where: {
+          projectId,
+          tags: { has: 'Automated' },
+        },
+      })
+
       const manualTests = totalTests - automatedTests
       const coverage = totalTests > 0 ? ((automatedTests / totalTests) * 100).toFixed(1) : '0'
 
-      // Count execution cycles by status
-      const cycles = await prisma.executionCycle.findMany({
-        where: { projectId },
-        select: { status: true },
-      })
+      // Count execution cycles by status efficiently
+      const [draftCycles, activeCycles, completedCycles] = await Promise.all([
+        prisma.executionCycle.count({
+          where: { projectId, status: 'PLANNED' },
+        }),
+        prisma.executionCycle.count({
+          where: { projectId, status: 'IN_PROGRESS' },
+        }),
+        prisma.executionCycle.count({
+          where: { projectId, status: 'COMPLETED' },
+        }),
+      ])
 
-      const draftCycles = cycles.filter(c => c.status === 'PLANNED').length
-      const activeCycles = cycles.filter(c => c.status === 'IN_PROGRESS').length
-      const completedCycles = cycles.filter(c => c.status === 'COMPLETED').length
-
-      // Count unique tags
+      // Get unique tags
       const tags = await prisma.tag.findMany({
         where: { projectId },
         distinct: ['name'],
