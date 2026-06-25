@@ -51,10 +51,31 @@ function formatMetric(value: number | null): string {
 
 function DashboardContent() {
   const { user } = useAuth()
-  const [currentProjectId, setCurrentProjectId] = useState('default-project')
+  const [projects, setProjects] = useState<any[]>([])
+  const [currentProjectId, setCurrentProjectId] = useState<string>('')
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  // Load projects on mount
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        const res = await fetch('/api/projects')
+        if (res.ok) {
+          const data = await res.json()
+          setProjects(data)
+          // Auto-select first project
+          if (data.length > 0 && !currentProjectId) {
+            setCurrentProjectId(data[0].id)
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load projects:', err)
+      }
+    }
+    loadProjects()
+  }, [])
 
   const fetchMetrics = useCallback(async (projectId: string) => {
     setLoading(true)
