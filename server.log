@@ -37,3 +37,18 @@
 [repository/tree] Total database queries: 2
  GET /api/repository/tree?projectId=cmqttt49c000r7kygg73fmuqv&parentId=null 200 in 3.2s (next.js: 39ms, application-code: 3.1s)
  GET /api/tags?projectId=cmqttt49c000r7kygg73fmuqv 200 in 2.0s (next.js: 38ms, application-code: 1962ms)
+ GET /api/projects 200 in 1460ms (next.js: 3ms, application-code: 1457ms)
+ GET /api/dashboard/repository-metrics?projectId=cmqttt49c000r7kygg73fmuqv 200 in 7.0s (next.js: 3ms, application-code: 7.0s)
+ GET /api/test-cases?projectId=cmqttt49c000r7kygg73fmuqv&page=1&limit=50 200 in 3.3s (next.js: 2ms, application-code: 3.3s)
+ GET /api/execution-cycles?projectId=cmqttt49c000r7kygg73fmuqv 200 in 2.8s (next.js: 1833µs, application-code: 2.8s)
+ GET /api/test-suites?projectId=cmqttt49c000r7kygg73fmuqv 200 in 3.1s (next.js: 2ms, application-code: 3.1s)
+[repository/tree] Query 1: Loading repository...
+[repository/tree] Query 1 complete
+[repository/tree] Repository found: cmqttuyy4000x7kyg9z0ptdvn
+[repository/tree] Query 2: Loading nodes (parentId: root)...
+[repository/tree] Queries complete, loaded nodes: 1
+[repository/tree] Total request duration: 3561ms
+[repository/tree] Total database queries: 2
+ GET /api/repository/tree?projectId=cmqttt49c000r7kygg73fmuqv 200 in 3.6s (next.js: 1857µs, application-code: 3.6s)
+ POST /api/test-suites?projectId=cmqttt49c000r7kygg73fmuqv 201 in 3.4s (next.js: 1762µs, application-code: 3.4s)
+ POST /api/execution-cycles?projectId=cmqttt49c000r7kygg73fmuqv 201 in 9.2s (next.js: 1970µs, application-code: 9.2s)
