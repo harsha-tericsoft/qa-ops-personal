@@ -1,73 +1,81 @@
 'use client'
 
-import { useAuth } from '@/lib/hooks/useAuth'
-import { ProtectedRoute } from '@/components/ProtectedRoute'
-import { useEffect, useState, useCallback } from 'react'
-import { MetricCard } from '@/components/dashboard/MetricCard'
-import { ReadinessBadge } from '@/components/dashboard/ReadinessBadge'
-import { MetricGrid } from '@/components/dashboard/MetricGrid'
-import { ProjectSelector } from '@/components/dashboard/ProjectSelector'
-import { RepositorySection } from '@/components/dashboard/RepositorySection'
-import { RoamIntegrationStatus } from '@/components/dashboard/RoamIntegrationStatus'
-import { RecentActivity } from '@/components/dashboard/RecentActivity'
-import { ExecutionDashboard } from '@/components/dashboard/ExecutionDashboard'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+
+interface Project {
+  id: string
+  name: string
+}
+
+interface ExecutionCycle {
+  id: string
+  name: string
+  status: string
+}
+
+interface ExecutionVersion {
+  id: string
+  buildVersion: string
+  versionNumber: number
+  status: string
+}
 
 interface DashboardMetrics {
   totalTests: number
-  repositoryTests: number
-  testSuites: number
-  tagCount: number
-  activeCycles: number
-  passRate: number | null
-  failRate: number | null
-  blockedRate: number | null
+  passedTests: number
+  failedTests: number
   blockedTests: number
-  openDefects: number
-  readiness: 'READY' | 'AT_RISK' | 'NOT_READY' | 'INSUFFICIENT_DATA'
-  passCount: number
-  failCount: number
-  totalRunTests: number
-  hasExecutionData: boolean
-  roamConfig: {
-    isConfigured: boolean
-    lastSyncAt: Date | null
-    lastSyncStatus: string
-  }
-  executionCycles?: {
-    total: number
-    pass: number
-    fail: number
-    blocked: number
-    notExecuted: number
-    passRate: number
-    executionRate: number
-  }
+  skippedTests: number
+  notExecutedTests: number
+  executionRate: number
+  passRate: number
 }
 
-function formatMetric(value: number | null): string {
-  if (value === null) return '-'
-  return `${value.toFixed(1)}%`
-}
-
-function DashboardContent() {
-  const { user } = useAuth()
-  const [projects, setProjects] = useState<any[]>([])
-  const [currentProjectId, setCurrentProjectId] = useState<string>('')
-  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
+export default function DashboardPage() {
+  const router = useRouter()
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [projects, setProjects] = useState<Project[]>([])
+  const [selectedProjectId, setSelectedProjectId] = useState('')
+  const [cycles, setCycles] = useState<ExecutionCycle[]>([])
+  const [selectedCycleId, setSelectedCycleId] = useState('')
+  const [versions, setVersions] = useState<ExecutionVersion[]>([])
+  const [selectedVersionId, setSelectedVersionId] = useState('')
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
+  const [metricsLoading, setMetricsLoading] = useState(false)
 
-  // Load projects on mount
+  // Check authentication on mount
   useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/projects')
+        if (res.status === 401) {
+          router.push('/login')
+          return
+        }
+        setIsAuthenticated(true)
+      } catch (err) {
+        router.push('/login')
+      } finally {
+        setLoading(false)
+      }
+    }
+    checkAuth()
+  }, [router])
+
+  // Load projects
+  useEffect(() => {
+    if (!isAuthenticated) return
+
     const loadProjects = async () => {
       try {
         const res = await fetch('/api/projects')
         if (res.ok) {
           const data = await res.json()
           setProjects(data)
-          // Auto-select first project
-          if (data.length > 0 && !currentProjectId) {
-            setCurrentProjectId(data[0].id)
+          if (data.length > 0 && !selectedProjectId) {
+            setSelectedProjectId(data[0].id)
           }
         }
       } catch (err) {
@@ -75,211 +83,227 @@ function DashboardContent() {
       }
     }
     loadProjects()
-  }, [])
+  }, [isAuthenticated, selectedProjectId])
 
-  const fetchMetrics = useCallback(async (projectId: string) => {
-    setLoading(true)
-    setError('')
-    try {
-      // Try new metrics API first
-      const response = await fetch(`/api/dashboard/summary?projectId=${projectId}`)
-      if (response.ok) {
-        const summaryData = await response.json()
-        // Transform to legacy format - now using actual API values
-        const data: DashboardMetrics = {
-          totalTests: summaryData.totalTests,
-          repositoryTests: summaryData.totalTests,
-          testSuites: summaryData.testSuites || 0,
-          tagCount: summaryData.tagCount || 0,
-          activeCycles: summaryData.activeCycles || 0,
-          passRate: summaryData.totalTests > 0 ? summaryData.passRate : null,
-          failRate: summaryData.totalTests > 0 ? ((summaryData.failed / summaryData.totalTests) * 100) : null,
-          blockedRate: summaryData.totalTests > 0 ? ((summaryData.blocked / summaryData.totalTests) * 100) : null,
-          blockedTests: summaryData.blocked,
-          openDefects: 0,
-          readiness: 'READY',
-          passCount: summaryData.passed,
-          failCount: summaryData.failed,
-          totalRunTests: summaryData.passed + summaryData.failed + summaryData.blocked + summaryData.inProgress,
-          hasExecutionData: (summaryData.passed + summaryData.failed) > 0,
-          roamConfig: {
-            isConfigured: true,
-            lastSyncAt: new Date(summaryData.timestamp),
-            lastSyncStatus: 'SUCCESS',
-          },
-          executionCycles: summaryData.executionCycles,
-        }
-        setMetrics(data)
-      } else {
-        setError('Failed to load dashboard metrics')
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load metrics')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
+  // Load cycles when project changes
   useEffect(() => {
-    fetchMetrics(currentProjectId)
-  }, [currentProjectId, fetchMetrics])
+    if (!selectedProjectId) return
 
-  const handleProjectChange = (projectId: string) => {
-    setCurrentProjectId(projectId)
-  }
+    const loadCycles = async () => {
+      try {
+        const res = await fetch(`/api/execution-cycles?projectId=${selectedProjectId}`)
+        if (res.ok) {
+          const data = await res.json()
+          setCycles(data)
+          setSelectedCycleId('') // Reset cycle selection
+          setSelectedVersionId('') // Reset version selection
+        }
+      } catch (err) {
+        console.error('Failed to load cycles:', err)
+      }
+    }
+    loadCycles()
+  }, [selectedProjectId])
+
+  // Load versions when cycle changes
+  useEffect(() => {
+    if (!selectedCycleId) {
+      setVersions([])
+      setSelectedVersionId('')
+      return
+    }
+
+    const loadVersions = async () => {
+      try {
+        const res = await fetch(`/api/execution-cycles/${selectedCycleId}/versions`)
+        if (res.ok) {
+          const data = await res.json()
+          setVersions(data)
+          setSelectedVersionId('') // Reset version selection
+        }
+      } catch (err) {
+        console.error('Failed to load versions:', err)
+      }
+    }
+    loadVersions()
+  }, [selectedCycleId])
+
+  // Load metrics when both cycle and version are selected
+  useEffect(() => {
+    if (!selectedCycleId || !selectedVersionId) {
+      setMetrics(null)
+      return
+    }
+
+    const loadMetrics = async () => {
+      setMetricsLoading(true)
+      try {
+        const res = await fetch(
+          `/api/dashboard/execution-metrics?projectId=${selectedProjectId}&cycleId=${selectedCycleId}&versionId=${selectedVersionId}`
+        )
+        if (res.ok) {
+          const data = await res.json()
+          setMetrics(data)
+        }
+      } catch (err) {
+        console.error('Failed to load metrics:', err)
+      } finally {
+        setMetricsLoading(false)
+      }
+    }
+    loadMetrics()
+  }, [selectedCycleId, selectedVersionId, selectedProjectId])
 
   if (loading) {
-    return <div className="p-8">Loading dashboard...</div>
-  }
-
-  if (error || !metrics) {
     return (
-      <div className="p-8">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <h2 className="font-bold text-red-900 mb-2">Error Loading Dashboard</h2>
-          <p className="text-red-700">{error}</p>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="inline-block w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     )
   }
 
+  if (!isAuthenticated) {
+    return null
+  }
+
+  const executionRate = metrics ? metrics.executionRate : 0
+  const passRate = metrics ? metrics.passRate : 0
+
   return (
-    <main className="p-6 space-y-6">
-      {/* Header with Project Selector */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-700 mt-1">Welcome, {user?.name}! 👋</p>
-        </div>
-        {user?.role === 'LEAD' && (
-          <ProjectSelector
-            currentProjectId={currentProjectId}
-            onProjectChange={handleProjectChange}
-          />
-        )}
-      </div>
-
-      {/* Execution Dashboard: Cycle-focused QA metrics */}
-      <ExecutionDashboard projectId={currentProjectId} />
-
-      {/* Repository Section */}
-      <RepositorySection
-        repositoryTests={metrics.repositoryTests}
-        tagCount={metrics.tagCount}
-        lastSyncAt={metrics.roamConfig.lastSyncAt}
-        lastSyncStatus={metrics.roamConfig.lastSyncStatus}
-      />
-
-      {/* Execution Cycle Metrics */}
-      {metrics.executionCycles && metrics.executionCycles.total > 0 && (
-        <div>
-          <h2 className="text-lg font-semibold mb-3 text-gray-900">Execution Cycle Results</h2>
-          <MetricGrid>
-            <MetricCard
-              label="Total Tests"
-              value={metrics.executionCycles.total}
-              color="blue"
-            />
-            <MetricCard
-              label="Passed"
-              value={metrics.executionCycles.pass}
-              color="green"
-            />
-            <MetricCard
-              label="Failed"
-              value={metrics.executionCycles.fail}
-              color="red"
-            />
-            <MetricCard
-              label="Blocked"
-              value={metrics.executionCycles.blocked}
-              color="orange"
-            />
-            <MetricCard
-              label="Not Executed"
-              value={metrics.executionCycles.notExecuted}
-              color="grey"
-            />
-            <MetricCard
-              label="Pass Rate"
-              value={formatMetric(metrics.executionCycles.passRate)}
-              color={
-                metrics.executionCycles.passRate >= 75
-                  ? 'green'
-                  : metrics.executionCycles.passRate >= 50
-                    ? 'orange'
-                    : 'red'
-              }
-            />
-          </MetricGrid>
-        </div>
-      )}
-
-      {/* Quality Metrics */}
-      {metrics.hasExecutionData && (
-        <div>
-          <h2 className="text-lg font-semibold mb-3 text-gray-900">Quality Metrics</h2>
-          <MetricGrid>
-            <MetricCard
-              label="Pass Rate"
-              value={formatMetric(metrics.passRate)}
-              color={
-                metrics.passRate !== null && metrics.passRate >= 95
-                  ? 'green'
-                  : 'orange'
-              }
-            />
-            <MetricCard
-              label="Fail Rate"
-              value={formatMetric(metrics.failRate)}
-              color={
-                metrics.failRate !== null && metrics.failRate <= 2
-                  ? 'green'
-                  : 'red'
-              }
-            />
-            <MetricCard
-              label="Blocked Rate"
-              value={formatMetric(metrics.blockedRate)}
-              color={
-                metrics.blockedRate !== null && metrics.blockedRate === 0
-                  ? 'green'
-                  : 'orange'
-              }
-            />
-          </MetricGrid>
-        </div>
-      )}
-
-      {/* Release Readiness */}
+    <main className="p-6 space-y-8">
+      {/* Header */}
       <div>
-        <h2 className="text-lg font-semibold mb-3 text-gray-900">Release Readiness</h2>
-        <ReadinessBadge
-          status={metrics.readiness}
-          passRate={metrics.passRate}
-          blockedTests={metrics.blockedTests}
-          openDefects={metrics.openDefects}
-        />
+        <h1 className="text-4xl font-bold text-gray-900">Execution Dashboard</h1>
+        <p className="text-gray-600 mt-2">Enterprise QA Metrics & Analytics</p>
       </div>
 
-      {/* Roam Integration Status */}
-      <RoamIntegrationStatus
-        isConfigured={metrics.roamConfig.isConfigured}
-        lastSyncAt={metrics.roamConfig.lastSyncAt}
-        lastSyncStatus={metrics.roamConfig.lastSyncStatus}
-        repositoryTests={metrics.repositoryTests}
-      />
+      {/* Selection Controls */}
+      <div className="grid grid-cols-3 gap-4 bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        {/* Project Selector */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Project</label>
+          <select
+            value={selectedProjectId}
+            onChange={(e) => setSelectedProjectId(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="">Select Project...</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      {/* Recent Activity */}
-      <RecentActivity projectId={currentProjectId} />
+        {/* Cycle Selector */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Execution Cycle</label>
+          <select
+            value={selectedCycleId}
+            onChange={(e) => setSelectedCycleId(e.target.value)}
+            disabled={!selectedProjectId}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+          >
+            <option value="">Select Cycle...</option>
+            {cycles.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name} ({c.status})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Version Selector */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Version</label>
+          <select
+            value={selectedVersionId}
+            onChange={(e) => setSelectedVersionId(e.target.value)}
+            disabled={!selectedCycleId}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+          >
+            <option value="">Select Version...</option>
+            {versions.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.buildVersion} (v{v.versionNumber})
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Empty State */}
+      {!metrics && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">
+          <div className="text-4xl mb-3">📊</div>
+          <h3 className="text-lg font-semibold text-blue-900 mb-2">Select Project, Cycle & Version</h3>
+          <p className="text-blue-700">Choose a project, execution cycle, and version to view execution metrics.</p>
+        </div>
+      )}
+
+      {/* Execution Metrics */}
+      {metrics && (
+        <>
+          {/* KPI Cards */}
+          <div className="grid grid-cols-4 gap-4">
+            <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+              <div className="text-sm font-medium text-gray-600">Total Tests</div>
+              <div className="text-3xl font-bold text-gray-900 mt-2">{metrics.totalTests}</div>
+            </div>
+            <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+              <div className="text-sm font-medium text-gray-600">Passed</div>
+              <div className="text-3xl font-bold text-green-600 mt-2">{metrics.passedTests}</div>
+            </div>
+            <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+              <div className="text-sm font-medium text-gray-600">Failed</div>
+              <div className="text-3xl font-bold text-red-600 mt-2">{metrics.failedTests}</div>
+            </div>
+            <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+              <div className="text-sm font-medium text-gray-600">Blocked</div>
+              <div className="text-3xl font-bold text-orange-600 mt-2">{metrics.blockedTests}</div>
+            </div>
+          </div>
+
+          {/* Execution Progress */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">Execution Progress</h3>
+
+            <div className="grid grid-cols-2 gap-8">
+              {/* Execution Rate */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-gray-700">Execution Rate</span>
+                  <span className="text-lg font-bold text-blue-600">{executionRate.toFixed(1)}%</span>
+                </div>
+                <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-600 transition-all duration-300"
+                    style={{ width: `${Math.min(executionRate, 100)}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Pass Rate */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-gray-700">Pass Rate</span>
+                  <span className="text-lg font-bold text-green-600">{passRate.toFixed(1)}%</span>
+                </div>
+                <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-green-600 transition-all duration-300"
+                    style={{ width: `${Math.min(passRate, 100)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </main>
-  )
-}
-
-export default function DashboardPage() {
-  return (
-    <ProtectedRoute>
-      <DashboardContent />
-    </ProtectedRoute>
   )
 }
