@@ -310,7 +310,7 @@ function ExecutionCyclesContent() {
       // Optimistic update: Update local state immediately
       const updatedVersions = versions.map((v) => ({
         ...v,
-        testRuns: v.testRuns.map((run) =>
+        testRuns: (v.testRuns || []).map((run) =>
           run.id === runId ? { ...run, status: status as any } : run
         ),
       }))
@@ -322,7 +322,7 @@ function ExecutionCyclesContent() {
           c.id === selectedCycleId
             ? {
                 ...c,
-                testRuns: c.testRuns.map((run) =>
+                testRuns: (c.testRuns || []).map((run) =>
                   run.id === runId ? { ...run, status: status as any } : run
                 ),
               }
