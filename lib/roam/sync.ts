@@ -5,6 +5,73 @@ import { TestCaseExtractor } from './test-case-extractor'
 import { prisma } from '@/lib/prisma'
 
 /**
+ * Normalize values for comparison
+ * Treats semantically equivalent values as equal
+ */
+function normalizeForComparison(value: any, fieldName: string): any {
+  // Handle order field: undefined/null/0 are equivalent
+  if (fieldName === 'order') {
+    if (value === undefined || value === null || value === 0) return 0
+    return value
+  }
+
+  // Handle tags field: undefined/null/[] are equivalent
+  if (fieldName === 'tags') {
+    if (value === undefined || value === null || (Array.isArray(value) && value.length === 0)) return []
+    if (Array.isArray(value)) return value
+    return []
+  }
+
+  // Handle slug field: undefined/null/empty are equivalent
+  if (fieldName === 'slug') {
+    if (!value) return ''
+    return String(value)
+  }
+
+  // Handle parentId field: undefined/null are equivalent
+  if (fieldName === 'parentId') {
+    if (value === undefined || value === null) return null
+    return value
+  }
+
+  // Handle children field: undefined/[] are equivalent
+  if (fieldName === 'children') {
+    if (value === undefined || (Array.isArray(value) && value.length === 0)) return []
+    if (Array.isArray(value)) return value
+    return []
+  }
+
+  // Handle markdown field: trim trailing whitespace
+  if (fieldName === 'markdown') {
+    if (typeof value === 'string') return value.trimEnd()
+    return value
+  }
+
+  // Handle string fields: trim with trimEnd()
+  if (typeof value === 'string') {
+    return value.trimEnd()
+  }
+
+  return value
+}
+
+/**
+ * Check if two values are equal after normalization
+ */
+function areFieldsEqual(dbValue: any, parsedValue: any, fieldName: string): boolean {
+  const dbNorm = normalizeForComparison(dbValue, fieldName)
+  const parsedNorm = normalizeForComparison(parsedValue, fieldName)
+
+  // Handle arrays
+  if (Array.isArray(dbNorm) && Array.isArray(parsedNorm)) {
+    return JSON.stringify(dbNorm.sort()) === JSON.stringify(parsedNorm.sort())
+  }
+
+  // Handle objects and primitives
+  return dbNorm === parsedNorm
+}
+
+/**
  * Import markdown nodes directly from Roam hierarchy
  * Uses recursive tree traversal to ensure parents are created before children
  */
@@ -15,15 +82,20 @@ export async function importMarkdownNodes(
 ): Promise<SyncResult> {
   const result: SyncResult = { added: 0, updated: 0, skipped: 0, errors: [] }
   const startTime = Date.now()
+  const phases: Record<string, number> = {}
 
   console.log('[importMarkdownNodes] TOTAL_NODES =', nodes.length)
   console.log('[importMarkdownNodes] Starting batch import optimization...')
 
   try {
     // Sort nodes by depth (parents first) to ensure FK integrity
+    let phaseStart = Date.now()
     const sortedNodes = [...nodes].sort((a, b) => (a.nodeDepth || 0) - (b.nodeDepth || 0))
+    phases['sort'] = Date.now() - phaseStart
+    console.log('[importMarkdownNodes] PHASE: sort =', phases['sort'], 'ms')
 
     // Deduplicate nodes by roamNodeId (same node can appear multiple times in tree)
+    phaseStart = Date.now()
     const seenUids = new Set<string>()
     const deduplicatedNodes: typeof sortedNodes = []
     for (const node of sortedNodes) {
@@ -32,6 +104,9 @@ export async function importMarkdownNodes(
         deduplicatedNodes.push(node)
       }
     }
+    phases['dedup'] = Date.now() - phaseStart
+    console.log('[importMarkdownNodes] PHASE: dedup =', phases['dedup'], 'ms')
+
     const dupCount = sortedNodes.length - deduplicatedNodes.length
     if (dupCount > 0) {
       console.log(`[importMarkdownNodes] ⚠️  DEDUPLICATED: ${dupCount} duplicate nodes removed (${sortedNodes.length} → ${deduplicatedNodes.length} unique)`)
@@ -39,15 +114,16 @@ export async function importMarkdownNodes(
 
     // OPTIMIZATION: Load all existing nodes in ONE query
     console.log('[importMarkdownNodes] Loading existing nodes (one query)...')
-    const loadStart = Date.now()
+    phaseStart = Date.now()
     const existingNodes = await prisma.repositoryNode.findMany({
       where: {
         repositoryId,
         roamNodeId: { in: deduplicatedNodes.map(n => n.uid) }
       },
-      select: { id: true, roamNodeId: true, name: true }
+      select: { id: true, roamNodeId: true, name: true, order: true, tags: true, type: true, slug: true }
     })
-    console.log(`[importMarkdownNodes] Loaded ${existingNodes.length} existing nodes in ${Date.now() - loadStart}ms`)
+    phases['loadExisting'] = Date.now() - phaseStart
+    console.log(`[importMarkdownNodes] PHASE: loadExisting = ${phases['loadExisting']}ms (loaded ${existingNodes.length} nodes)`)
 
     // Build uid -> RepositoryNode mapping
     const existingMap = new Map(existingNodes.map(n => [n.roamNodeId, n]))
@@ -57,6 +133,11 @@ export async function importMarkdownNodes(
     const nodesToCreate: Array<any> = []
     const nodesToUpdate: Array<{ id: string; data: any }> = []
     const nodeWithParentRefs: Array<{ uid: string; parentId: string | null }> = []
+
+    // Debug: Print comparison for first node
+    let debugNodePrinted = false
+    let debugUpdatesPrinted = 0
+    const updateReasons = { nameChanged: 0, orderChanged: 0, tagsChanged: 0, slugChanged: 0 }
 
     for (const node of deduplicatedNodes) {
       if (!node.uid) continue
@@ -74,8 +155,84 @@ export async function importMarkdownNodes(
         // Map existing node
         uidToNodeId.set(node.uid, existing.id)
 
-        // Check if update needed
-        if (existing.name !== node.text || node.order !== undefined) {
+        // Normalize fields for comparison
+        const nameEqual = areFieldsEqual(existing.name, node.text, 'name')
+        const orderEqual = areFieldsEqual(existing.order, node.order, 'order')
+        const tagsEqual = areFieldsEqual(existing.tags, node.tags, 'tags')
+
+        // Calculate slug the same way as update logic
+        const slug = node.text
+          .toLowerCase()
+          .replace(/[^\w\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .substring(0, 50)
+
+        // Normalize slug for comparison using normalization function
+        const slugEqual = areFieldsEqual(existing.slug, slug, 'slug')
+
+        // NOTE: Do NOT compare type here - type is determined by TestCaseExtractor AFTER sync
+        // Comparing type would cause spurious updates when nodes are later classified as test cases
+
+        // Check if update needed - only update if meaningful fields actually changed
+        const needsUpdate = !nameEqual || !orderEqual || !tagsEqual || !slugEqual
+
+        if (!debugNodePrinted) {
+          debugNodePrinted = true
+          console.log('\n[DIRTY-CHECK] First node comparison (normalized):')
+          console.log('  uid:', node.uid)
+          console.log('  --- name ---')
+          console.log('    DB:', JSON.stringify(existing.name))
+          console.log('    Parsed:', JSON.stringify(node.text))
+          console.log('    Normalized DB:', JSON.stringify(normalizeForComparison(existing.name, 'name')))
+          console.log('    Normalized Parsed:', JSON.stringify(normalizeForComparison(node.text, 'name')))
+          console.log('    Equal?', nameEqual)
+          console.log('  --- order ---')
+          console.log('    DB:', existing.order)
+          console.log('    Parsed:', node.order)
+          console.log('    Normalized DB:', normalizeForComparison(existing.order, 'order'))
+          console.log('    Normalized Parsed:', normalizeForComparison(node.order, 'order'))
+          console.log('    Equal?', orderEqual)
+          console.log('  --- tags ---')
+          console.log('    DB:', existing.tags)
+          console.log('    Parsed:', node.tags)
+          console.log('    Normalized DB:', normalizeForComparison(existing.tags, 'tags'))
+          console.log('    Normalized Parsed:', normalizeForComparison(node.tags, 'tags'))
+          console.log('    Equal?', tagsEqual)
+          console.log('  --- slug ---')
+          console.log('    DB:', JSON.stringify(existing.slug))
+          console.log('    Parsed:', JSON.stringify(slug))
+          console.log('    Normalized DB:', JSON.stringify(normalizeForComparison(existing.slug, 'slug')))
+          console.log('    Normalized Parsed:', JSON.stringify(normalizeForComparison(slug, 'slug')))
+          console.log('    Equal?', slugEqual)
+          console.log('  --- type (NOT compared - determined by TestCaseExtractor) ---')
+          console.log('    DB:', existing.type)
+          console.log('    Parsed:', nodeType)
+          console.log('  --- result ---')
+          console.log('    needsUpdate?', needsUpdate)
+          console.log()
+        }
+
+        if (needsUpdate) {
+          // Track which fields caused the update
+          if (!nameEqual) updateReasons.nameChanged++
+          if (!orderEqual) updateReasons.orderChanged++
+          if (!tagsEqual) updateReasons.tagsChanged++
+          if (!slugEqual) updateReasons.slugChanged++
+
+          // Log first 3 nodes that need update
+          if (debugUpdatesPrinted < 3) {
+            debugUpdatesPrinted++
+            if (!orderEqual) {
+              console.log(`\n[DEBUG-ORDER] Node ${debugUpdatesPrinted}: uid=${node.uid.substring(0, 8)}`)
+              console.log(`  DB order: ${existing.order} (type: ${typeof existing.order})`)
+              console.log(`  Parsed order: ${node.order} (type: ${typeof node.order})`)
+              const dbNorm = normalizeForComparison(existing.order, 'order')
+              const parsedNorm = normalizeForComparison(node.order, 'order')
+              console.log(`  Normalized DB: ${dbNorm}`)
+              console.log(`  Normalized Parsed: ${parsedNorm}`)
+              console.log(`  Are equal?: ${dbNorm === parsedNorm}`)
+            }
+          }
           nodesToUpdate.push({
             id: existing.id,
             data: {
@@ -117,6 +274,11 @@ export async function importMarkdownNodes(
     }
 
     console.log(`[importMarkdownNodes] Split results: ${nodesToCreate.length} to create, ${nodesToUpdate.length} to update, ${result.skipped} skipped`)
+    console.log(`[importMarkdownNodes] Update reasons breakdown:`)
+    console.log(`  nameChanged: ${updateReasons.nameChanged}`)
+    console.log(`  orderChanged: ${updateReasons.orderChanged}`)
+    console.log(`  tagsChanged: ${updateReasons.tagsChanged}`)
+    console.log(`  slugChanged: ${updateReasons.slugChanged}`)
 
     // Create nodes with batch insert support
     const createStart = Date.now()
@@ -140,9 +302,12 @@ export async function importMarkdownNodes(
     const depths = Array.from(nodesByDepth.keys()).sort((a, b) => a - b)
 
     // Process each depth level, creating all nodes at one depth before moving to next
+    phaseStart = Date.now()
+    let totalProcessed = 0
     for (const depth of depths) {
       const nodesAtDepth = nodesByDepth.get(depth) || []
       console.log(`[importMarkdownNodes] Processing depth ${depth}: ${nodesAtDepth.length} nodes`)
+      totalProcessed += nodesAtDepth.length
 
       for (let nodeIdx = 0; nodeIdx < nodesAtDepth.length; nodeIdx++) {
         const node = nodesAtDepth[nodeIdx]
@@ -263,6 +428,8 @@ export async function importMarkdownNodes(
         }
       }
     }
+    phases['depthLoop'] = Date.now() - phaseStart
+    console.log(`[importMarkdownNodes] PHASE: depthLoop = ${phases['depthLoop']}ms (processed ${totalProcessed} nodes)`)
 
     // CRITICAL FIX: Final flush for any remaining nodes
     if (nodesToCreateFinal.length > 0) {
@@ -319,33 +486,50 @@ export async function importMarkdownNodes(
 
     // Update any changed nodes
     console.log(`[importMarkdownNodes] Updating ${nodesToUpdate.length} nodes...`)
-    const updateStart = Date.now()
+    phaseStart = Date.now()
+    let updateCount = 0
+    const updateStartTime = Date.now()
 
-    for (const update of nodesToUpdate) {
+    for (let i = 0; i < nodesToUpdate.length; i++) {
+      const update = nodesToUpdate[i]
+      const itemStart = Date.now()
+
       try {
         await prisma.repositoryNode.update({
           where: { id: update.id },
           data: update.data
         })
         result.updated++
+        updateCount++
+
+        // Log progress every 100 updates
+        if (updateCount % 100 === 0) {
+          const elapsed = Date.now() - updateStartTime
+          const rate = updateCount / (elapsed / 1000)
+          console.log(`[importMarkdownNodes] Update progress: ${updateCount}/${nodesToUpdate.length} (${rate.toFixed(0)} updates/sec)`)
+        }
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Unknown error'
-        console.error(`[importMarkdownNodes] Update error for node ${update.id}:`, errorMsg)
+        const itemTime = Date.now() - itemStart
+        console.error(`[importMarkdownNodes] Update error for node ${update.id} (attempt took ${itemTime}ms):`, errorMsg.substring(0, 100))
         result.errors.push(`Update error: ${errorMsg}`)
       }
     }
 
-    const updateDuration = Date.now() - updateStart
-    console.log(`[importMarkdownNodes] All updates completed in ${updateDuration}ms`)
+    phases['updates'] = Date.now() - phaseStart
+    console.log(`[importMarkdownNodes] PHASE: updates = ${phases['updates']}ms (updated ${updateCount} nodes)`)
 
     const totalDuration = Date.now() - startTime
-    console.log(`\n[importMarkdownNodes] OPTIMIZATION COMPLETE:`)
+    console.log(`\n[importMarkdownNodes] END - Total duration: ${totalDuration}ms`)
     console.log(`  Total nodes: ${deduplicatedNodes.length} (after dedup)`)
     console.log(`  Created: ${result.added}`)
     console.log(`  Updated: ${result.updated}`)
     console.log(`  Skipped: ${result.skipped}`)
-    console.log(`  Duration: ${totalDuration}ms`)
-    console.log(`  Query reduction: ~500x (was 7436+ sequential queries)`)
+    console.log(`\n[importMarkdownNodes] Phase breakdown:`)
+    Object.entries(phases).forEach(([phase, ms]) => {
+      const pct = ((ms / totalDuration) * 100).toFixed(1)
+      console.log(`  ${phase}: ${ms}ms (${pct}%)`)
+    })
   } catch (error) {
     result.errors.push(error instanceof Error ? error.message : 'Unknown error')
   }
@@ -584,12 +768,18 @@ export async function refreshSync(projectId: string): Promise<{
   message: string
 }> {
   const startTime = Date.now()
+  const timings: Record<string, number> = {}
+
+  console.log('[refreshSync] START at', new Date(startTime).toISOString())
 
   try {
     // Load Roam config
+    const configStart = Date.now()
     const config = await prisma.roamConfig.findUnique({
       where: { projectId },
     })
+    timings['loadConfig'] = Date.now() - configStart
+    console.log('[refreshSync] PHASE: loadConfig =', timings['loadConfig'], 'ms')
 
     if (!config) {
       throw new Error('No Roam configuration found')
@@ -620,6 +810,7 @@ export async function refreshSync(projectId: string): Promise<{
 
     // Fetch repository root page using roam get-page (returns FULL hierarchy)
     console.log('[refreshSync] Fetching repository root page:', config.repositoryRootPage)
+    const roamGetStart = Date.now()
     let pageData: any
     try {
       const { stdout } = await execAsync(
@@ -640,36 +831,49 @@ export async function refreshSync(projectId: string): Promise<{
         'Verify the page title matches exactly in your Roam graph and roam-cli is configured.'
       )
     }
+    timings['roamGetPage'] = Date.now() - roamGetStart
+    console.log('[refreshSync] PHASE: roamGetPage =', timings['roamGetPage'], 'ms, markdown length:', (pageData?.markdown || '').length)
 
     if (!pageData || !pageData.uid) {
       throw new Error('Failed to fetch page from Roam')
     }
 
     // Parse the markdown response from roam-cli
+    const parseStart = Date.now()
     console.log('[refreshSync] Parsing Roam response - markdown length:', (pageData.markdown || '').length)
     const tree = MarkdownRoamParser.parseMarkdown(
       pageData.markdown || '',
       config.repositoryRootPage,
       pageData.uid
     )
+    timings['parseMarkdown'] = Date.now() - parseStart
+    console.log('[refreshSync] PHASE: parseMarkdown =', timings['parseMarkdown'], 'ms')
 
     if (!tree) {
       throw new Error('Failed to parse Roam page')
     }
 
     // Flatten and import (handles updates via importMarkdownNodes)
+    const flattenStart = Date.now()
     console.log('[refreshSync] Flattening markdown tree to database format')
     const nodes = MarkdownRoamParser.flattenTree(tree)
-    console.log('[refreshSync] Flattened tree contains', nodes.length, 'nodes')
+    timings['flattenTree'] = Date.now() - flattenStart
+    console.log('[refreshSync] PHASE: flattenTree =', timings['flattenTree'], 'ms, node count:', nodes.length)
 
+    const importStart = Date.now()
     const result = await importMarkdownNodes(nodes, repository.id, projectId)
+    timings['importMarkdownNodes'] = Date.now() - importStart
+    console.log('[refreshSync] PHASE: importMarkdownNodes =', timings['importMarkdownNodes'], 'ms, added:', result.added)
 
     // Extract test cases from imported nodes
+    const extractStart = Date.now()
     console.log('[refreshSync] Extracting test cases from imported nodes...')
     const testCaseResult = await TestCaseExtractor.extractTestCases(repository.id, projectId)
-    console.log('[refreshSync] Test case extraction: created', testCaseResult.created, ', skipped', testCaseResult.skipped)
+    timings['extractTestCases'] = Date.now() - extractStart
+    console.log('[refreshSync] PHASE: extractTestCases =', timings['extractTestCases'], 'ms, created:', testCaseResult.created)
 
     // Update repository sync status
+    const updateStart = Date.now()
     await prisma.repository.update({
       where: { id: repository.id },
       data: {
@@ -679,8 +883,11 @@ export async function refreshSync(projectId: string): Promise<{
         totalTestCount: testCaseResult.created,
       },
     })
+    timings['updateRepository'] = Date.now() - updateStart
+    console.log('[refreshSync] PHASE: updateRepository =', timings['updateRepository'], 'ms')
 
     // Log sync operation
+    const logStart = Date.now()
     const duration = Date.now() - startTime
     await prisma.syncLog.create({
       data: {
@@ -694,8 +901,11 @@ export async function refreshSync(projectId: string): Promise<{
         durationMs: duration,
       },
     })
+    timings['createSyncLog'] = Date.now() - logStart
+    console.log('[refreshSync] PHASE: createSyncLog =', timings['createSyncLog'], 'ms')
 
     // Update Roam config
+    const configUpdateStart = Date.now()
     await prisma.roamConfig.update({
       where: { projectId },
       data: {
@@ -703,6 +913,16 @@ export async function refreshSync(projectId: string): Promise<{
         lastSyncStatus: 'SUCCESS',
         lastSyncError: null,
       },
+    })
+    timings['updateRoamConfig'] = Date.now() - configUpdateStart
+    console.log('[refreshSync] PHASE: updateRoamConfig =', timings['updateRoamConfig'], 'ms')
+
+    const totalDuration = Date.now() - startTime
+    console.log('[refreshSync] END - Total duration:', totalDuration, 'ms')
+    console.log('[refreshSync] Timing breakdown:')
+    Object.entries(timings).forEach(([phase, ms]) => {
+      const pct = ((ms / totalDuration) * 100).toFixed(1)
+      console.log(`  ${phase}: ${ms}ms (${pct}%)`)
     })
 
     return {

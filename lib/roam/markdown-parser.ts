@@ -20,7 +20,9 @@ export class MarkdownRoamParser {
    * Extracts UIDs, text, indentation depth, and tags (#Manual, #Automation, etc.)
    */
   static parseMarkdown(markdown: string, pageTitle: string, pageUid: string): RoamMarkdownBlock | null {
+    const parseStart = Date.now()
     const lines = markdown.split('\n')
+    console.log('[parseMarkdown] START with', lines.length, 'lines')
 
     // Create root node for the page itself
     const root: RoamMarkdownBlock = {
@@ -37,9 +39,11 @@ export class MarkdownRoamParser {
     // Skip the title line (starts with #) and process content
     let currentDepth = 0
     const stack: RoamMarkdownBlock[] = [root]
+    let blockCount = 0
 
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim()
+      blockCount++
 
       if (!line) continue
 
@@ -103,6 +107,9 @@ export class MarkdownRoamParser {
       stack.push(block)
     }
 
+    const elapsed = Date.now() - parseStart
+    console.log('[parseMarkdown] END - Parsed', blockCount, 'blocks in', elapsed, 'ms')
+
     return root
   }
 
@@ -125,8 +132,15 @@ export class MarkdownRoamParser {
   static flattenTree(
     block: RoamMarkdownBlock,
     parentId: string | null = null,
-    parentPath: string = '/'
+    parentPath: string = '/',
+    _depth: number = 0,
+    _startTime?: number
   ): Array<RoamMarkdownBlock & { parentId: string | null; parentPath: string; nodeDepth: number }> {
+    if (_depth === 0 && !_startTime) {
+      _startTime = Date.now()
+      console.log('[flattenTree] START')
+    }
+
     const result: Array<RoamMarkdownBlock & { parentId: string | null; parentPath: string; nodeDepth: number }> = []
 
     const nodePath = parentPath === '/' ? `/${block.uid}` : `${parentPath}/${block.uid}`
@@ -159,8 +173,13 @@ export class MarkdownRoamParser {
 
     // Process children - they preserve their sibling order from parser
     for (const child of block.children) {
-      const childResults = this.flattenTree(child, block.uid || parentId, nodePath)
+      const childResults = this.flattenTree(child, block.uid || parentId, nodePath, _depth + 1, _startTime)
       result.push(...childResults)
+    }
+
+    if (_depth === 0 && _startTime) {
+      const elapsed = Date.now() - _startTime
+      console.log('[flattenTree] END - Flattened to', result.length, 'nodes in', elapsed, 'ms')
     }
 
     return result
