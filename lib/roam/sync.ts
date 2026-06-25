@@ -601,20 +601,6 @@ export async function refreshSync(projectId: string): Promise<{
       throw new Error('No repository found. Run initial sync first.')
     }
 
-    // Use roam-cli directly without token encryption
-    // roam-cli reads credentials from ~/.roam-tools.json automatically
-    const { exec } = await import('child_process')
-    const { promisify } = await import('util')
-    const execAsync = promisify(exec)
-
-    // Test connection using roam-cli (no token needed - reads from ~/.roam-tools.json)
-    console.log('[refreshSync] Testing roam-cli connection to graph:', config.graphName)
-    try {
-      await execAsync(`roam search --graph "${config.graphName}" --query=""`, { timeout: 30000 })
-    } catch (err) {
-      throw new Error(`Cannot connect to Roam graph "${config.graphName}". Ensure roam-cli is configured with credentials in ~/.roam-tools.json`)
-    }
-
     // Validate configuration
     if (!config.repositoryRootPage) {
       throw new Error(
@@ -623,28 +609,86 @@ export async function refreshSync(projectId: string): Promise<{
       )
     }
 
-    // Fetch repository root page using roam-cli
-    console.log('[refreshSync] Fetching repository root page:', config.repositoryRootPage)
-    let pageData: any
+    // Use roam-cli with roam get-page (returns FULL page markdown with all children)
+    // NOT roam search (which returns only page header with hiddenChildren="1")
+    const { spawn } = await import('child_process')
+
+    // Test connection first
+    console.log('[refreshSync] Testing roam-cli connection to graph:', config.graphName)
     try {
-      const { stdout } = await execAsync(
-        `roam search --graph "${config.graphName}" --query="${config.repositoryRootPage}"`,
-        { timeout: 30000 }
-      )
-      const searchResult = JSON.parse(stdout)
-      if (!searchResult.results || searchResult.results.length === 0) {
-        throw new Error('Root page not found')
-      }
-      pageData = searchResult.results[0]
+      const testProcess = spawn('roam', ['search', '--graph', config.graphName, '--query', ''])
+      await new Promise((resolve, reject) => {
+        testProcess.on('close', (code) => {
+          if (code === 0) resolve(null)
+          else reject(new Error(`Connection test failed with code ${code}`))
+        })
+        testProcess.on('error', reject)
+      })
     } catch (err) {
+      throw new Error(`Cannot connect to Roam graph "${config.graphName}". Ensure roam-cli is configured with credentials in ~/.roam-tools.json`)
+    }
+
+    // Fetch repository root page using roam get-page (returns FULL hierarchy)
+    console.log('[refreshSync] Fetching repository root page:', config.repositoryRootPage)
+    const pageData = await new Promise<any>((resolve, reject) => {
+      const process = spawn('roam', ['get-page', '--graph', config.graphName, '--title', config.repositoryRootPage])
+
+      let stdout = ''
+      let stderr = ''
+      let timeout: NodeJS.Timeout | null = null
+
+      // Set timeout manually
+      timeout = setTimeout(() => {
+        process.kill()
+        reject(new Error('roam get-page timeout after 60s'))
+      }, 60000)
+
+      process.stdout.on('data', (data) => {
+        stdout += data.toString()
+      })
+
+      process.stderr.on('data', (data) => {
+        stderr += data.toString()
+      })
+
+      process.on('error', (err) => {
+        if (timeout) clearTimeout(timeout)
+        reject(err)
+      })
+
+      process.on('close', (code) => {
+        if (timeout) clearTimeout(timeout)
+        if (code !== 0) {
+          reject(new Error(`roam get-page failed with code ${code}: ${stderr}`))
+          return
+        }
+
+        try {
+          // Parse JSON - skip warnings
+          const jsonMatch = stdout.match(/\{[\s\S]*\}/s)
+          if (!jsonMatch) {
+            reject(new Error('No JSON in roam response'))
+            return
+          }
+          const result = JSON.parse(jsonMatch[0])
+          resolve(result)
+        } catch (err) {
+          reject(err)
+        }
+      })
+    }).catch((err) => {
       throw new Error(
         `Repository root page not found: "${config.repositoryRootPage}". ` +
         'Verify the page title matches exactly in your Roam graph.'
       )
+    })
+
+    if (!pageData || !pageData.uid) {
+      throw new Error('Failed to fetch page from Roam')
     }
 
     // Parse the markdown response from roam-cli
-    console.log('[refreshSync] Parsing Roam response')
+    console.log('[refreshSync] Parsing Roam response - markdown length:', (pageData.markdown || '').length)
     const tree = MarkdownRoamParser.parseMarkdown(
       pageData.markdown || '',
       config.repositoryRootPage,
