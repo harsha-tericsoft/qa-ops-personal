@@ -6,6 +6,7 @@ import { TestCaseSummaryCards } from '@/components/test-cases/TestCaseSummaryCar
 import { TestCaseFilterPanel } from '@/components/test-cases/TestCaseFilterPanel'
 import { TestCaseGrid } from '@/components/test-cases/TestCaseGrid'
 import { PreviewSelectedModal } from '@/components/test-cases/PreviewSelectedModal'
+import { CreateSuiteModal } from '@/components/test-cases/CreateSuiteModal'
 import { useState, useEffect } from 'react'
 
 interface Project {
@@ -76,6 +77,9 @@ function TestCasesContent() {
 
   // Preview modal
   const [showPreview, setShowPreview] = useState(false)
+
+  // Create suite modal
+  const [showCreateSuite, setShowCreateSuite] = useState(false)
 
   useEffect(() => {
     fetchProjects()
@@ -321,6 +325,7 @@ function TestCasesContent() {
                         Preview Selected ({selectedIds.size})
                       </button>
                       <button
+                        onClick={() => setShowCreateSuite(true)}
                         className="px-4 py-2 text-sm bg-green-600 text-white hover:bg-green-700 rounded-lg"
                       >
                         Create Suite ({selectedIds.size})
@@ -367,6 +372,19 @@ function TestCasesContent() {
         onClose={() => setShowPreview(false)}
         selectedCount={selectedIds.size}
         testCases={testCases.filter(tc => selectedIds.has(tc.id))}
+      />
+
+      {/* Create Suite Modal */}
+      <CreateSuiteModal
+        isOpen={showCreateSuite}
+        onClose={() => setShowCreateSuite(false)}
+        selectedIds={selectedIds}
+        projectId={currentProjectId}
+        onSuiteCreated={() => {
+          // Refresh might be needed here, but for now just close and clear
+          setShowCreateSuite(false)
+          setSelectedIds(new Set())
+        }}
       />
     </div>
   )
