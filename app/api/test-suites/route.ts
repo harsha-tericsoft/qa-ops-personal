@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/test-suites
+// POST /api/test-suites - Create suite with bulk test case assignment
 export async function POST(req: NextRequest) {
   const projectId = req.nextUrl.searchParams.get('projectId')
   if (!projectId) {
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { name, description, category = 'CUSTOM', selectionMethod = 'HIERARCHY' } = body
+    const { name, description, category = 'CUSTOM', selectionMethod = 'HIERARCHY', testIds = [] } = body
 
     if (!name) {
       return NextResponse.json(
@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Create suite and add test cases in a single transaction
     const suite = await prisma.testSuite.create({
       data: {
         projectId,
@@ -52,6 +53,17 @@ export async function POST(req: NextRequest) {
         description,
         category,
         selectionMethod,
+        // Bulk insert test cases if provided
+        testCases: testIds.length > 0
+          ? {
+              createMany: {
+                data: testIds.map((testId: string, index: number) => ({
+                  testCaseId: testId,
+                  order: index,
+                })),
+              },
+            }
+          : undefined,
       },
       include: {
         testCases: {

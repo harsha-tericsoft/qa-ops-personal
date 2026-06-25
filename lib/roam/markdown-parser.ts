@@ -7,6 +7,7 @@ export interface RoamMarkdownBlock {
   uid: string
   text: string
   depth: number
+  order: number  // Sibling order from Roam (0-indexed)
   children: RoamMarkdownBlock[]
   tags: string[]
   isTestCase: boolean
@@ -26,6 +27,7 @@ export class MarkdownRoamParser {
       uid: pageUid,
       text: pageTitle,
       depth: 0,
+      order: 0,  // Root always has order 0
       children: [],
       tags: [],
       isTestCase: false,
@@ -67,15 +69,6 @@ export class MarkdownRoamParser {
       // IMPORTANT: Do NOT classify as test case here.
       // Classification happens LATER in TestCaseExtractor, AFTER sync completes.
       // The parser's only job is to build the hierarchy.
-      const block: RoamMarkdownBlock = {
-        uid,
-        text,
-        depth,
-        children: [],
-        tags,
-        isTestCase: false,  // Will be determined by TestCaseExtractor
-        isFolder: false,  // Will be determined after tree is complete
-      }
 
       // Find parent based on depth
       while (stack.length > 0 && stack[stack.length - 1].depth >= depth) {
@@ -83,6 +76,19 @@ export class MarkdownRoamParser {
       }
 
       const parent = stack[stack.length - 1]
+      const siblingOrder = parent ? parent.children.length : 0  // Track position among siblings
+
+      const block: RoamMarkdownBlock = {
+        uid,
+        text,
+        depth,
+        order: siblingOrder,  // Preserve sibling order from Roam
+        children: [],
+        tags,
+        isTestCase: false,  // Will be determined by TestCaseExtractor
+        isFolder: false,  // Will be determined after tree is complete
+      }
+
       if (parent) {
         parent.children.push(block)
         if (uid === 'k9IcSszSC') {
@@ -114,7 +120,7 @@ export class MarkdownRoamParser {
 
   /**
    * Flatten tree into list for database insertion
-   * Includes parent path information for hierarchy
+   * Includes parent path information for hierarchy and sibling order
    */
   static flattenTree(
     block: RoamMarkdownBlock,
@@ -137,6 +143,7 @@ export class MarkdownRoamParser {
           parentPath: '/',
           nodeDepth: 0,
           isFolder,  // Set based on actual children
+          order: 0,  // Root always has order 0
         })
       } else if (parentId) {
         result.push({
@@ -145,11 +152,12 @@ export class MarkdownRoamParser {
           parentPath: nodePath,
           nodeDepth: block.depth,
           isFolder,  // Set based on actual children
+          // order is already set from parser, keep it
         })
       }
     }
 
-    // Process children
+    // Process children - they preserve their sibling order from parser
     for (const child of block.children) {
       const childResults = this.flattenTree(child, block.uid || parentId, nodePath)
       result.push(...childResults)

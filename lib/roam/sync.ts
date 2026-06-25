@@ -75,7 +75,7 @@ export async function importMarkdownNodes(
         uidToNodeId.set(node.uid, existing.id)
 
         // Check if update needed
-        if (existing.name !== node.text) {
+        if (existing.name !== node.text || node.order !== undefined) {
           nodesToUpdate.push({
             id: existing.id,
             data: {
@@ -83,6 +83,7 @@ export async function importMarkdownNodes(
               slug,
               type: nodeType,
               tags: node.tags || [],
+              order: node.order ?? 0,  // Preserve sibling order from Roam
               updatedAt: new Date(),
               syncedAt: new Date(),
             }
@@ -99,6 +100,7 @@ export async function importMarkdownNodes(
           slug,
           path: node.parentPath,
           depth: node.nodeDepth,
+          order: node.order ?? 0,  // Preserve sibling order from Roam
           parentId: null, // Set to null for now
           roamNodeId: node.uid,
           type: nodeType,
@@ -176,6 +178,7 @@ export async function importMarkdownNodes(
             slug,
             path: node.parentPath,
             depth: node.nodeDepth,
+            order: node.order ?? 0,  // Preserve sibling order from Roam
             parentId: parentNodeId,
             roamNodeId: node.uid,
             type: nodeType,
