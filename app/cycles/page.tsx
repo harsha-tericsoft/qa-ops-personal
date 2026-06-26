@@ -132,21 +132,23 @@ function ExecutionCyclesContent() {
     }
   }, [selectedCycleId])
 
-  const fetchCycles = async (useOptimized = false) => {
+  const fetchCycles = async (useOptimized = true) => {
     setLoading(true)
     try {
-      // IMPORTANT: For cycles page, we need FULL data with testRuns!
-      // Only use skipTestRuns=true for dashboard dropdown optimization
-      // The cycles page needs testRuns to display test cases
+      // OPTIMIZATION: Use skipTestRuns=true by default for fast initial load
+      // We only need cycle name, status for the list view
+      // TestRuns are loaded when user selects a specific cycle (via fetchVersions)
       const optimizedParam = useOptimized ? '&skipTestRuns=true' : ''
-      console.log('[fetchCycles] Fetching with skipTestRuns:', useOptimized)
+      console.log('[fetchCycles] Fetching cycles with skipTestRuns:', useOptimized)
+      console.log(`[fetchCycles] API: /api/execution-cycles?projectId=${currentProjectId}${optimizedParam}`)
+
+      const startTime = Date.now()
       const response = await fetch(`/api/execution-cycles?projectId=${currentProjectId}${optimizedParam}`)
+      const duration = Date.now() - startTime
+
       if (response.ok) {
         const data = await response.json()
-        console.log('[fetchCycles] Received', Array.isArray(data) ? data.length : 0, 'cycles')
-        if (Array.isArray(data) && data.length > 0) {
-          console.log('[fetchCycles] First cycle testRuns count:', data[0].testRuns?.length || 0)
-        }
+        console.log(`[fetchCycles] Received ${Array.isArray(data) ? data.length : 0} cycles in ${duration}ms`)
         setCycles(Array.isArray(data) ? data : [])
       } else {
         console.error('[fetchCycles] API error:', response.status)
@@ -211,13 +213,21 @@ function ExecutionCyclesContent() {
 
   const fetchSuites = async () => {
     try {
-      const response = await fetch(`/api/test-suites?projectId=${currentProjectId}`)
+      console.log('[fetchSuites] Loading test suites...')
+      const startTime = Date.now()
+      // Use minimal=true to skip testCases data (fast loading)
+      const response = await fetch(`/api/test-suites?projectId=${currentProjectId}&minimal=true`)
+      const duration = Date.now() - startTime
+
       if (response.ok) {
         const data = await response.json()
+        console.log(`[fetchSuites] Received ${Array.isArray(data) ? data.length : 0} suites in ${duration}ms`)
         setSuites(Array.isArray(data) ? data : [])
+      } else {
+        console.error('[fetchSuites] API error:', response.status)
       }
     } catch (error) {
-      console.error('Error fetching suites:', error)
+      console.error('[fetchSuites] Error fetching suites:', error)
       setSuites([])
     }
   }

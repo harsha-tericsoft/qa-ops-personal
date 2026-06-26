@@ -16,6 +16,30 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    // OPTIMIZATION: Support minimal parameter for fast listing
+    const minimal = req.nextUrl.searchParams.get('minimal') === 'true'
+
+    if (minimal) {
+      // Lightweight response for dropdowns (no testCases data)
+      console.log(`[API] GET /api/test-suites (minimal=true)`)
+      const suites = await prisma.testSuite.findMany({
+        where: { projectId },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      })
+
+      perfMonitor.mark('fetch-suites-minimal', { count: suites.length })
+      console.log(`[API] Returned ${suites.length} suites (minimal) in ${perfMonitor.getDuration()}ms`)
+      return NextResponse.json(suites)
+    }
+
+    // Full data with testCases
+    console.log(`[API] GET /api/test-suites (full data)`)
     const suites = await prisma.testSuite.findMany({
       where: { projectId },
       include: {
