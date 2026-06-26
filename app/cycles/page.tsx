@@ -726,7 +726,18 @@ function ExecutionCyclesContent() {
 
   const selectedCycle = cycles.find((c) => c.id === selectedCycleId)
   const selectedVersion = versions.find((v) => v.id === selectedVersionId)
+
+  // Debug: Log selected cycle and version
+  console.log('[Cycles Render] selectedCycleId:', selectedCycleId)
+  console.log('[Cycles Render] selectedVersionId:', selectedVersionId)
+  console.log('[Cycles Render] selectedCycle:', selectedCycle?.name)
+  console.log('[Cycles Render] selectedVersion:', selectedVersion?.buildVersion)
+  console.log('[Cycles Render] selectedVersion.testRuns:', selectedVersion?.testRuns?.length || 0)
+  console.log('[Cycles Render] selectedCycle.testRuns:', selectedCycle?.testRuns?.length || 0)
+
   const testRuns = (selectedVersion?.testRuns && selectedVersion.testRuns.length > 0) ? selectedVersion.testRuns : (selectedCycle?.testRuns || [])
+  console.log('[Cycles Render] Final testRuns:', testRuns.length)
+
   const isVersionCompleted = selectedVersion?.status === 'COMPLETED'
 
   if (selectedCycle) {
@@ -1017,6 +1028,18 @@ function ExecutionCyclesContent() {
             </div>
           </div>
 
+          {/* DEBUG: Show data status */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 text-xs text-blue-900">
+            <strong>Debug Info:</strong>
+            Cycle: {selectedCycle?.name} |
+            Version: {selectedVersion?.buildVersion} |
+            TestRuns: {testRuns.length} |
+            CycleTestRuns: {selectedCycle?.testRuns?.length || 0} |
+            VersionTestRuns: {selectedVersion?.testRuns?.length || 0}
+            <br/>
+            Versions array size: {versions.length} | Cycles array size: {cycles.length}
+          </div>
+
           <div className="grid grid-cols-4 gap-4 mb-8">
             <div className="bg-green-50 border border-green-200 rounded-lg p-5">
               <div className="text-3xl font-bold text-green-700">{passCount}</div>
@@ -1037,7 +1060,31 @@ function ExecutionCyclesContent() {
           </div>
 
           <div className="space-y-4">
-            {testRuns.map((run) => (
+            {testRuns.length === 0 ? (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-900">
+                <p className="font-medium">No test cases to display</p>
+                <p className="text-sm mt-1">
+                  {selectedVersion ? (
+                    <>
+                      Version "{selectedVersion.buildVersion}" has no test runs.
+                      {selectedCycle?.testRuns && selectedCycle.testRuns.length > 0 && (
+                        <> But cycle has {selectedCycle.testRuns.length} tests at the cycle level.</>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      Select a version to view test cases.
+                      {selectedCycle?.testRuns && selectedCycle.testRuns.length > 0 && (
+                        <> Cycle has {selectedCycle.testRuns.length} tests.</>
+                      )}
+                    </>
+                  )}
+                </p>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-gray-600 mb-4">Showing {testRuns.length} test cases</p>
+                {testRuns.map((run) => (
               <div
                 key={run.id}
                 className="bg-white rounded-lg border border-gray-200 p-5"
@@ -1191,6 +1238,8 @@ function ExecutionCyclesContent() {
                 )}
               </div>
             ))}
+              </>
+            )}
           </div>
         </div>
       </div>
