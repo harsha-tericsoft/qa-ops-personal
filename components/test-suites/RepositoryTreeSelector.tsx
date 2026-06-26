@@ -177,7 +177,13 @@ export function RepositoryTreeSelector({
   const renderNode = (node: RepositoryNode, level: number = 0): React.ReactElement => {
     const isSelected = selectedNodeIds.includes(node.id)
     const hasChildren = node.children && node.children.length > 0
-    const testCount = testCounts[node.id] || 0
+
+    // DYNAMIC COUNT: Calculate per-node test count by counting descendants
+    // This is more reliable than using pre-calculated testCounts
+    const allNodesFlat = flattenHierarchy(nodes)
+    const descendants = getNodeAndDescendants(node.id, allNodesFlat)
+    const descendantIds = descendants.map((n: any) => n.id)
+    const testCount = testCases.filter((tc: any) => descendantIds.includes(tc.repositoryNodeId)).length
 
     return (
       <div key={node.id}>
