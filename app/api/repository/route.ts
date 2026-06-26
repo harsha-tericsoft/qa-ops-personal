@@ -18,22 +18,6 @@ function setCachedRepository(projectId: string, data: any) {
   repositoryCache.set(projectId, { data, timestamp: Date.now() })
 }
 
-// Helper to get only top-level nodes (pagination alternative)
-async function getRepositoryNodesPaginated(repositoryId: string, page = 0, pageSize = 1000) {
-  return await prisma.repositoryNode.findMany({
-    where: { repositoryId },
-    orderBy: [{ depth: 'asc' }, { order: 'asc' }],
-    select: {
-      id: true,
-      name: true,
-      type: true,
-      parentId: true,
-      depth: true,
-    },
-    skip: page * pageSize,
-    take: pageSize,
-  })
-}
 
 // GET /api/repository - Get repository hierarchy (flat list of all nodes)
 export async function GET(req: NextRequest) {
@@ -67,24 +51,21 @@ export async function GET(req: NextRequest) {
     }
 
     // Query 2: Fetch ALL nodes for this repository (needed for client-side tree building)
-    // Using pagination to avoid memory/timeout issues with large datasets
-    console.log('[api/repository] Fetching nodes for repository:', repo.id)
+    // Note: 3729 nodes is not large enough to require pagination
+    // Pagination with ORDER BY causes each query to sort entire dataset - worse than single query
+    console.log('[api/repository] Fetching all nodes for repository:', repo.id)
 
-    const allNodes: any[] = []
-    let page = 0
-    const pageSize = 1000
-    let hasMore = true
-
-    while (hasMore) {
-      const pageNodes = await getRepositoryNodesPaginated(repo.id, page, pageSize)
-      if (pageNodes.length === 0) {
-        hasMore = false
-      } else {
-        allNodes.push(...pageNodes)
-        page++
-        console.log(`[api/repository] Fetched page ${page}: ${pageNodes.length} nodes`)
-      }
-    }
+    const allNodes = await prisma.repositoryNode.findMany({
+      where: { repositoryId: repo.id },
+      orderBy: [{ depth: 'asc' }, { order: 'asc' }],
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        parentId: true,
+        depth: true,
+      },
+    })
 
     const elapsed = Date.now() - startTime
     console.log(`[api/repository] Found ${allNodes.length} nodes in ${elapsed}ms`)
