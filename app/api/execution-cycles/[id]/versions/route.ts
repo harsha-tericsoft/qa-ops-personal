@@ -28,6 +28,8 @@ export async function GET(
     }
 
     // Full data with testRuns for detail view
+    // OPTIMIZED: Don't include comments and jiraLinks on initial load
+    // They're only shown when user expands a test, so load them separately
     const versions = await prisma.executionVersion.findMany({
       where: { cycleId },
       orderBy: { versionNumber: 'desc' },
@@ -35,16 +37,14 @@ export async function GET(
         testRuns: {
           include: {
             testCase: true,
-            comments: {
-              orderBy: { createdAt: 'asc' },
-            },
-            jiraLinks: true,
+            // Exclude comments and jiraLinks for initial load (optimization)
+            // These are fetched separately when user expands a test
           },
         },
       },
     })
 
-    console.log(`[execution-cycles/versions] Returning ${versions.length} versions with testRuns`)
+    console.log(`[execution-cycles/versions] Returning ${versions.length} versions with testRuns (optimized)`)
     return NextResponse.json(versions)
   } catch (error) {
     console.error('[execution-cycles/versions] Error:', error)
