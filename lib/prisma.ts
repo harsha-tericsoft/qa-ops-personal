@@ -13,26 +13,11 @@ const prismaClientSingleton = () => {
 
   const client = new PrismaClient({
     log: process.env.NODE_ENV === 'development'
-      ? ['error', 'warn', 'query']
+      ? ['error', 'warn']
       : ['error'],
     // Add connection management settings
     errorFormat: 'pretty',
   })
-
-  // Track all queries for diagnostics
-  if (process.env.NODE_ENV === 'development') {
-    client.$on('query', (e) => {
-      const elapsed = e.duration
-
-      // Log every query with timing
-      console.log(`[Query] ${elapsed}ms - ${e.query.substring(0, 100)}${e.query.length > 100 ? '...' : ''}`)
-
-      // Alert on slow queries
-      if (elapsed > 1000) {
-        console.warn(`[SLOW QUERY] ${elapsed}ms - ${e.query.substring(0, 80)}...`)
-      }
-    })
-  }
 
   // Handle connection errors
   client.$on('error', (e) => {

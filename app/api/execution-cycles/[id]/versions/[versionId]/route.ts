@@ -90,7 +90,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
         // All versions completed - mark cycle as COMPLETED
         await prisma.executionCycle.update({
           where: { id: cycleId },
-          data: { status: 'COMPLETED', completedAt: new Date() },
+          data: { status: 'COMPLETED' },
         })
       } else {
         // Still have versions in progress - keep cycle IN_PROGRESS
