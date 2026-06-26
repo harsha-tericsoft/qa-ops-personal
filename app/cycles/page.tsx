@@ -625,11 +625,42 @@ function ExecutionCyclesContent() {
     }
   }
 
+  // Helper: Parse Jira URL or key and extract both
+  const parseJiraInput = (input: string): { issueKey: string; issueUrl?: string } => {
+    const trimmed = input.trim()
+
+    // If it's a full URL, extract key and URL
+    if (trimmed.startsWith('http')) {
+      const match = trimmed.match(/\/browse\/([A-Z0-9]+-\d+)/)
+      if (match) {
+        return {
+          issueKey: match[1],
+          issueUrl: trimmed,
+        }
+      }
+    }
+
+    // If it's just a key (PROJ-123), return as-is
+    if (/^[A-Z0-9]+-\d+$/.test(trimmed)) {
+      return {
+        issueKey: trimmed,
+      }
+    }
+
+    // Invalid format
+    return { issueKey: trimmed }
+  }
+
   const handleAddJiraLink = async (runId: string) => {
     if (!newJiraKey.trim()) return
 
     try {
-      const issueKey = newJiraKey
+      const { issueKey, issueUrl } = parseJiraInput(newJiraKey)
+
+      if (!issueKey) {
+        showToast('Invalid Jira key or URL format. Use PROJ-123 or full URL', 'error')
+        return
+      }
 
       // Optimistic update: Add Jira link to local state
       const updatedVersions = versions.map((v) => {
@@ -645,6 +676,7 @@ function ExecutionCyclesContent() {
                     {
                       id: `temp-${Date.now()}`,
                       issueKey: issueKey,
+                      issueUrl: issueUrl,
                       createdAt: new Date().toISOString(),
                     },
                   ],
@@ -671,6 +703,7 @@ function ExecutionCyclesContent() {
                           {
                             id: `temp-${Date.now()}`,
                             issueKey: issueKey,
+                            issueUrl: issueUrl,
                             createdAt: new Date().toISOString(),
                           },
                         ],
@@ -692,6 +725,7 @@ function ExecutionCyclesContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           issueKey: issueKey,
+          issueUrl: issueUrl,
         }),
       })
 
