@@ -1,6 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+// Simple in-memory cache for repository nodes
+const repositoryCache = new Map<string, { data: any; timestamp: number }>()
+const CACHE_TTL = 60 * 1000 // 60 seconds
+
+function getCachedRepository(projectId: string) {
+  const cached = repositoryCache.get(projectId)
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    console.log('[api/repository] Cache HIT for project:', projectId)
+    return cached.data
+  }
+  return null
+}
+
+function setCachedRepository(projectId: string, data: any) {
+  repositoryCache.set(projectId, { data, timestamp: Date.now() })
+}
+
 // GET /api/repository - Get repository hierarchy (flat list of all nodes)
 export async function GET(req: NextRequest) {
   const projectId = req.nextUrl.searchParams.get('projectId')
@@ -9,7 +26,14 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    // Check cache first
+    const cached = getCachedRepository(projectId)
+    if (cached) {
+      return NextResponse.json(cached)
+    }
+
     console.log('[api/repository] Fetching repository for project:', projectId)
+    const startTime = Date.now()
 
     // Query 1: Check if repository exists
     const repo = await prisma.repository.findFirst({
@@ -19,8 +43,6 @@ export async function GET(req: NextRequest) {
         name: true,
       },
     })
-
-    console.log('[api/repository] Repository found:', repo?.id)
 
     if (!repo) {
       console.log('[api/repository] No repository found, returning empty nodes')
@@ -43,13 +65,19 @@ export async function GET(req: NextRequest) {
       },
     })
 
-    console.log('[api/repository] Found', allNodes.length, 'nodes')
+    const elapsed = Date.now() - startTime
+    console.log(`[api/repository] Found ${allNodes.length} nodes in ${elapsed}ms`)
 
-    return NextResponse.json({
+    const response = {
       id: repo.id,
       name: repo.name,
       nodes: allNodes,
-    })
+    }
+
+    // Cache the result
+    setCachedRepository(projectId, response)
+
+    return NextResponse.json(response)
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error'
     console.error('[api/repository] Error:', msg)

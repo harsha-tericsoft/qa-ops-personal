@@ -8,7 +8,8 @@ export async function GET(request: NextRequest) {
   try {
     const projectId = request.nextUrl.searchParams.get('projectId')
     const page = parseInt(request.nextUrl.searchParams.get('page') || '1', 10)
-    const limit = parseInt(request.nextUrl.searchParams.get('limit') || '100', 10)
+    const all = request.nextUrl.searchParams.get('all') === 'true'
+    const limit = all ? 10000 : parseInt(request.nextUrl.searchParams.get('limit') || '100', 10)
 
     perfMonitor.mark('parse-params')
 

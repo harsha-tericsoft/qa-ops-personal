@@ -88,11 +88,13 @@ export function RepositoryTreeSelector({
     const counts: Record<string, number> = {}
 
     try {
-      const response = await fetch(`/api/test-cases?projectId=${projectId}`)
+      const response = await fetch(`/api/test-cases?projectId=${projectId}&all=true`)
       if (response.ok) {
         const data = await response.json()
         // API returns {data: [...], pagination: {...}}
         const fetchedTestCases = Array.isArray(data) ? data : data?.data || []
+
+        console.log('[RepositoryTreeSelector] Fetched', fetchedTestCases.length, 'test cases')
 
         // Store test cases in state for later direct counting
         setTestCases(fetchedTestCases)
