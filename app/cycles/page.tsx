@@ -749,37 +749,41 @@ function ExecutionCyclesContent() {
       if (response.ok) {
         const fullTestRun = await response.json()
 
-        const updatedVersions = versions.map((v) => ({
-          ...v,
-          testRuns: v.testRuns.map((run) =>
-            run.id === runId
-              ? {
-                  ...run,
-                  comments: fullTestRun.comments,
-                  jiraLinks: fullTestRun.jiraLinks,
-                }
-              : run
-          ),
-        }))
+        // Update versions - only if testRuns are loaded
+        const updatedVersions = versions.map((v) => {
+          if (!v.testRuns) return v // Skip if testRuns not loaded yet
+          return {
+            ...v,
+            testRuns: v.testRuns.map((run) =>
+              run.id === runId
+                ? {
+                    ...run,
+                    comments: fullTestRun.comments,
+                    jiraLinks: fullTestRun.jiraLinks,
+                  }
+                : run
+            ),
+          }
+        })
         setVersions(updatedVersions)
 
+        // Update cycles - only if testRuns are loaded
         if (!selectedVersionId) {
-          const updatedCycles = cycles.map((c) =>
-            c.id === selectedCycleId
-              ? {
-                  ...c,
-                  testRuns: c.testRuns.map((run) =>
-                    run.id === runId
-                      ? {
-                          ...run,
-                          comments: fullTestRun.comments,
-                          jiraLinks: fullTestRun.jiraLinks,
-                        }
-                      : run
-                  ),
-                }
-              : c
-          )
+          const updatedCycles = cycles.map((c) => {
+            if (!c.testRuns) return c // Skip if testRuns not loaded yet
+            return {
+              ...c,
+              testRuns: c.testRuns.map((run) =>
+                run.id === runId
+                  ? {
+                      ...run,
+                      comments: fullTestRun.comments,
+                      jiraLinks: fullTestRun.jiraLinks,
+                    }
+                  : run
+              ),
+            }
+          })
           setCycles(updatedCycles)
         }
 

@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
       })
 
       perfMonitor.mark('fetch-suites-minimal', { count: suites.length })
-      console.log(`[API] Returned ${suites.length} suites (minimal) in ${perfMonitor.getDuration()}ms`)
+      console.log(`[API] Returned ${suites.length} suites (minimal, lightweight response)`)
       return NextResponse.json(suites)
     }
 
