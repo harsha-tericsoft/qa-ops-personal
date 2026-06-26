@@ -522,31 +522,35 @@ function ExecutionCyclesContent() {
       const commentAuthor = user?.email || 'Unknown'
 
       // Optimistic update: Add comment to local state
-      const updatedVersions = versions.map((v) => ({
-        ...v,
-        testRuns: v.testRuns.map((run) =>
-          run.id === runId
-            ? {
-                ...run,
-                comments: [
-                  ...(run.comments || []),
-                  {
-                    id: `temp-${Date.now()}`,
-                    content: commentText,
-                    author: commentAuthor,
-                    createdAt: new Date().toISOString(),
-                  },
-                ],
-              }
-            : run
-        ),
-      }))
+      const updatedVersions = versions.map((v) => {
+        if (!v.testRuns) return v
+        return {
+          ...v,
+          testRuns: v.testRuns.map((run) =>
+            run.id === runId
+              ? {
+                  ...run,
+                  comments: [
+                    ...(run.comments || []),
+                    {
+                      id: `temp-${Date.now()}`,
+                      content: commentText,
+                      author: commentAuthor,
+                      createdAt: new Date().toISOString(),
+                    },
+                  ],
+                }
+              : run
+          ),
+        }
+      })
       setVersions(updatedVersions)
 
       // Optimistic update: Also update cycle if no version selected
       if (!selectedVersionId) {
-        const updatedCycles = cycles.map((c) =>
-          c.id === selectedCycleId
+        const updatedCycles = cycles.map((c) => {
+          if (!c.testRuns) return c
+          return c.id === selectedCycleId
             ? {
                 ...c,
                 testRuns: c.testRuns.map((run) =>
@@ -567,7 +571,7 @@ function ExecutionCyclesContent() {
                 ),
               }
             : c
-        )
+        })
         setCycles(updatedCycles)
       }
 
@@ -612,30 +616,34 @@ function ExecutionCyclesContent() {
       const issueKey = newJiraKey
 
       // Optimistic update: Add Jira link to local state
-      const updatedVersions = versions.map((v) => ({
-        ...v,
-        testRuns: v.testRuns.map((run) =>
-          run.id === runId
-            ? {
-                ...run,
-                jiraLinks: [
-                  ...(run.jiraLinks || []),
-                  {
-                    id: `temp-${Date.now()}`,
-                    issueKey: issueKey,
-                    createdAt: new Date().toISOString(),
-                  },
-                ],
-              }
-            : run
-        ),
-      }))
+      const updatedVersions = versions.map((v) => {
+        if (!v.testRuns) return v
+        return {
+          ...v,
+          testRuns: v.testRuns.map((run) =>
+            run.id === runId
+              ? {
+                  ...run,
+                  jiraLinks: [
+                    ...(run.jiraLinks || []),
+                    {
+                      id: `temp-${Date.now()}`,
+                      issueKey: issueKey,
+                      createdAt: new Date().toISOString(),
+                    },
+                  ],
+                }
+              : run
+          ),
+        }
+      })
       setVersions(updatedVersions)
 
       // Optimistic update: Also update cycle if no version selected
       if (!selectedVersionId) {
-        const updatedCycles = cycles.map((c) =>
-          c.id === selectedCycleId
+        const updatedCycles = cycles.map((c) => {
+          if (!c.testRuns) return c
+          return c.id === selectedCycleId
             ? {
                 ...c,
                 testRuns: c.testRuns.map((run) =>
@@ -655,7 +663,7 @@ function ExecutionCyclesContent() {
                 ),
               }
             : c
-        )
+        })
         setCycles(updatedCycles)
       }
 
