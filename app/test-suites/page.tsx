@@ -117,6 +117,10 @@ function TestSuitesContent() {
       setCreationStep('Creating suite...')
 
       // Collect selected RoamTestCase IDs
+      console.log(`[handleCreateSuite] Starting suite creation`)
+      console.log(`  - selectedNodeIds: ${selectedNodeIds.length}`)
+      console.log(`  - availableTests: ${availableTests.length}`)
+
       const roamTestCaseIds: string[] = []
       if (selectedNodeIds.length > 0) {
         const roamTestCases = availableTests.filter((tc: any) =>
@@ -124,6 +128,9 @@ function TestSuitesContent() {
         )
         roamTestCaseIds.push(...roamTestCases.map((tc: any) => tc.id))
       }
+
+      console.log(`  - roamTestCaseIds to send: ${roamTestCaseIds.length}`)
+      console.log(`  - First 3 IDs: ${roamTestCaseIds.slice(0, 3).join(', ')}`)
 
       // SINGLE REQUEST: Backend handles all the work in a transaction
       const response = await fetch(`/api/test-suites?projectId=${currentProjectId}`, {
@@ -139,13 +146,22 @@ function TestSuitesContent() {
 
       if (response.ok) {
         const newSuite = await response.json()
+        const responseTestCaseCount = newSuite.testCases?.length || 0
+        console.log(`[handleCreateSuite] Response received:`)
+        console.log(`  - Suite ID: ${newSuite.id}`)
+        console.log(`  - testCases in response: ${responseTestCaseCount}`)
+        console.log(`  - Expected: ${roamTestCaseIds.length}`)
+
         showToast(
           `Suite "${newSuiteName}" created successfully with ${roamTestCaseIds.length} test cases`,
           'success'
         )
 
         // Optimize: Add new suite to list instead of refetching all
-        setSuites((prev) => [newSuite, ...prev])
+        setSuites((prev) => {
+          console.log(`[handleCreateSuite] Adding suite to state, total suites now: ${prev.length + 1}`)
+          return [newSuite, ...prev]
+        })
 
         // Reset form and close modal
         setNewSuiteName('')

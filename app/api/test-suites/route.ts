@@ -51,6 +51,12 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
+    console.log(`[GET] Fetched ${suites.length} suites`)
+    suites.forEach((suite, i) => {
+      const testCaseCount = suite.testCases?.length || 0
+      console.log(`  [${i}] "${suite.name}" - ${testCaseCount} testCases`)
+    })
+
     perfMonitor.mark('fetch-suites', { count: suites.length })
 
     if (process.env.NODE_ENV === 'development') {
@@ -90,6 +96,11 @@ export async function POST(req: NextRequest) {
       roamTestCaseIds = []
     } = body
 
+    console.log(`[POST /api/test-suites] Received request:`)
+    console.log(`  - Suite name: ${name}`)
+    console.log(`  - roamTestCaseIds count: ${roamTestCaseIds.length}`)
+    console.log(`  - testIds count: ${testIds.length}`)
+
     if (!name) {
       return NextResponse.json(
         { error: 'name is required' },
@@ -105,6 +116,8 @@ export async function POST(req: NextRequest) {
 
         if (roamTestCaseIds.length > 0) {
           // Step 1: Fetch RoamTestCase records
+          console.log(`[POST] Step 1: Fetching ${roamTestCaseIds.length} RoamTestCase records`)
+
           const roamTestCases = await tx.roamTestCase.findMany({
             where: {
               id: { in: roamTestCaseIds },
@@ -117,6 +130,7 @@ export async function POST(req: NextRequest) {
             },
           })
 
+          console.log(`[POST] Step 1 result: Found ${roamTestCases.length} RoamTestCase records`)
           perfMonitor.mark('fetch-roam-test-cases', { count: roamTestCases.length })
 
           // Step 2: Batch insert all TestCase records using raw SQL for performance
@@ -146,6 +160,8 @@ export async function POST(req: NextRequest) {
         }
 
         // Step 3: Create suite and link tests
+        console.log(`[POST] Step 3: Creating suite with ${finalTestIds.length} testCase links`)
+
         const newSuite = await tx.testSuite.create({
           data: {
             projectId,
@@ -173,6 +189,7 @@ export async function POST(req: NextRequest) {
           },
         })
 
+        console.log(`[POST] Step 3 result: Suite created with ${newSuite.testCases?.length || 0} testCases in response`)
         perfMonitor.mark('create-suite-with-links', { testCount: finalTestIds.length })
 
         return newSuite
