@@ -221,7 +221,7 @@ export async function getDashboardMetrics(projectId: string) {
       tagCount,
       repositoryNodes,
     ] = await Promise.all([
-      client.query('SELECT COUNT(*) as count FROM "TestCase" WHERE "projectId" = $1', [projectId]),
+      client.query('SELECT COUNT(*) as count FROM "RoamTestCase" WHERE "projectId" = $1', [projectId]),
       client.query('SELECT COUNT(*) as count FROM "ExecutionCycle" WHERE "projectId" = $1 AND status = $2', [projectId, 'IN_PROGRESS']),
       client.query('SELECT COUNT(*) as count FROM "TestRun" tr JOIN "ExecutionCycle" ec ON tr."cycleId" = ec.id WHERE tr.status = $1 AND ec."projectId" = $2', ['PASS', projectId]),
       client.query('SELECT COUNT(*) as count FROM "TestRun" tr JOIN "ExecutionCycle" ec ON tr."cycleId" = ec.id WHERE tr.status = $1 AND ec."projectId" = $2', ['FAIL', projectId]),
