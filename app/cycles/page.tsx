@@ -232,6 +232,22 @@ function ExecutionCyclesContent() {
     }
   }
 
+  // Helper: Fetch just the selected version to keep testRuns data
+  const refetchSelectedVersion = async (versionId: string) => {
+    try {
+      console.log('[refetchSelectedVersion] Refetching version:', versionId)
+      const response = await fetch(`/api/execution-cycles/${selectedCycleId}/versions/${versionId}`)
+      if (response.ok) {
+        const versionWithData = await response.json()
+        console.log('[refetchSelectedVersion] Updated version with fresh data')
+        // Update just this version in the versions array
+        setVersions(versions.map(v => v.id === versionId ? versionWithData : v))
+      }
+    } catch (error) {
+      console.error('[refetchSelectedVersion] Error:', error)
+    }
+  }
+
   const handleCreateCycle = async () => {
     if (!newCycleName.trim() || !selectedSuiteId) return
 
@@ -589,9 +605,9 @@ function ExecutionCyclesContent() {
       })
 
       if (response.ok) {
-        // API confirmed - fetch latest data to ensure sync
+        // Refetch selected version to get latest data while keeping testRuns
         if (selectedVersionId) {
-          await fetchVersions(selectedCycleId!)
+          await refetchSelectedVersion(selectedVersionId)
         } else {
           await fetchCycles()
         }
@@ -680,9 +696,9 @@ function ExecutionCyclesContent() {
       })
 
       if (response.ok) {
-        // API confirmed - fetch latest data to ensure sync
+        // Refetch selected version to get latest data while keeping testRuns
         if (selectedVersionId) {
-          await fetchVersions(selectedCycleId!)
+          await refetchSelectedVersion(selectedVersionId)
         } else {
           await fetchCycles()
         }
