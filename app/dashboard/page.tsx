@@ -90,12 +90,25 @@ export default function DashboardPage() {
     const loadMetrics = async () => {
       setMetricsLoading(true)
       try {
+        console.log('[Dashboard] Loading metrics for project:', selectedProjectId)
         const res = await fetch(`/api/dashboard/repository-metrics?projectId=${selectedProjectId}`)
-        if (!res.ok) throw new Error(`Metrics error: ${res.status}`)
+        if (!res.ok) {
+          console.error('[Dashboard] Metrics API error:', res.status)
+          throw new Error(`Metrics error: ${res.status}`)
+        }
         const data = await res.json()
+        console.log('[Dashboard] Received metrics:', data)
+
+        // Check if metrics are all zeros (might indicate database error)
+        const allZero = data.totalTests === 0 && data.draftCycles === 0
+        if (allZero && !data.lastSync) {
+          console.warn('[Dashboard] Metrics are empty - this might indicate an issue loading data')
+        }
+
         setMetrics(data)
       } catch (err) {
-        // Silently handle fetch errors (network issues, CORS, etc.)
+        console.error('[Dashboard] Error loading metrics:', err)
+        setError(`Failed to load metrics: ${err instanceof Error ? err.message : 'Unknown error'}`)
         setMetrics(null)
       } finally {
         setMetricsLoading(false)
@@ -216,7 +229,7 @@ export default function DashboardPage() {
             <select
               value={selectedProjectId}
               onChange={(e) => setSelectedProjectId(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
             >
               <option value="">-- Choose Project --</option>
               {projects.map((p) => (
@@ -234,7 +247,7 @@ export default function DashboardPage() {
               value={selectedCycleId}
               onChange={(e) => setSelectedCycleId(e.target.value)}
               disabled={!selectedProjectId}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 text-gray-900 bg-white"
             >
               <option value="">-- Choose Cycle --</option>
               {cycles.map((c) => (
@@ -252,7 +265,7 @@ export default function DashboardPage() {
               value={selectedVersionId}
               onChange={(e) => setSelectedVersionId(e.target.value)}
               disabled={!selectedCycleId}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 text-gray-900 bg-white"
             >
               <option value="">-- Choose Version --</option>
               {versions.map((v) => (
