@@ -305,31 +305,48 @@ function ExecutionCyclesContent() {
     }
   }
 
-  const handleRunStatusChange = async (runId: string, status: string) => {
+  const handleRunStatusChange = async (runId: string, newStatus: string) => {
     try {
+      // Find the current status before making changes (needed for reverting on error)
+      let currentStatus = 'NOT_EXECUTED'
+      for (const v of versions) {
+        const run = v.testRuns?.find((r) => r.id === runId)
+        if (run) {
+          currentStatus = run.status
+          break
+        }
+      }
+      if (!currentStatus) {
+        for (const c of cycles) {
+          const run = c.testRuns?.find((r) => r.id === runId)
+          if (run) {
+            currentStatus = run.status
+            break
+          }
+        }
+      }
+
       // Optimistic update: Update local state immediately
       const updatedVersions = versions.map((v) => ({
         ...v,
         testRuns: (v.testRuns || []).map((run) =>
-          run.id === runId ? { ...run, status: status as any } : run
+          run.id === runId ? { ...run, status: newStatus as any } : run
         ),
       }))
       setVersions(updatedVersions)
 
-      // Optimistic update: Also update cycle testRuns if no version selected
-      if (!selectedVersionId) {
-        const updatedCycles = cycles.map((c) =>
-          c.id === selectedCycleId
-            ? {
-                ...c,
-                testRuns: (c.testRuns || []).map((run) =>
-                  run.id === runId ? { ...run, status: status as any } : run
-                ),
-              }
-            : c
-        )
-        setCycles(updatedCycles as any)
-      }
+      // Optimistic update: ALWAYS update cycles to keep the list in sync
+      const updatedCycles = cycles.map((c) =>
+        c.id === selectedCycleId
+          ? {
+              ...c,
+              testRuns: (c.testRuns || []).map((run) =>
+                run.id === runId ? { ...run, status: newStatus as any } : run
+              ),
+            }
+          : c
+      )
+      setCycles(updatedCycles as any)
 
       // Update UI immediately
       setLastSavedAt(new Date())
@@ -338,46 +355,67 @@ function ExecutionCyclesContent() {
       const response = await fetch(`/api/test-runs/${runId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status: newStatus }),
       })
 
       if (response.ok) {
         // API confirmed - get the updated test run from response
         const updatedRun = await response.json()
 
-        // Update only the affected test run in state (more efficient than refetching all versions)
-        if (selectedVersionId) {
-          const newVersions = versions.map((v) => ({
-            ...v,
-            testRuns: (v.testRuns || []).map((run) =>
-              run.id === runId ? updatedRun : run
-            ),
-          }))
-          setVersions(newVersions)
-        } else if (selectedCycleId) {
-          const newCycles = cycles.map((c) =>
-            c.id === selectedCycleId
-              ? {
-                  ...c,
-                  testRuns: (c.testRuns || []).map((run) =>
-                    run.id === runId ? updatedRun : run
-                  ),
-                }
-              : c
-          )
-          setCycles(newCycles as any)
-        }
+        // Update versions with API response data
+        const newVersions = versions.map((v) => ({
+          ...v,
+          testRuns: (v.testRuns || []).map((run) =>
+            run.id === runId ? updatedRun : run
+          ),
+        }))
+        setVersions(newVersions)
+
+        // Update cycles with API response data
+        const newCycles = cycles.map((c) =>
+          c.id === selectedCycleId
+            ? {
+                ...c,
+                testRuns: (c.testRuns || []).map((run) =>
+                  run.id === runId ? updatedRun : run
+                ),
+              }
+            : c
+        )
+        setCycles(newCycles as any)
       } else {
-        // If API fails, revert optimistic update
-        setVersions(versions)
-        setCycles(cycles)
+        // If API fails, revert optimistic update to original status
+        const revertVersions = versions.map((v) => ({
+          ...v,
+          testRuns: (v.testRuns || []).map((run) =>
+            run.id === runId ? { ...run, status: currentStatus as any } : run
+          ),
+        }))
+        setVersions(revertVersions)
+
+        const revertCycles = cycles.map((c) =>
+          c.id === selectedCycleId
+            ? {
+                ...c,
+                testRuns: (c.testRuns || []).map((run) =>
+                  run.id === runId ? { ...run, status: currentStatus as any } : run
+                ),
+              }
+            : c
+        )
+        setCycles(revertCycles as any)
+
         console.error('Error updating run status:', await response.json())
+        showToast('Failed to update test run status', 'error')
       }
     } catch (error) {
       // If error, revert optimistic update
-      setVersions(versions)
-      setCycles(cycles)
+      showToast('Error updating test run status', 'error')
       console.error('Error updating run status:', error)
+      // Refetch data to ensure consistency
+      if (selectedCycleId && selectedVersionId) {
+        fetchVersions(selectedCycleId)
+      }
     }
   }
 
