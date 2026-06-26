@@ -176,8 +176,22 @@ export function RepositoryTreeSelector({
     console.log('[toggleNodeSelection] testCases state:', testCases)
     console.log('[toggleNodeSelection] typeof testCases:', typeof testCases)
     console.log('[toggleNodeSelection] Array.isArray(testCases):', Array.isArray(testCases))
+    console.log('[toggleNodeSelection] testCases.length:', Array.isArray(testCases) ? testCases.length : 'N/A')
+    if (Array.isArray(testCases) && testCases.length > 0) {
+      console.log('[toggleNodeSelection] First testCase:', testCases[0])
+    }
     if (testCases && typeof testCases === 'object') {
       console.log('[toggleNodeSelection] Object.keys(testCases):', Object.keys(testCases))
+    }
+
+    // Expose to window for Playwright access
+    (window as any).__testCasesDebug = {
+      detected: true,
+      typeof: typeof testCases,
+      isArray: Array.isArray(testCases),
+      length: Array.isArray(testCases) ? testCases.length : 'N/A',
+      keys: testCases && typeof testCases === 'object' ? Object.keys(testCases) : [],
+      first: Array.isArray(testCases) && testCases.length > 0 ? testCases[0] : null,
     }
 
     // Defensive: ensure testCases is an array before filtering
