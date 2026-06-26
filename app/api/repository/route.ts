@@ -22,16 +22,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ nodes: [] })
     }
 
-    // Query 2: Fetch all nodes for this repository (flat list)
-    // Using separate query instead of include to avoid N+1 and large result sets
-    // Get root level nodes only to avoid fetching thousands of rows
-    const nodes = await prisma.repositoryNode.findMany({
-      where: {
-        repositoryId: repo.id,
-        // Fetch root nodes first, lazy load children on demand
-        depth: 0,
-      },
-      orderBy: [{ order: 'asc' }],
+    // Query 2: Fetch ALL nodes for this repository (needed for client-side tree building)
+    // RepositoryTree component builds complete hierarchy client-side without lazy loading
+    const allNodes = await prisma.repositoryNode.findMany({
+      where: { repositoryId: repo.id },
+      orderBy: [{ depth: 'asc' }, { order: 'asc' }],
       select: {
         id: true,
         name: true,
@@ -40,20 +35,6 @@ export async function GET(req: NextRequest) {
         depth: true,
       },
     })
-
-    // If no root nodes, fetch first 100 nodes (fallback for flat structures)
-    const allNodes = nodes.length === 0 ? await prisma.repositoryNode.findMany({
-      where: { repositoryId: repo.id },
-      orderBy: [{ depth: 'asc' }, { order: 'asc' }],
-      take: 100,
-      select: {
-        id: true,
-        name: true,
-        type: true,
-        parentId: true,
-        depth: true,
-      },
-    }) : nodes
 
     return NextResponse.json({
       id: repo.id,
