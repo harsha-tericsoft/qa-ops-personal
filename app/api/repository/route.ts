@@ -9,6 +9,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    console.log('[api/repository] Fetching repository for project:', projectId)
+
     // Query 1: Check if repository exists
     const repo = await prisma.repository.findFirst({
       where: { projectId },
@@ -18,12 +20,17 @@ export async function GET(req: NextRequest) {
       },
     })
 
+    console.log('[api/repository] Repository found:', repo?.id)
+
     if (!repo) {
+      console.log('[api/repository] No repository found, returning empty nodes')
       return NextResponse.json({ nodes: [] })
     }
 
     // Query 2: Fetch ALL nodes for this repository (needed for client-side tree building)
     // RepositoryTree component builds complete hierarchy client-side without lazy loading
+    console.log('[api/repository] Fetching nodes for repository:', repo.id)
+
     const allNodes = await prisma.repositoryNode.findMany({
       where: { repositoryId: repo.id },
       orderBy: [{ depth: 'asc' }, { order: 'asc' }],
@@ -36,6 +43,8 @@ export async function GET(req: NextRequest) {
       },
     })
 
+    console.log('[api/repository] Found', allNodes.length, 'nodes')
+
     return NextResponse.json({
       id: repo.id,
       name: repo.name,
@@ -44,6 +53,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error'
     console.error('[api/repository] Error:', msg)
-    return NextResponse.json({ error: msg }, { status: 500 })
+    console.error('[api/repository] Full error:', error)
+    return NextResponse.json({ error: msg, code: 'REPOSITORY_ERROR' }, { status: 500 })
   }
 }

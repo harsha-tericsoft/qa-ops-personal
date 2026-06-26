@@ -96,7 +96,7 @@ export function CreateSuiteModal({
               value={suiteName}
               onChange={(e) => setSuiteName(e.target.value)}
               placeholder="e.g., Smoke Tests, Critical Path, Release Tests"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
               disabled={isCreating}
             />
           </div>
@@ -110,7 +110,7 @@ export function CreateSuiteModal({
               onChange={(e) => setSuiteDesc(e.target.value)}
               placeholder="Optional: Describe the purpose of this test suite"
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
               disabled={isCreating}
             />
           </div>
