@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
 import { createCycle, listCycles } from '@/lib/services/execution.service'
 
 // GET /api/execution-cycles
@@ -13,7 +14,6 @@ export async function GET(req: NextRequest) {
     // Supports both 'skipTestRuns=true' (old) and 'fullData=false' (new)
     const skipTestRuns = req.nextUrl.searchParams.get('skipTestRuns') === 'true'
     const fullData = req.nextUrl.searchParams.get('fullData') === 'true'
-    const { prisma } = await import('@/lib/prisma')
 
     // Use lightweight by default UNLESS fullData=true
     if (fullData && !skipTestRuns) {
