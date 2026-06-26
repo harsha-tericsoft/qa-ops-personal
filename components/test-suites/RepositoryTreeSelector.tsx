@@ -28,9 +28,11 @@ export function RepositoryTreeSelector({
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [testCounts, setTestCounts] = useState<Record<string, number>>({})
+  const [testCases, setTestCases] = useState<any[]>([])
 
   useEffect(() => {
     fetchRepositoryHierarchy()
+    console.log('[RepositoryTreeSelector] Component loaded for project:', projectId)
   }, [projectId])
 
   const fetchRepositoryHierarchy = async () => {
@@ -90,11 +92,14 @@ export function RepositoryTreeSelector({
       if (response.ok) {
         const data = await response.json()
         // API returns {data: [...], pagination: {...}}
-        const testCases = Array.isArray(data) ? data : data?.data || []
+        const fetchedTestCases = Array.isArray(data) ? data : data?.data || []
+
+        // Store test cases in state for later direct counting
+        setTestCases(fetchedTestCases)
 
         // Count test cases for each node and its descendants
         nodes.forEach((node: any) => {
-          counts[node.id] = countTestsForNode(node.id, nodes, testCases)
+          counts[node.id] = countTestsForNode(node.id, nodes, fetchedTestCases)
         })
       }
     } catch (error) {
@@ -148,21 +153,12 @@ export function RepositoryTreeSelector({
       descendants.forEach((node: any) => newSelected.add(node.id))
     }
 
-    // Calculate total test count - only sum top-level selected nodes
-    // (not all descendants, since testCounts includes descendants)
-    const topLevelSelected = new Set<string>()
-    Array.from(newSelected).forEach((nodeId) => {
-      // Check if this node's parent is also selected
-      const node = allNodes.find((n: any) => n.id === nodeId)
-      if (!node?.parentId || !newSelected.has(node.parentId)) {
-        // This is a top-level selected node
-        topLevelSelected.add(nodeId)
-      }
-    })
-
-    const totalCount = Array.from(topLevelSelected).reduce((sum, id) => {
-      return sum + (testCounts[id] || 0)
-    }, 0)
+    // DIRECT COUNT: Count test cases that match ANY selected node
+    // This is more reliable than depending on pre-calculated testCounts
+    const selectedNodeSet = new Set(newSelected)
+    const totalCount = testCases.filter((tc: any) =>
+      selectedNodeSet.has(tc.repositoryNodeId)
+    ).length
 
     onSelectionChange(Array.from(newSelected), totalCount)
   }
