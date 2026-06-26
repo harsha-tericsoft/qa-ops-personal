@@ -14,31 +14,45 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get test run metrics for this version
-    const testRuns = await prisma.testRun.findMany({
-      where: {
-        versionId,
-      },
-      select: {
-        status: true,
-      },
-    })
+    // OPTIMIZED: Use count queries instead of fetching all data
+    const startTime = Date.now()
+
+    const [totalTests, passedTests, failedTests, blockedTests, notExecutedTests] = await Promise.all([
+      prisma.testRun.count({
+        where: { versionId },
+      }),
+      prisma.testRun.count({
+        where: { versionId, status: 'PASS' },
+      }),
+      prisma.testRun.count({
+        where: { versionId, status: 'FAIL' },
+      }),
+      prisma.testRun.count({
+        where: { versionId, status: 'BLOCKED' },
+      }),
+      prisma.testRun.count({
+        where: { versionId, status: 'NOT_EXECUTED' },
+      }),
+    ])
+
+    const executedTests = totalTests - notExecutedTests
+    const executionRate = totalTests > 0 ? (executedTests / totalTests) * 100 : 0
+    const passRate = (passedTests + failedTests) > 0
+      ? (passedTests / (passedTests + failedTests)) * 100
+      : 0
 
     const metrics = {
-      totalTests: testRuns.length,
-      passedTests: testRuns.filter(t => t.status === 'PASS').length,
-      failedTests: testRuns.filter(t => t.status === 'FAIL').length,
-      blockedTests: testRuns.filter(t => t.status === 'BLOCKED').length,
-      skippedTests: 0,
-      notExecutedTests: testRuns.filter(t => t.status === 'NOT_EXECUTED').length,
-      executionRate: testRuns.length > 0 
-        ? ((testRuns.filter(t => t.status !== 'NOT_EXECUTED').length / testRuns.length) * 100)
-        : 0,
-      passRate: testRuns.filter(t => t.status === 'PASS' || t.status === 'FAIL').length > 0
-        ? ((testRuns.filter(t => t.status === 'PASS').length / 
-            testRuns.filter(t => t.status === 'PASS' || t.status === 'FAIL').length) * 100)
-        : 0,
+      totalTests,
+      passedTests,
+      failedTests,
+      blockedTests,
+      notExecutedTests,
+      executionRate: parseFloat(executionRate.toFixed(1)),
+      passRate: parseFloat(passRate.toFixed(1)),
     }
+
+    const elapsed = Date.now() - startTime
+    console.log(`[execution-metrics] Completed in ${elapsed}ms`)
 
     return NextResponse.json(metrics)
   } catch (error) {

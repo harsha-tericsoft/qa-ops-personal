@@ -30,7 +30,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 
 // PATCH /api/execution-cycles/[id]/versions/[versionId]
 export async function PATCH(req: NextRequest, { params }: RouteParams) {
-  const { versionId } = await params
+  const { id: cycleId, versionId } = await params
 
   try {
     const body = await req.json()
@@ -55,6 +55,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       updateData.completedAt = new Date()
     }
 
+    // Update version
     const version = await prisma.executionVersion.update({
       where: { id: versionId },
       data: updateData,
@@ -68,6 +69,37 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
         },
       },
     })
+
+    // Auto-update parent cycle status based on version statuses
+    if (status === 'IN_PROGRESS') {
+      // When any version is IN_PROGRESS, mark cycle as IN_PROGRESS
+      await prisma.executionCycle.update({
+        where: { id: cycleId },
+        data: { status: 'IN_PROGRESS' },
+      })
+    } else if (status === 'COMPLETED') {
+      // Check if ALL versions are now COMPLETED
+      const nonCompletedVersions = await prisma.executionVersion.count({
+        where: {
+          cycleId,
+          status: { not: 'COMPLETED' },
+        },
+      })
+
+      if (nonCompletedVersions === 0) {
+        // All versions completed - mark cycle as COMPLETED
+        await prisma.executionCycle.update({
+          where: { id: cycleId },
+          data: { status: 'COMPLETED', completedAt: new Date() },
+        })
+      } else {
+        // Still have versions in progress - keep cycle IN_PROGRESS
+        await prisma.executionCycle.update({
+          where: { id: cycleId },
+          data: { status: 'IN_PROGRESS' },
+        })
+      }
+    }
 
     return NextResponse.json(version)
   } catch (error) {
