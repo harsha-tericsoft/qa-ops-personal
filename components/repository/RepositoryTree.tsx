@@ -7,13 +7,8 @@ interface TreeNode {
   name: string
   type: string
   depth: number
-  path: string
-  metadata: any
-  tags: string[]
-  roamPageId: string | null
+  parentId: string | null
   children: TreeNode[]
-  hasMore?: boolean
-  loading?: boolean
 }
 
 interface RepositoryTreeProps {
@@ -34,50 +29,62 @@ export function RepositoryTree({
   isAutomated = null,
 }: RepositoryTreeProps) {
   const [nodes, setNodes] = useState<TreeNode[]>([])
+  const [allNodesMap, setAllNodesMap] = useState<Record<string, TreeNode>>({})
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchNodes(null) // Load root nodes only
-  }, [projectId, search, selectedTags, nodeType, isAutomated])
+    loadAllNodes()
+  }, [projectId])
 
-  const fetchNodes = async (parent: string | null = null) => {
+  const loadAllNodes = async () => {
     setLoading(true)
     setError(null)
 
     try {
-      const params = new URLSearchParams({
-        projectId,
-      })
-
-      if (parent) params.append('parentId', parent)
-      if (search) params.append('search', search)
-      selectedTags.forEach((tag) => params.append('tags', tag))
-      if (nodeType) params.append('nodeType', nodeType)
-      if (isAutomated) params.append('automated', isAutomated)
-
-      const response = await fetch(`/api/repository/tree?${params}`)
+      // Fetch all nodes at once (no lazy loading)
+      const response = await fetch(`/api/repository?projectId=${projectId}`)
 
       if (!response.ok) {
-        let errorMessage = 'Failed to fetch nodes'
-        try {
-          const data = await response.json()
-          errorMessage = data.error || errorMessage
-        } catch {
-          errorMessage = `Server error (${response.status}): ${response.statusText}`
-        }
-        throw new Error(errorMessage)
+        throw new Error(`Failed to fetch repository: ${response.status}`)
       }
 
       const data = await response.json()
+      const allNodes = data.nodes || []
 
-      if (!Array.isArray(data.nodes)) {
+      if (!Array.isArray(allNodes)) {
         console.error('[RepositoryTree] API response nodes is not an array:', data)
         setNodes([])
-      } else {
-        setNodes(data.nodes)
+        setAllNodesMap({})
+        return
       }
+
+      // Build map of all nodes for quick lookup
+      const nodeMap: Record<string, TreeNode> = {}
+      allNodes.forEach((node: any) => {
+        nodeMap[node.id] = {
+          id: node.id,
+          name: node.name,
+          type: node.type,
+          depth: node.depth || 0,
+          parentId: node.parentId || null,
+          children: [],
+        }
+      })
+
+      // Build hierarchy
+      const rootNodes: TreeNode[] = []
+      allNodes.forEach((node: any) => {
+        if (node.parentId && nodeMap[node.parentId]) {
+          nodeMap[node.parentId].children.push(nodeMap[node.id])
+        } else {
+          rootNodes.push(nodeMap[node.id])
+        }
+      })
+
+      setAllNodesMap(nodeMap)
+      setNodes(rootNodes)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error')
       setNodes([])
@@ -86,62 +93,19 @@ export function RepositoryTree({
     }
   }
 
-  const fetchChildren = async (nodeId: string) => {
-    try {
-      const params = new URLSearchParams({
-        projectId,
-        parentId: nodeId,
-      })
-
-      if (search) params.append('search', search)
-      selectedTags.forEach((tag) => params.append('tags', tag))
-      if (nodeType) params.append('nodeType', nodeType)
-      if (isAutomated) params.append('automated', isAutomated)
-
-      const response = await fetch(`/api/repository/tree?${params}`)
-      if (!response.ok) throw new Error('Failed to fetch children')
-
-      const data = await response.json()
-      return Array.isArray(data.nodes) ? data.nodes : []
-    } catch (err) {
-      console.error('[RepositoryTree] Error loading children:', err)
-      return []
-    }
-  }
-
-  const findAndUpdateNode = (nodes: TreeNode[], nodeId: string, update: (n: TreeNode) => TreeNode): TreeNode[] => {
-    return nodes.map(n => {
-      if (n.id === nodeId) {
-        return update(n)
-      }
-      if (n.children && n.children.length > 0) {
-        return { ...n, children: findAndUpdateNode(n.children, nodeId, update) }
-      }
-      return n
-    })
-  }
-
-  const toggleExpanded = async (id: string) => {
+  const toggleExpanded = (id: string) => {
     const newExpanded = new Set(expanded)
     if (newExpanded.has(id)) {
       newExpanded.delete(id)
-      setExpanded(newExpanded)
     } else {
-      // Mark as loading
-      setNodes(prevNodes => findAndUpdateNode(prevNodes, id, n => ({ ...n, loading: true })))
-
-      const children = await fetchChildren(id)
-      setNodes(prevNodes => findAndUpdateNode(prevNodes, id, n => ({ ...n, children, loading: false })))
-
       newExpanded.add(id)
-      setExpanded(newExpanded)
     }
+    setExpanded(newExpanded)
   }
 
   const renderNode = (node: TreeNode, depth: number = 0) => {
-    const hasChildren = node.hasMore || (node.children && node.children.length > 0)
+    const hasChildren = node.children && node.children.length > 0
     const isExpanded = expanded.has(node.id)
-    const isLoading = node.loading
     const paddingLeft = `${depth * 20}px`
 
     return (
@@ -153,10 +117,9 @@ export function RepositoryTree({
           {hasChildren && (
             <button
               onClick={() => toggleExpanded(node.id)}
-              disabled={isLoading}
-              className="text-gray-600 hover:text-gray-900 disabled:opacity-50"
+              className="text-gray-600 hover:text-gray-900"
             >
-              {isLoading ? '⟳' : isExpanded ? '▼' : '▶'}
+              {isExpanded ? '▼' : '▶'}
             </button>
           )}
 
