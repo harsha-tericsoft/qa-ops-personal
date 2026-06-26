@@ -143,6 +143,7 @@ export async function POST(
       try {
         const testRuns = await prisma.testRun.createMany({
           data: testCaseIds.map(testCaseId => ({
+            cycleId,
             versionId: newVersion.id,
             testCaseId,
             status: 'NOT_EXECUTED' as const,
