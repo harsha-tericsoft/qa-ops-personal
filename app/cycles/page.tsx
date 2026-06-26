@@ -1520,7 +1520,7 @@ function ExecutionCyclesContent() {
                     value={newCycleName}
                     onChange={(e) => setNewCycleName(e.target.value)}
                     placeholder="e.g., Smoke Test Run"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
                   />
                 </div>
 
@@ -1533,7 +1533,7 @@ function ExecutionCyclesContent() {
                     value={newCycleDesc}
                     onChange={(e) => setNewCycleDesc(e.target.value)}
                     placeholder="Cycle description"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
                   />
                 </div>
 
@@ -1542,7 +1542,7 @@ function ExecutionCyclesContent() {
                   <select
                     value={selectedSuiteId}
                     onChange={(e) => setSelectedSuiteId(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
                   >
                     <option value="">Select a suite...</option>
                     {suites.map((suite) => (

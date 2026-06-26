@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
 
       perfMonitor.mark('fetch-suites-minimal', { count: suites.length })
       console.log(`[API] Returned ${suites.length} suites (minimal, lightweight response)`)
-      return NextResponse.json(suites)
+      return NextResponse.json({ data: suites })
     }
 
     // Full data with testCases
@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
       perfMonitor.log()
     }
 
-    return NextResponse.json(suites)
+    return NextResponse.json({ data: suites })
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error'
     console.error('[API ERROR]', msg)

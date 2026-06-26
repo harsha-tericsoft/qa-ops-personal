@@ -9,13 +9,19 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // Optimized for dashboard: fetch only necessary fields for dropdown
-    // Full data if explicitly requested
-    const skipTestRuns = req.nextUrl.searchParams.get('skipTestRuns') === 'true'
+    // OPTIMIZED: Default to lightweight response for FAST listing
+    // Only fetch full data if explicitly requested with fullData=true
+    const fullData = req.nextUrl.searchParams.get('fullData') === 'true'
+    const { prisma } = await import('@/lib/prisma')
 
-    if (skipTestRuns) {
-      // Lightweight response for dropdown (no testRuns data)
-      const { prisma } = await import('@/lib/prisma')
+    if (fullData) {
+      // Full data for detailed views (expensive query)
+      console.log('[api/execution-cycles] Fetching full data with testRuns')
+      const cycles = await listCycles(projectId)
+      return NextResponse.json({ data: cycles })
+    } else {
+      // LIGHTWEIGHT: Default response for dropdown/listing (fast)
+      console.log('[api/execution-cycles] Fetching lightweight list only')
       const cycles = await prisma.executionCycle.findMany({
         where: { projectId },
         select: {
@@ -26,11 +32,7 @@ export async function GET(req: NextRequest) {
         },
         orderBy: { createdAt: 'desc' },
       })
-      return NextResponse.json(cycles)
-    } else {
-      // Full data for detailed views
-      const cycles = await listCycles(projectId)
-      return NextResponse.json(cycles)
+      return NextResponse.json({ data: cycles })
     }
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error'
