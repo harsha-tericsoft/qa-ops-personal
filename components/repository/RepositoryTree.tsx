@@ -109,30 +109,30 @@ export function RepositoryTree({
     }
   }
 
+  const findAndUpdateNode = (nodes: TreeNode[], nodeId: string, update: (n: TreeNode) => TreeNode): TreeNode[] => {
+    return nodes.map(n => {
+      if (n.id === nodeId) {
+        return update(n)
+      }
+      if (n.children && n.children.length > 0) {
+        return { ...n, children: findAndUpdateNode(n.children, nodeId, update) }
+      }
+      return n
+    })
+  }
+
   const toggleExpanded = async (id: string) => {
     const newExpanded = new Set(expanded)
     if (newExpanded.has(id)) {
       newExpanded.delete(id)
       setExpanded(newExpanded)
     } else {
-      // Load children if not already loaded
-      setNodes((prevNodes) => {
-        const node = prevNodes.find((n) => n.id === id)
-        if (node && node.children.length === 0) {
-          // Mark as loading
-          return prevNodes.map((n) =>
-            n.id === id ? { ...n, loading: true } : n
-          )
-        }
-        return prevNodes
-      })
+      // Mark as loading
+      setNodes(prevNodes => findAndUpdateNode(prevNodes, id, n => ({ ...n, loading: true })))
 
       const children = await fetchChildren(id)
-      setNodes((prevNodes) =>
-        prevNodes.map((n) =>
-          n.id === id ? { ...n, children, loading: false } : n
-        )
-      )
+      setNodes(prevNodes => findAndUpdateNode(prevNodes, id, n => ({ ...n, children, loading: false })))
+
       newExpanded.add(id)
       setExpanded(newExpanded)
     }
