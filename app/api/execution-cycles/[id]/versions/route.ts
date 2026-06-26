@@ -93,22 +93,36 @@ export async function POST(
 
     const nextVersionNumber = (lastVersion?.versionNumber || 0) + 1
 
+    console.log(`[execution-cycles/versions POST] Cycle found: ${cycle.name}, sourceSuiteId: ${cycle.sourceSuiteId}`)
+
     // Get all test cases from the cycle (via the source suite)
     let testCaseIds: string[] = []
 
     if (cycle.sourceSuiteId) {
+      console.log(`[execution-cycles/versions POST] Fetching test cases from suite ${cycle.sourceSuiteId}`)
+
       const suite = await prisma.testSuite.findUnique({
         where: { id: cycle.sourceSuiteId },
-        select: { testCases: { select: { id: true } } }
+        select: { testCases: { select: { id: true, testCaseId: true } } }
       })
+
       if (suite?.testCases) {
-        testCaseIds = suite.testCases.map(tc => tc.id)
+        // testCases might have testCaseId field or id field
+        testCaseIds = suite.testCases.map(tc => tc.testCaseId || tc.id)
+        console.log(`[execution-cycles/versions POST] Found ${testCaseIds.length} test cases from suite`)
+        if (testCaseIds.length > 0) {
+          console.log(`[execution-cycles/versions POST] First 3 test case IDs: ${testCaseIds.slice(0, 3).join(', ')}`)
+        }
+      } else {
+        console.warn(`[execution-cycles/versions POST] Suite not found or has no test cases`)
       }
+    } else {
+      console.warn(`[execution-cycles/versions POST] Cycle has no sourceSuiteId!`)
     }
 
-    console.log(`[execution-cycles/versions] Creating version with ${testCaseIds.length} test cases`)
-
     // Create new version with DRAFT status
+    console.log(`[execution-cycles/versions POST] Creating ExecutionVersion: v${nextVersionNumber} - ${buildVersion}`)
+
     const newVersion = await prisma.executionVersion.create({
       data: {
         cycleId,
@@ -119,22 +133,36 @@ export async function POST(
       },
     })
 
+    console.log(`[execution-cycles/versions POST] ExecutionVersion created: ${newVersion.id}`)
+
     // Create TestRun records for all test cases with NOT_EXECUTED status
     if (testCaseIds.length > 0) {
-      console.log(`[execution-cycles/versions] Creating ${testCaseIds.length} testRuns for version ${newVersion.id}`)
+      console.log(`[execution-cycles/versions POST] Creating ${testCaseIds.length} testRuns for version ${newVersion.id}`)
 
-      const testRuns = await prisma.testRun.createMany({
-        data: testCaseIds.map(testCaseId => ({
-          versionId: newVersion.id,
-          testCaseId,
-          status: 'NOT_EXECUTED' as const,
-        })),
-      })
+      try {
+        const testRuns = await prisma.testRun.createMany({
+          data: testCaseIds.map(testCaseId => ({
+            versionId: newVersion.id,
+            testCaseId,
+            status: 'NOT_EXECUTED' as const,
+          })),
+          skipDuplicates: true,
+        })
 
-      console.log(`[execution-cycles/versions] Created ${testRuns.count} testRuns`)
+        console.log(`[execution-cycles/versions POST] Successfully created ${testRuns.count} testRuns`)
+      } catch (createError) {
+        console.error(`[execution-cycles/versions POST] Error creating testRuns:`, createError)
+        throw createError
+      }
     } else {
-      console.warn(`[execution-cycles/versions] No test cases found for version - this version will have no tests`)
+      console.warn(`[execution-cycles/versions POST] No test cases to create testRuns for`)
     }
+
+    // Verify testRuns were created
+    const verifyCount = await prisma.testRun.count({
+      where: { versionId: newVersion.id }
+    })
+    console.log(`[execution-cycles/versions POST] Verified: Version ${newVersion.id} has ${verifyCount} testRuns`)
 
     // Return full version data with testRuns
     const fullVersion = await prisma.executionVersion.findUnique({
@@ -147,6 +175,8 @@ export async function POST(
         },
       },
     })
+
+    console.log(`[execution-cycles/versions POST] Returning version with ${fullVersion?.testRuns?.length || 0} testRuns`)
 
     return NextResponse.json(fullVersion, { status: 201 })
   } catch (error) {
