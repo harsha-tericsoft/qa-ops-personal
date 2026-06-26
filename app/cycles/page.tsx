@@ -853,7 +853,28 @@ function ExecutionCyclesContent() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Select Version</label>
                   <select
                     value={selectedVersionId || ''}
-                    onChange={(e) => setSelectedVersionId(e.target.value)}
+                    onChange={async (e) => {
+                      const versionId = e.target.value
+                      setSelectedVersionId(versionId)
+
+                      // If this version doesn't have testRuns yet, fetch them
+                      const selectedVer = versions.find(v => v.id === versionId)
+                      if (selectedVer && !selectedVer.testRuns) {
+                        try {
+                          console.log(`[Version Selection] Fetching testRuns for version ${versionId}`)
+                          const response = await fetch(`/api/execution-cycles/${selectedCycleId}/versions/${versionId}`)
+                          if (response.ok) {
+                            const versionWithTestRuns = await response.json()
+                            // Update versions array to include testRuns for this version
+                            setVersions(versions.map(v =>
+                              v.id === versionId ? versionWithTestRuns : v
+                            ))
+                          }
+                        } catch (error) {
+                          console.error('Error fetching version testRuns:', error)
+                        }
+                      }
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">-- Select a version --</option>

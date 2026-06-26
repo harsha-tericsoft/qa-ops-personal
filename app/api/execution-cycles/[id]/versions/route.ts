@@ -27,24 +27,56 @@ export async function GET(
       return NextResponse.json(versions)
     }
 
-    // Full data with testRuns for detail view
-    const versions = await prisma.executionVersion.findMany({
+    // OPTIMIZED: Get versions in 2 queries for better performance
+    // Query 1: Get all versions (metadata only - fast)
+    const versionsMetadata = await prisma.executionVersion.findMany({
       where: { cycleId },
       orderBy: { versionNumber: 'desc' },
-      include: {
-        testRuns: {
-          include: {
-            testCase: true,
-            comments: {
-              orderBy: { createdAt: 'asc' },
-            },
-            jiraLinks: true,
-          },
-        },
+      select: {
+        id: true,
+        cycleId: true,
+        versionNumber: true,
+        buildVersion: true,
+        status: true,
+        releaseNotes: true,
+        createdAt: true,
+        completedAt: true,
       },
     })
 
-    console.log(`[execution-cycles/versions] Returning ${versions.length} versions with testRuns`)
+    console.log(`[execution-cycles/versions] Fetched ${versionsMetadata.length} versions metadata (fast)`)
+
+    // Query 2: Get testRuns for FIRST version only
+    // This allows initial UI display without loading all testRuns for all versions
+    let versions: any[] = versionsMetadata
+
+    if (versionsMetadata.length > 0) {
+      const firstVersion = versionsMetadata[0]
+      console.log(`[execution-cycles/versions] Fetching testRuns for first version ${firstVersion.buildVersion}`)
+
+      const firstVersionWithTestRuns = await prisma.executionVersion.findUnique({
+        where: { id: firstVersion.id },
+        include: {
+          testRuns: {
+            include: {
+              testCase: true,
+              comments: {
+                orderBy: { createdAt: 'asc' },
+              },
+              jiraLinks: true,
+            },
+          },
+        },
+      })
+
+      // Merge testRuns into first version, keep others without testRuns
+      versions = [
+        firstVersionWithTestRuns,
+        ...versionsMetadata.slice(1),
+      ]
+    }
+
+    console.log(`[execution-cycles/versions] Returning ${versions.length} versions (optimized - testRuns for first version only)`)
     return NextResponse.json(versions)
   } catch (error) {
     console.error('[execution-cycles/versions] Error:', error)
