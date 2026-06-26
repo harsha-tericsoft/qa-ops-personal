@@ -152,16 +152,36 @@ function ExecutionCyclesContent() {
 
   const fetchVersions = async (cycleId: string) => {
     try {
+      console.log('[fetchVersions] Loading versions for cycle:', cycleId)
+      // Don't use minimal=true here - we need full testRuns data for the detail view
       const response = await fetch(`/api/execution-cycles/${cycleId}/versions`)
       if (response.ok) {
         const data = await response.json()
-        setVersions(Array.isArray(data) ? data : [])
+        console.log('[fetchVersions] Received versions:', data.length)
+
+        if (!Array.isArray(data)) {
+          console.error('[fetchVersions] Data is not an array:', data)
+          setVersions([])
+          return
+        }
+
+        // Log first version to verify testRuns are included
+        if (data.length > 0) {
+          console.log('[fetchVersions] First version testRuns count:', data[0].testRuns?.length || 0)
+        }
+
+        setVersions(data)
         if (data.length > 0 && !selectedVersionId) {
+          console.log('[fetchVersions] Auto-selecting first version:', data[0].id)
           setSelectedVersionId(data[0].id)
         }
+      } else {
+        console.error('[fetchVersions] API error:', response.status)
+        const errorData = await response.json()
+        console.error('[fetchVersions] Error details:', errorData)
       }
     } catch (error) {
-      console.error('Error fetching versions:', error)
+      console.error('[fetchVersions] Error:', error)
     }
   }
 

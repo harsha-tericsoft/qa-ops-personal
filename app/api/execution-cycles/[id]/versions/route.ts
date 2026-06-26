@@ -7,23 +7,50 @@ export async function GET(
 ) {
   try {
     const { id: cycleId } = await params
+    const minimal = request.nextUrl.searchParams.get('minimal') === 'true'
 
+    console.log(`[execution-cycles/versions] GET ${cycleId}, minimal=${minimal}`)
+
+    // If minimal=true, return only basic info (for dropdown)
+    // Otherwise, return full data including testRuns (for detail view)
+    if (minimal) {
+      const versions = await prisma.executionVersion.findMany({
+        where: { cycleId },
+        orderBy: { versionNumber: 'desc' },
+        select: {
+          id: true,
+          buildVersion: true,
+          versionNumber: true,
+          status: true,
+        },
+      })
+      return NextResponse.json(versions)
+    }
+
+    // Full data with testRuns for detail view
     const versions = await prisma.executionVersion.findMany({
       where: { cycleId },
       orderBy: { versionNumber: 'desc' },
-      select: {
-        id: true,
-        buildVersion: true,
-        versionNumber: true,
-        status: true,
+      include: {
+        testRuns: {
+          include: {
+            testCase: true,
+            comments: {
+              orderBy: { createdAt: 'asc' },
+            },
+            jiraLinks: true,
+          },
+        },
       },
     })
 
+    console.log(`[execution-cycles/versions] Returning ${versions.length} versions with testRuns`)
     return NextResponse.json(versions)
   } catch (error) {
     console.error('[execution-cycles/versions] Error:', error)
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Unknown error' },
+      { error: errorMsg, code: 'DB_ERROR' },
       { status: 500 }
     )
   }
