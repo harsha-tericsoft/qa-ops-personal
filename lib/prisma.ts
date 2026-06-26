@@ -13,24 +13,7 @@ const prismaClientSingleton = () => {
     // For PgBouncer: recommend 4-8 connections per Prisma instance
   })
 
-  // Log connection events for debugging
-  if (process.env.NODE_ENV === 'development') {
-    console.log('[Prisma] Connection pool debugging enabled')
-  }
-
-  // Set query timeout to fail fast instead of hanging indefinitely
-  client.$use(async (params, next) => {
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(
-        () => reject(new Error(`Query timeout (30s): ${params.model}.${params.action}`)),
-        30000 // 30 second timeout per query
-      )
-    )
-
-    return Promise.race([next(params), timeoutPromise])
-  })
-
-  console.log('[Prisma] Client initialized successfully with 30s query timeout')
+  console.log('[Prisma] Client initialized successfully')
   return client
 }
 
