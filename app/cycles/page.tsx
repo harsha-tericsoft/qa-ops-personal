@@ -132,10 +132,12 @@ function ExecutionCyclesContent() {
     }
   }, [selectedCycleId])
 
-  const fetchCycles = async () => {
+  const fetchCycles = async (useOptimized = true) => {
     setLoading(true)
     try {
-      const response = await fetch(`/api/execution-cycles?projectId=${currentProjectId}`)
+      // Use optimized query by default for dropdowns (no testRuns data)
+      const optimizedParam = useOptimized ? '&skipTestRuns=true' : ''
+      const response = await fetch(`/api/execution-cycles?projectId=${currentProjectId}${optimizedParam}`)
       if (response.ok) {
         const data = await response.json()
         setCycles(Array.isArray(data) ? data : [])

@@ -115,10 +115,12 @@ export default function DashboardPage() {
 
     const loadCycles = async () => {
       try {
-        const res = await fetch(`/api/execution-cycles?projectId=${selectedProjectId}`)
+        // Use optimized query (skipTestRuns=true) for dashboard dropdown
+        // This significantly reduces payload and improves performance
+        const res = await fetch(`/api/execution-cycles?projectId=${selectedProjectId}&skipTestRuns=true`)
         if (res.ok) {
           const data = await res.json()
-          setCycles(data || [])
+          setCycles(Array.isArray(data) ? data : data?.data || [])
         }
       } catch (err) {
         // Silently handle fetch errors

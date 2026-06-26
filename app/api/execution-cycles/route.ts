@@ -9,8 +9,29 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const cycles = await listCycles(projectId)
-    return NextResponse.json(cycles)
+    // Optimized for dashboard: fetch only necessary fields for dropdown
+    // Full data if explicitly requested
+    const skipTestRuns = req.nextUrl.searchParams.get('skipTestRuns') === 'true'
+
+    if (skipTestRuns) {
+      // Lightweight response for dropdown (no testRuns data)
+      const { prisma } = await import('@/lib/prisma')
+      const cycles = await prisma.executionCycle.findMany({
+        where: { projectId },
+        select: {
+          id: true,
+          name: true,
+          status: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      })
+      return NextResponse.json(cycles)
+    } else {
+      // Full data for detailed views
+      const cycles = await listCycles(projectId)
+      return NextResponse.json(cycles)
+    }
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json({ error: msg }, { status: 500 })
