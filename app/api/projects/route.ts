@@ -1,21 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requestQueue } from '@/lib/request-queue'
 
 // GET /api/projects
 export async function GET(req: NextRequest) {
   try {
     console.log('[GET /api/projects] Request received')
-    const projects = await prisma.project.findMany({
-      orderBy: {
-        createdAt: 'desc',
-      },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+    const projects = await requestQueue.execute(async () => {
+      return await prisma.project.findMany({
+        orderBy: {
+          createdAt: 'desc',
+        },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      })
     })
 
     console.log(`[GET /api/projects] Successfully fetched ${projects.length} projects`)
