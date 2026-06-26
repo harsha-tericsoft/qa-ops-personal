@@ -16,24 +16,24 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit
 
-    // Get total count
-    const total = await prisma.roamTestCase.count({
-      where: { projectId },
-    })
-
-    // Get paginated results
-    const roamTestCases = await prisma.roamTestCase.findMany({
-      where: { projectId },
-      select: {
-        id: true,
-        title: true,
-        sourceRoamUid: true,
-        repositoryNodeId: true,
-      },
-      orderBy: { createdAt: 'desc' },
-      skip,
-      take: limit,
-    })
+    // Combine count + findMany into a single Promise.all to reduce database round trips
+    const [total, roamTestCases] = await Promise.all([
+      prisma.roamTestCase.count({
+        where: { projectId },
+      }),
+      prisma.roamTestCase.findMany({
+        where: { projectId },
+        select: {
+          id: true,
+          title: true,
+          sourceRoamUid: true,
+          repositoryNodeId: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+    ])
 
     return NextResponse.json({
       data: roamTestCases,

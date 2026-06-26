@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "git": {
+      "command": "git",
+      "args": ["help"],
+      "disabled": false
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["playwright", "--version"],
+      "disabled": false
+    }
+  }
+}

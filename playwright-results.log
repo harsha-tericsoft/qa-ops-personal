@@ -1,0 +1,109 @@
+
+Running 8 tests using 1 worker
+
+
+=== BUG #1: Dashboard Connectivity ===
+Reload 1/3...
+  ✘  1 verify-bugs.spec.ts:42:7 › BUG VERIFICATION: Production Stabilization › BUG #1: Dashboard API 500 errors and database connection (30.1s)
+
+=== BUG #2: Repository Hierarchy ===
+Found 0 tree nodes at initial load
+Found 0 expandable nodes
+❌ No expandable nodes found - tree might be broken
+  ✓  2 verify-bugs.spec.ts:95:7 › BUG VERIFICATION: Production Stabilization › BUG #2: Repository page hierarchy loading (3.3s)
+
+=== BUG #3: Test Selection ===
+Found 0 checkboxes
+  ✓  3 verify-bugs.spec.ts:152:7 › BUG VERIFICATION: Production Stabilization › BUG #3: Test selection consistency (3.1s)
+
+=== BUG #4: Suite Creation & Duplication ===
+  ✓  4 verify-bugs.spec.ts:204:7 › BUG VERIFICATION: Production Stabilization › BUG #4: Test suite creation and duplication (3.1s)
+
+=== BUG #5: Status Updates ===
+  ✓  5 verify-bugs.spec.ts:261:7 › BUG VERIFICATION: Production Stabilization › BUG #5: Execution cycle status updates (3.1s)
+
+=== BUG #6: API Performance ===
+/api/projects: 3001ms
+/dashboard: 11561ms
+  ⚠️  SLOW: /dashboard took 11561ms
+/test-cases: 664ms
+/repository: 642ms
+/cycles: 663ms
+  ✓  6 verify-bugs.spec.ts:310:7 › BUG VERIFICATION: Production Stabilization › BUG #6: API Performance measurements (16.7s)
+
+=== BUG #7: Text Visibility ===
+Text color analysis:
+  QAQA Ops Platform: color=rgb(23, 23, 23) bg=rgb(255, 255, 255)
+  QAQA Ops Platform: color=rgb(23, 23, 23) bg=rgba(0, 0, 0, 0)
+  QAQA Ops Platform: color=rgb(23, 23, 23) bg=rgba(0, 0, 0, 0)
+  QA: color=rgb(255, 255, 255) bg=lab(44.0605 29.0279 -86.0352)
+  QA Ops Platform: color=lab(8.11897 0.811279 -12.254) bg=rgba(0, 0, 0, 0)
+  QA Execution DashboardEnterpri: color=rgb(23, 23, 23) bg=rgba(0, 0, 0, 0)
+  QA Execution DashboardEnterpri: color=rgb(23, 23, 23) bg=rgba(0, 0, 0, 0)
+  QA Execution DashboardEnterpri: color=rgb(23, 23, 23) bg=rgba(0, 0, 0, 0)
+  QA Execution DashboardEnterpri: color=rgb(23, 23, 23) bg=rgba(0, 0, 0, 0)
+  QA Execution Dashboard: color=lab(8.11897 0.811279 -12.254) bg=rgba(0, 0, 0, 0)
+  Enterprise test execution and : color=lab(35.6337 -1.58697 -10.8425) bg=rgba(0, 0, 0, 0)
+  Project & Execution SelectionP: color=rgb(23, 23, 23) bg=rgb(255, 255, 255)
+  Project & Execution Selection: color=lab(8.11897 0.811279 -12.254) bg=rgba(0, 0, 0, 0)
+  Project-- Choose Project --Kin: color=rgb(23, 23, 23) bg=rgba(0, 0, 0, 0)
+  Project-- Choose Project --Kin: color=rgb(23, 23, 23) bg=rgba(0, 0, 0, 0)
+  Project: color=lab(27.1134 -0.956401 -12.3224) bg=rgba(0, 0, 0, 0)
+  -- Choose Project --KinergyDum: color=rgb(23, 23, 23) bg=rgba(0, 0, 0, 0)
+  -- Choose Project --: color=rgb(23, 23, 23) bg=rgba(0, 0, 0, 0)
+  Kinergy: color=rgb(23, 23, 23) bg=rgba(0, 0, 0, 0)
+  Dummy: color=rgb(23, 23, 23) bg=rgba(0, 0, 0, 0)
+  ✓  7 verify-bugs.spec.ts:354:7 › BUG VERIFICATION: Production Stabilization › BUG #7: Text visibility in dark mode (12.6s)
+
+=== BUG #8: Count Consistency ===
+  ✘  8 verify-bugs.spec.ts:386:7 › BUG VERIFICATION: Production Stabilization › BUG #8: Count consistency across modules (10.4s)
+
+
+  1) verify-bugs.spec.ts:42:7 › BUG VERIFICATION: Production Stabilization › BUG #1: Dashboard API 500 errors and database connection 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.waitForLoadState: Test timeout of 30000ms exceeded.
+
+      73 |       console.log(`Reload ${i + 1}/3...`)
+      74 |       await page.reload()
+    > 75 |       await page.waitForLoadState('networkidle')
+         |                  ^
+      76 |       await page.waitForTimeout(500)
+      77 |     }
+      78 |
+        at C:\Users\harsh\ClaudeCode\Assignment3\qa-ops\verify-bugs.spec.ts:75:18
+
+    Error Context: test-results\verify-bugs-BUG-VERIFICATI-6b179-ors-and-database-connection\error-context.md
+
+  2) verify-bugs.spec.ts:386:7 › BUG VERIFICATION: Production Stabilization › BUG #8: Count consistency across modules 
+
+    Error: locator.textContent: SyntaxError: Invalid flags supplied to RegExp constructor 'i, [data-test-id="total-tests"]'
+        at new RegExp (<anonymous>)
+        at createTextMatcher (<anonymous>:8050:16)
+        at Object.queryAll (<anonymous>:6831:33)
+        at InjectedScript._queryEngineAll (<anonymous>:6804:49)
+        at InjectedScript.querySelectorAll (<anonymous>:6791:30)
+        at InjectedScript.querySelector (<anonymous>:6703:25)
+        at eval (eval at evaluate (:303:30), <anonymous>:3:39)
+        at UtilityScript.evaluate (<anonymous>:305:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+    Call log:
+      - waiting for locator('text=/\\d+ test/i, [data-test-id="total-tests"]').first()
+
+        at createTextMatcher (<anonymous>:8050:16)
+        at Object.queryAll (<anonymous>:6831:33)
+        at InjectedScript._queryEngineAll (<anonymous>:6804:49)
+        at InjectedScript.querySelectorAll (<anonymous>:6791:30)
+        at InjectedScript.querySelector (<anonymous>:6703:25)
+        at eval (eval at evaluate (:303:30), <anonymous>:3:39)
+        at UtilityScript.evaluate (<anonymous>:305:16)
+        at UtilityScript.<anonymous> (<anonymous>:1:44)
+        at C:\Users\harsh\ClaudeCode\Assignment3\qa-ops\verify-bugs.spec.ts:396:50
+
+    Error Context: test-results\verify-bugs-BUG-VERIFICATI-7e526--consistency-across-modules\error-context.md
+
+  2 failed
+    verify-bugs.spec.ts:42:7 › BUG VERIFICATION: Production Stabilization › BUG #1: Dashboard API 500 errors and database connection 
+    verify-bugs.spec.ts:386:7 › BUG VERIFICATION: Production Stabilization › BUG #8: Count consistency across modules 
+  6 passed (1.5m)

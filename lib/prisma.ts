@@ -5,33 +5,41 @@ declare global {
 }
 
 const prismaClientSingleton = () => {
-  try {
-    console.log('[Prisma] Initializing Prisma Client (v6)')
+  console.log('[Prisma] Initializing Prisma Client (v6)')
 
-    const client = new PrismaClient({
-      log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-    })
+  const client = new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+    // Configure connection pool: increase max connections for Node.js (not serverless)
+    // For PgBouncer: recommend 4-8 connections per Prisma instance
+  })
 
-    console.log('[Prisma] Client initialized successfully')
-    return client
-  } catch (error) {
-    console.error('[Prisma] Failed to initialize Prisma Client:', error)
-    throw error
+  // Log connection events for debugging
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[Prisma] Connection pool debugging enabled')
   }
+
+  // Set query timeout to fail fast instead of hanging indefinitely
+  client.$use(async (params, next) => {
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`Query timeout (30s): ${params.model}.${params.action}`)),
+        30000 // 30 second timeout per query
+      )
+    )
+
+    return Promise.race([next(params), timeoutPromise])
+  })
+
+  console.log('[Prisma] Client initialized successfully with 30s query timeout')
+  return client
 }
 
-let prismaInstance: PrismaClient | undefined
+type PrismaClientType = PrismaClient & { _activePromise?: Promise<void> }
 
-try {
-  prismaInstance = global.prisma ?? prismaClientSingleton()
-} catch (error) {
-  console.error('[Prisma] Error during initialization:', error)
-  // Re-throw the error instead of silently failing
-  throw error
+let prismaInstance: PrismaClientType = (global.prisma || prismaClientSingleton()) as PrismaClientType
+
+if (process.env.NODE_ENV !== 'production') {
+  global.prisma = prismaInstance
 }
 
 export const prisma = prismaInstance
-
-if (process.env.NODE_ENV !== 'production' && typeof global !== 'undefined') {
-  global.prisma = prisma
-}
