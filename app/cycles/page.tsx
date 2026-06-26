@@ -628,6 +628,7 @@ function ExecutionCyclesContent() {
   // Helper: Parse Jira URL or key and extract both
   const parseJiraInput = (input: string): { issueKey: string; issueUrl?: string } => {
     const trimmed = input.trim()
+    const jiraBaseUrl = process.env.NEXT_PUBLIC_JIRA_BASE_URL || 'https://jira.atlassian.net'
 
     // If it's a full URL, extract key and URL
     if (trimmed.startsWith('http')) {
@@ -640,14 +641,15 @@ function ExecutionCyclesContent() {
       }
     }
 
-    // If it's just a key (PROJ-123), return as-is
+    // If it's just a key (PROJ-123), construct full URL using configured base
     if (/^[A-Z0-9]+-\d+$/.test(trimmed)) {
       return {
         issueKey: trimmed,
+        issueUrl: `${jiraBaseUrl}/browse/${trimmed}`,
       }
     }
 
-    // Invalid format
+    // Invalid format - still return key but no URL
     return { issueKey: trimmed }
   }
 
