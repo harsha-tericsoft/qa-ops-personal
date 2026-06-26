@@ -109,59 +109,53 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // OPTIMIZED: Run all queries in parallel
-      const [
-        totalTests,
-        automatedTests,
-        draftVersions,
-        activeVersions,
-        completedVersions,
-        tags,
-        lastSync,
-      ] = await Promise.all([
-        // Query 1: Count total tests
-        prisma.roamTestCase.count({
-          where: { projectId },
-        }),
+      // CHANGED: Run queries SEQUENTIALLY instead of Promise.all()
+      // Reason: 7 concurrent queries exhaust the connection pool (only ~10-15 total)
+      // Sequential is slower but prevents pool exhaustion and ECHECKOUTTIMEOUT errors
+      console.log(`[repository-metrics:${requestId}] Running 7 queries sequentially (changed from concurrent Promise.all)`)
 
-        // Query 2: Count automated tests
-        prisma.roamTestCase.count({
-          where: {
-            projectId,
-            tags: { has: 'Automated' },
-          },
-        }),
+      console.log(`[repository-metrics:${requestId}] Query 1: total tests count`)
+      const totalTests = await prisma.roamTestCase.count({
+        where: { projectId },
+      })
 
-        // Query 3: Count draft versions (or check single version)
-        typeof draftWhere === 'number'
-          ? Promise.resolve(draftWhere)
-          : prisma.executionVersion.count({ where: draftWhere }),
+      console.log(`[repository-metrics:${requestId}] Query 2: automated tests count`)
+      const automatedTests = await prisma.roamTestCase.count({
+        where: {
+          projectId,
+          tags: { has: 'Automated' },
+        },
+      })
 
-        // Query 4: Count active versions (or check single version)
-        typeof activeWhere === 'number'
-          ? Promise.resolve(activeWhere)
-          : prisma.executionVersion.count({ where: activeWhere }),
+      console.log(`[repository-metrics:${requestId}] Query 3: draft versions count`)
+      const draftVersions = typeof draftWhere === 'number'
+        ? draftWhere
+        : await prisma.executionVersion.count({ where: draftWhere })
 
-        // Query 5: Count completed versions (or check single version)
-        typeof completedWhere === 'number'
-          ? Promise.resolve(completedWhere)
-          : prisma.executionVersion.count({ where: completedWhere }),
+      console.log(`[repository-metrics:${requestId}] Query 4: active versions count`)
+      const activeVersions = typeof activeWhere === 'number'
+        ? activeWhere
+        : await prisma.executionVersion.count({ where: activeWhere })
 
-        // Query 6: Get unique tags
-        prisma.tag.findMany({
-          where: { projectId },
-          distinct: ['name'],
-          select: { name: true },
-          take: 50,
-        }),
+      console.log(`[repository-metrics:${requestId}] Query 5: completed versions count`)
+      const completedVersions = typeof completedWhere === 'number'
+        ? completedWhere
+        : await prisma.executionVersion.count({ where: completedWhere })
 
-        // Query 7: Get last sync
-        prisma.syncLog.findFirst({
-          where: { projectId },
-          orderBy: { createdAt: 'desc' },
-          select: { createdAt: true, status: true },
-        }),
-      ])
+      console.log(`[repository-metrics:${requestId}] Query 6: unique tags`)
+      const tags = await prisma.tag.findMany({
+        where: { projectId },
+        distinct: ['name'],
+        select: { name: true },
+        take: 50,
+      })
+
+      console.log(`[repository-metrics:${requestId}] Query 7: last sync`)
+      const lastSync = await prisma.syncLog.findFirst({
+        where: { projectId },
+        orderBy: { createdAt: 'desc' },
+        select: { createdAt: true, status: true },
+      })
 
       const manualTests = totalTests - automatedTests
       const coverage = totalTests > 0 ? (automatedTests / totalTests) * 100 : 0

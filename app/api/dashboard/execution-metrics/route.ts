@@ -22,27 +22,37 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // OPTIMIZED: Use count queries instead of fetching all data
-    console.log(`[execution-metrics:${requestId}] About to run 5 concurrent count queries on testRun table`)
+    // CHANGED: Run queries SEQUENTIALLY instead of Promise.all()
+    // Reason: 5 concurrent queries exhaust the connection pool (only ~10-15 total)
+    // Sequential is slower but prevents pool exhaustion
+    console.log(`[execution-metrics:${requestId}] Running 5 sequential count queries on testRun table (changed from concurrent)`)
 
     const queriesStartTime = Date.now()
-    const [totalTests, passedTests, failedTests, blockedTests, notExecutedTests] = await Promise.all([
-      prisma.testRun.count({
-        where: { versionId },
-      }),
-      prisma.testRun.count({
-        where: { versionId, status: 'PASS' },
-      }),
-      prisma.testRun.count({
-        where: { versionId, status: 'FAIL' },
-      }),
-      prisma.testRun.count({
-        where: { versionId, status: 'BLOCKED' },
-      }),
-      prisma.testRun.count({
-        where: { versionId, status: 'NOT_EXECUTED' },
-      }),
-    ])
+
+    console.log(`[execution-metrics:${requestId}] Query 1: total count`)
+    const totalTests = await prisma.testRun.count({
+      where: { versionId },
+    })
+
+    console.log(`[execution-metrics:${requestId}] Query 2: PASS count`)
+    const passedTests = await prisma.testRun.count({
+      where: { versionId, status: 'PASS' },
+    })
+
+    console.log(`[execution-metrics:${requestId}] Query 3: FAIL count`)
+    const failedTests = await prisma.testRun.count({
+      where: { versionId, status: 'FAIL' },
+    })
+
+    console.log(`[execution-metrics:${requestId}] Query 4: BLOCKED count`)
+    const blockedTests = await prisma.testRun.count({
+      where: { versionId, status: 'BLOCKED' },
+    })
+
+    console.log(`[execution-metrics:${requestId}] Query 5: NOT_EXECUTED count`)
+    const notExecutedTests = await prisma.testRun.count({
+      where: { versionId, status: 'NOT_EXECUTED' },
+    })
 
     const queriesElapsed = Date.now() - queriesStartTime
     console.log(`[execution-metrics:${requestId}] 5 count queries completed in ${queriesElapsed}ms`)
