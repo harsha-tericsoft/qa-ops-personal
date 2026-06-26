@@ -308,22 +308,22 @@ function ExecutionCyclesContent() {
 
         if (response.ok) {
           const newVersion = await response.json()
-          console.log('[handleCreateVersion] Version created successfully')
+          console.log('[handleCreateVersion] Version created successfully with', newVersion.testRuns?.length, 'testRuns')
 
           setBuildVersion('')
           setReleaseNotes('')
-          // Fetch versions first to ensure new version is in the list
-          const versionsResponse = await fetch(`/api/execution-cycles/${selectedCycleId}/versions`)
-          if (versionsResponse.ok) {
-            const allVersions = await versionsResponse.json()
-            setVersions(Array.isArray(allVersions) ? allVersions : [])
-            // NOW set the selected version so it's found in the updated list
-            setSelectedVersionId(newVersion.id)
-          } else {
-            // Fallback to old fetch method if direct fetch fails
-            await fetchVersions(selectedCycleId)
-            setSelectedVersionId(newVersion.id)
-          }
+
+          // IMPORTANT: newVersion from POST already includes full testRuns data!
+          // Don't fetch metadata-only list - add the new version directly with its testRuns
+          setVersions((prevVersions) => {
+            const updated = [newVersion, ...prevVersions]
+            console.log('[handleCreateVersion] Updated versions array with new version at top')
+            return updated
+          })
+
+          // Select the new version - it already has testRuns loaded from the POST response
+          setSelectedVersionId(newVersion.id)
+
           setLastSavedAt(new Date())
           showToast('Version created - Active version auto-selected', 'success')
           setIsSavingVersion(false)
