@@ -8,10 +8,17 @@ const prismaClientSingleton = () => {
   console.log('[Prisma] Initializing Prisma Client (v6)')
 
   const client = new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-    // Configure connection pool: increase max connections for Node.js (not serverless)
-    // For PgBouncer: recommend 4-8 connections per Prisma instance
+    log: process.env.NODE_ENV === 'development'
+      ? ['error', 'warn', 'query']
+      : ['error'],
   })
+
+  // Enable query performance logging in development
+  if (process.env.NODE_ENV === 'development') {
+    client.$on('query', (e) => {
+      console.log(`[SQL] ${e.query} (${e.duration}ms)`)
+    })
+  }
 
   console.log('[Prisma] Client initialized successfully')
   return client

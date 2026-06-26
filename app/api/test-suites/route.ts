@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createTestSuite } from '@/lib/db'
 import { prisma } from '@/lib/prisma'
+import { PerformanceMonitor } from '@/lib/performance-monitor'
+import { randomUUID } from 'crypto'
 
 // GET /api/test-suites
 export async function GET(req: NextRequest) {
   const projectId = req.nextUrl.searchParams.get('projectId')
+  const perfMonitor = new PerformanceMonitor()
+
+  perfMonitor.mark('parse-params')
+
   if (!projectId) {
     return NextResponse.json({ error: 'projectId required' }, { status: 400 })
   }
@@ -20,22 +26,37 @@ export async function GET(req: NextRequest) {
       },
       orderBy: { createdAt: 'desc' },
     })
+
+    perfMonitor.mark('fetch-suites', { count: suites.length })
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`\n[API] GET /api/test-suites`)
+      perfMonitor.log()
+    }
+
     return NextResponse.json(suites)
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error'
+    console.error('[API ERROR]', msg)
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
 
 // POST /api/test-suites - Create suite with bulk test case assignment
 export async function POST(req: NextRequest) {
+  const perfMonitor = new PerformanceMonitor()
   const projectId = req.nextUrl.searchParams.get('projectId')
+
+  perfMonitor.mark('parse-params')
+
   if (!projectId) {
     return NextResponse.json({ error: 'projectId required' }, { status: 400 })
   }
 
   try {
     const body = await req.json()
+    perfMonitor.mark('parse-request-body')
+
     const {
       name,
       description,
@@ -52,81 +73,105 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Step 1-2: Create TestCase records OUTSIDE transaction (avoids network latency in tx)
-    let finalTestIds = testIds
-    if (roamTestCaseIds.length > 0) {
-      const roamTestCases = await prisma.roamTestCase.findMany({
-        where: {
-          id: { in: roamTestCaseIds },
-          projectId,
-        },
-        select: {
-          id: true,
-          title: true,
-          sourceRoamUid: true,
-        },
-      })
+    // OPTIMIZATION: Use a single transaction for everything
+    // This eliminates the slow fetch-by-title step
+    const suite = await prisma.$transaction(
+      async (tx) => {
+        let finalTestIds = testIds
 
-      // Bulk create TestCase records outside transaction
-      await prisma.testCase.createMany({
-        data: roamTestCases.map((rtc) => ({
-          projectId,
-          title: rtc.title,
-          description: `Extracted from: ${rtc.sourceRoamUid}`,
-        })),
-        skipDuplicates: true,
-      })
+        if (roamTestCaseIds.length > 0) {
+          // Step 1: Fetch RoamTestCase records
+          const roamTestCases = await tx.roamTestCase.findMany({
+            where: {
+              id: { in: roamTestCaseIds },
+              projectId,
+            },
+            select: {
+              id: true,
+              title: true,
+              sourceRoamUid: true,
+            },
+          })
 
-      // Fetch created TestCase records to get IDs
-      const testCases = await prisma.testCase.findMany({
-        where: {
-          projectId,
-          title: { in: roamTestCases.map((rtc) => rtc.title) },
-        },
-        select: { id: true },
-      })
+          perfMonitor.mark('fetch-roam-test-cases', { count: roamTestCases.length })
 
-      finalTestIds = testCases.map((tc) => tc.id)
+          // Step 2: Batch insert all TestCase records using raw SQL for performance
+          // This is much faster than individual create() calls in a loop
+          const testCaseIds: string[] = roamTestCases.map(() => randomUUID())
+          const now = new Date().toISOString()
+
+          // Build batch INSERT with all required columns
+          const valuesList = roamTestCases
+            .map(
+              (rtc, i) =>
+                `('${testCaseIds[i]}', '${projectId}', '${rtc.title.replace(/'/g, "''")}', 'Extracted from: ${rtc.sourceRoamUid.replace(/'/g, "''")}', '${now}', '${now}')`
+            )
+            .join(',')
+
+          await tx.$executeRawUnsafe(
+            `INSERT INTO "TestCase" (id, "projectId", title, description, "createdAt", "updatedAt") VALUES ${valuesList}`
+          )
+
+          perfMonitor.mark('create-test-cases-batch', {
+            count: testCaseIds.length,
+          })
+
+          finalTestIds = testCaseIds
+        }
+
+        // Step 3: Create suite and link tests
+        const newSuite = await tx.testSuite.create({
+          data: {
+            projectId,
+            name,
+            description,
+            category,
+            selectionMethod,
+            testCases:
+              finalTestIds.length > 0
+                ? {
+                    createMany: {
+                      data: finalTestIds.map((testId: string, index: number) => ({
+                        testCaseId: testId,
+                        order: index,
+                      })),
+                    },
+                  }
+                : undefined,
+          },
+          include: {
+            testCases: {
+              include: { testCase: true },
+              orderBy: { order: 'asc' },
+            },
+          },
+        })
+
+        perfMonitor.mark('create-suite-with-links', { testCount: finalTestIds.length })
+
+        return newSuite
+      },
+      {
+        timeout: 30000,
+      }
+    )
+
+    // Return response
+    const response = NextResponse.json(suite, { status: 201 })
+
+    // Log performance in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`\n[API] POST /api/test-suites`)
+      perfMonitor.log()
     }
 
-    // Step 3: Create suite and link tests in a single fast transaction
-    const suite = await prisma.$transaction(async (tx) => {
-      const newSuite = await tx.testSuite.create({
-        data: {
-          projectId,
-          name,
-          description,
-          category,
-          selectionMethod,
-          // Bulk insert test cases
-          testCases: finalTestIds.length > 0
-            ? {
-                createMany: {
-                  data: finalTestIds.map((testId: string, index: number) => ({
-                    testCaseId: testId,
-                    order: index,
-                  })),
-                },
-              }
-            : undefined,
-        },
-        include: {
-          testCases: {
-            include: { testCase: true },
-            orderBy: { order: 'asc' },
-          },
-        },
-      })
-
-      return newSuite
-    }, {
-      // Increase timeout for this specific transaction
-      timeout: 30000, // 30 seconds (was default 5 seconds)
-    })
-
-    return NextResponse.json(suite, { status: 201 })
+    return response
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error'
+    console.error('[API ERROR]', msg)
+    if (process.env.NODE_ENV === 'development') {
+      perfMonitor.log()
+    }
     return NextResponse.json({ error: msg }, { status: 500 })
   }
 }

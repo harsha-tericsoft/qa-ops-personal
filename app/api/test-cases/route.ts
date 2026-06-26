@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { PerformanceMonitor } from '@/lib/performance-monitor'
 
 export async function GET(request: NextRequest) {
+  const perfMonitor = new PerformanceMonitor()
+
   try {
     const projectId = request.nextUrl.searchParams.get('projectId')
     const page = parseInt(request.nextUrl.searchParams.get('page') || '1', 10)
     const limit = parseInt(request.nextUrl.searchParams.get('limit') || '100', 10)
+
+    perfMonitor.mark('parse-params')
 
     if (!projectId) {
       return NextResponse.json(
@@ -34,6 +39,13 @@ export async function GET(request: NextRequest) {
         take: limit,
       }),
     ])
+
+    perfMonitor.mark('fetch-test-cases', { count: roamTestCases.length, total })
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`\n[API] GET /api/test-cases`)
+      perfMonitor.log()
+    }
 
     return NextResponse.json({
       data: roamTestCases,

@@ -2,6 +2,7 @@ import { SuiteCategory } from '@/app/generated/prisma'
 import { selectBySuite } from './test-selector.service'
 import { createCycle } from './execution.service'
 import { prisma } from '@/lib/prisma'
+import { randomUUID } from 'crypto'
 
 export interface FilterCriteria {
   modules?: string[]
@@ -62,26 +63,24 @@ export async function updateSuite(
         },
       })
 
-      // Bulk create TestCase records
-      await tx.testCase.createMany({
-        data: roamTestCases.map((rtc) => ({
-          projectId: suite.projectId,
-          title: rtc.title,
-          description: `Extracted from: ${rtc.sourceRoamUid}`,
-        })),
-        skipDuplicates: true,
-      })
+      // Batch insert TestCase records using raw SQL for performance
+      const testCaseIds: string[] = roamTestCases.map(() => randomUUID())
 
-      // Fetch the created TestCase records
-      const testCases = await tx.testCase.findMany({
-        where: {
-          projectId: suite.projectId,
-          title: { in: roamTestCases.map((rtc) => rtc.title) },
-        },
-        select: { id: true },
-      })
+      if (testCaseIds.length > 0) {
+        const now = new Date().toISOString()
+        const valuesList = roamTestCases
+          .map(
+            (rtc, i) =>
+              `('${testCaseIds[i]}', '${suite.projectId}', '${rtc.title.replace(/'/g, "''")}', 'Extracted from: ${rtc.sourceRoamUid.replace(/'/g, "''")}', '${now}', '${now}')`
+          )
+          .join(',')
 
-      return testCases.map((tc) => tc.id)
+        await tx.$executeRawUnsafe(
+          `INSERT INTO "TestCase" (id, "projectId", title, description, "createdAt", "updatedAt") VALUES ${valuesList}`
+        )
+      }
+
+      return testCaseIds
     })
   }
 
@@ -255,44 +254,51 @@ export async function createSuiteFromFilters(
     orderBy: { title: 'asc' },
   })
 
-  // For each RoamTestCase, create a corresponding TestCase if needed
-  // This bridges the execution pipeline which currently uses TestCase
-  const testCaseIds: string[] = []
+  // Bulk create TestCases in a transaction with explicit UUIDs
+  const suite = await prisma.$transaction(async (tx) => {
+    const testCaseIds: string[] = roamTestCases.map(() => randomUUID())
 
-  for (const rtc of roamTestCases) {
-    // Create a TestCase record for this RoamTestCase
-    const testCase = await prisma.testCase.create({
+    // Batch insert TestCase records using raw SQL for performance
+    if (testCaseIds.length > 0) {
+      const now = new Date().toISOString()
+      const valuesList = roamTestCases
+        .map(
+          (rtc, i) =>
+            `('${testCaseIds[i]}', '${projectId}', '${rtc.title.replace(/'/g, "''")}', null, '${now}', '${now}')`
+        )
+        .join(',')
+
+      await tx.$executeRawUnsafe(
+        `INSERT INTO "TestCase" (id, "projectId", title, description, "createdAt", "updatedAt") VALUES ${valuesList}`
+      )
+    }
+
+    // Create the suite with filter-based selection method
+    const newSuite = await tx.testSuite.create({
       data: {
         projectId,
-        title: rtc.title,
-      },
-    })
-    testCaseIds.push(testCase.id)
-  }
-
-  // Create the suite with filter-based selection method
-  const suite = await prisma.testSuite.create({
-    data: {
-      projectId,
-      name,
-      description,
-      selectionMethod: 'FILTER',
-      selectionConfig: filters as any,
-      testCases: {
-        createMany: {
-          data: testCaseIds.map((testCaseId, order) => ({
-            testCaseId,
-            order,
-          })),
+        name,
+        description,
+        selectionMethod: 'FILTER',
+        selectionConfig: filters as any,
+        testCases: {
+          createMany: {
+            data: testCaseIds.map((testCaseId, order) => ({
+              testCaseId,
+              order,
+            })),
+          },
         },
       },
-    },
-    include: {
-      testCases: {
-        include: { testCase: true },
-        orderBy: { order: 'asc' },
+      include: {
+        testCases: {
+          include: { testCase: true },
+          orderBy: { order: 'asc' },
+        },
       },
-    },
+    })
+
+    return newSuite
   })
 
   return suite

@@ -94,7 +94,9 @@ function TestSuitesContent() {
       const response = await fetch(`/api/test-cases?projectId=${currentProjectId}`)
       if (response.ok) {
         const data = await response.json()
-        setAvailableTests(Array.isArray(data) ? data : [])
+        // Handle both array format and pagination format
+        const tests = Array.isArray(data) ? data : data?.data || []
+        setAvailableTests(tests)
       }
     } catch (error) {
       console.error('Error fetching tests:', error)
@@ -140,13 +142,15 @@ function TestSuitesContent() {
           'success'
         )
 
-        // Reset and refresh
+        // Optimize: Add new suite to list instead of refetching all
+        setSuites((prev) => [newSuite, ...prev])
+
+        // Reset form and close modal
         setNewSuiteName('')
         setNewSuiteDesc('')
         setSelectedNodeIds([])
         setSelectedTestCount(0)
         setShowCreateModal(false)
-        await fetchSuites()
       } else {
         const error = await response.json()
         showToast(`Failed to create suite: ${error.error || 'Unknown error'}`, 'error')
@@ -188,14 +192,20 @@ function TestSuitesContent() {
       })
 
       if (response.ok) {
+        const updatedSuite = await response.json()
         showToast(`Suite "${newSuiteName}" updated successfully`, 'success')
+
+        // Optimize: Update suite in list instead of refetching all
+        setSuites((prev) =>
+          prev.map((s) => (s.id === editingSuiteId ? updatedSuite : s))
+        )
+
         setEditingSuiteId(null)
         setNewSuiteName('')
         setNewSuiteDesc('')
         setSelectedNodeIds([])
         setSelectedTestCount(0)
         setShowEditModal(false)
-        await fetchSuites()
       } else {
         const error = await response.json()
         showToast(`Failed to update suite: ${error.error || 'Unknown error'}`, 'error')
