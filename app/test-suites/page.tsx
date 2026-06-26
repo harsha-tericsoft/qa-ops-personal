@@ -78,7 +78,9 @@ function TestSuitesContent() {
       const response = await fetch(`/api/test-suites?projectId=${currentProjectId}`)
       if (response.ok) {
         const data = await response.json()
-        setSuites(Array.isArray(data) ? data : [])
+        // API returns { data: [...] }
+        const suitesList = data?.data || []
+        setSuites(Array.isArray(suitesList) ? suitesList : [])
       }
     } catch (error) {
       console.error('Error fetching suites:', error)

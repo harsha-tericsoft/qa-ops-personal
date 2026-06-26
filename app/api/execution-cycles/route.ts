@@ -10,11 +10,13 @@ export async function GET(req: NextRequest) {
 
   try {
     // OPTIMIZED: Default to lightweight response for FAST listing
-    // Only fetch full data if explicitly requested with fullData=true
+    // Supports both 'skipTestRuns=true' (old) and 'fullData=false' (new)
+    const skipTestRuns = req.nextUrl.searchParams.get('skipTestRuns') === 'true'
     const fullData = req.nextUrl.searchParams.get('fullData') === 'true'
     const { prisma } = await import('@/lib/prisma')
 
-    if (fullData) {
+    // Use lightweight by default UNLESS fullData=true
+    if (fullData && !skipTestRuns) {
       // Full data for detailed views (expensive query)
       console.log('[api/execution-cycles] Fetching full data with testRuns')
       const cycles = await listCycles(projectId)

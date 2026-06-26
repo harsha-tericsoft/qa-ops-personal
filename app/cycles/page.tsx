@@ -148,8 +148,10 @@ function ExecutionCyclesContent() {
 
       if (response.ok) {
         const data = await response.json()
-        console.log(`[fetchCycles] Received ${Array.isArray(data) ? data.length : 0} cycles in ${duration}ms`)
-        setCycles(Array.isArray(data) ? data : [])
+        // API returns { data: [...] }
+        const cyclesList = data?.data || []
+        console.log(`[fetchCycles] Received ${cyclesList.length} cycles in ${duration}ms`)
+        setCycles(cyclesList)
       } else {
         console.error('[fetchCycles] API error:', response.status)
       }
@@ -213,16 +215,19 @@ function ExecutionCyclesContent() {
 
   const fetchSuites = async () => {
     try {
-      console.log('[fetchSuites] Loading test suites...')
+      console.log('[fetchSuites] Loading test suites with test cases...')
       const startTime = Date.now()
-      // Use minimal=true to skip testCases data (fast loading)
-      const response = await fetch(`/api/test-suites?projectId=${currentProjectId}&minimal=true`)
+      // IMPORTANT: Fetch full data (NOT minimal) to include testCases
+      // So we can display test case count in the dropdown
+      const response = await fetch(`/api/test-suites?projectId=${currentProjectId}`)
       const duration = Date.now() - startTime
 
       if (response.ok) {
         const data = await response.json()
-        console.log(`[fetchSuites] Received ${Array.isArray(data) ? data.length : 0} suites in ${duration}ms`)
-        setSuites(Array.isArray(data) ? data : [])
+        // API returns { data: [...] }
+        const suitesList = data?.data || []
+        console.log(`[fetchSuites] Received ${suitesList.length} suites in ${duration}ms`)
+        setSuites(suitesList)
       } else {
         console.error('[fetchSuites] API error:', response.status)
       }
