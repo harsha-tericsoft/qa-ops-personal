@@ -93,6 +93,21 @@ export async function POST(
 
     const nextVersionNumber = (lastVersion?.versionNumber || 0) + 1
 
+    // Get all test cases from the cycle (via the source suite)
+    let testCaseIds: string[] = []
+
+    if (cycle.sourceSuiteId) {
+      const suite = await prisma.testSuite.findUnique({
+        where: { id: cycle.sourceSuiteId },
+        select: { testCases: { select: { id: true } } }
+      })
+      if (suite?.testCases) {
+        testCaseIds = suite.testCases.map(tc => tc.id)
+      }
+    }
+
+    console.log(`[execution-cycles/versions] Creating version with ${testCaseIds.length} test cases`)
+
     // Create new version with DRAFT status
     const newVersion = await prisma.executionVersion.create({
       data: {
@@ -104,7 +119,36 @@ export async function POST(
       },
     })
 
-    return NextResponse.json(newVersion, { status: 201 })
+    // Create TestRun records for all test cases with NOT_EXECUTED status
+    if (testCaseIds.length > 0) {
+      console.log(`[execution-cycles/versions] Creating ${testCaseIds.length} testRuns for version ${newVersion.id}`)
+
+      const testRuns = await prisma.testRun.createMany({
+        data: testCaseIds.map(testCaseId => ({
+          versionId: newVersion.id,
+          testCaseId,
+          status: 'NOT_EXECUTED' as const,
+        })),
+      })
+
+      console.log(`[execution-cycles/versions] Created ${testRuns.count} testRuns`)
+    } else {
+      console.warn(`[execution-cycles/versions] No test cases found for version - this version will have no tests`)
+    }
+
+    // Return full version data with testRuns
+    const fullVersion = await prisma.executionVersion.findUnique({
+      where: { id: newVersion.id },
+      include: {
+        testRuns: {
+          include: {
+            testCase: true,
+          },
+        },
+      },
+    })
+
+    return NextResponse.json(fullVersion, { status: 201 })
   } catch (error) {
     console.error('[execution-cycles/versions] POST Error:', error)
     return NextResponse.json(
