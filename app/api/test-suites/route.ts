@@ -103,8 +103,10 @@ export async function POST(req: NextRequest) {
           // Build batch INSERT with all required columns
           const valuesList = roamTestCases
             .map(
-              (rtc, i) =>
-                `('${testCaseIds[i]}', '${projectId}', '${rtc.title.replace(/'/g, "''")}', 'Extracted from: ${rtc.sourceRoamUid.replace(/'/g, "''")}', '${now}', '${now}')`
+              (rtc, i) => {
+                const sourceUid = rtc.sourceRoamUid ? rtc.sourceRoamUid.replace(/'/g, "''") : 'unknown'
+                return `('${testCaseIds[i]}', '${projectId}', '${rtc.title.replace(/'/g, "''")}', 'Extracted from: ${sourceUid}', '${now}', '${now}')`
+              }
             )
             .join(',')
 

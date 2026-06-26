@@ -4,7 +4,7 @@
 class ConnectionLimiter {
   private activeConnections = 0
   private maxConnections: number
-  private queue: Array<() => void> = []
+  private queue: Array<(value?: any) => void> = []
 
   constructor(maxConnections: number = 8) {
     this.maxConnections = maxConnections
@@ -14,7 +14,7 @@ class ConnectionLimiter {
     while (this.activeConnections >= this.maxConnections) {
       // Wait for a connection to be released
       await new Promise(resolve => {
-        this.queue.push(resolve)
+        this.queue.push(resolve as (value?: any) => void)
       })
     }
 
