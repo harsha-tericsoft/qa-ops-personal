@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma, incrementActiveRequests, decrementActiveRequests, getPoolStatus } from '@/lib/prisma'
 
 // Simple in-memory cache for metrics
 // Reduced TTL to 30 seconds since versions change frequently
@@ -19,7 +19,14 @@ function setCachedMetrics(projectId: string, data: any) {
 }
 
 export async function GET(request: NextRequest) {
+  const requestId = Math.random().toString(36).substr(2, 9)
+  const startTime = Date.now()
+
   try {
+    incrementActiveRequests()
+    const poolStatus = getPoolStatus()
+    console.log(`[repository-metrics:${requestId}] START - ${poolStatus.activeRequests} active requests`)
+
     const projectId = request.nextUrl.searchParams.get('projectId')
     const cycleId = request.nextUrl.searchParams.get('cycleId')
     const versionId = request.nextUrl.searchParams.get('versionId')
@@ -36,13 +43,16 @@ export async function GET(request: NextRequest) {
     if (!skipCache) {
       const cached = getCachedMetrics(cacheKey)
       if (cached) {
-        console.log(`[repository-metrics] Cache HIT (30s TTL) for key: ${cacheKey}`)
+        console.log(`[repository-metrics:${requestId}] Cache HIT (30s TTL)`)
+        const elapsed = Date.now() - startTime
+        console.log(`[repository-metrics:${requestId}] FINISH (${elapsed}ms)`)
+        decrementActiveRequests()
         return NextResponse.json(cached)
       } else {
-        console.log(`[repository-metrics] Cache MISS for key: ${cacheKey}`)
+        console.log(`[repository-metrics:${requestId}] Cache MISS`)
       }
     } else {
-      console.log(`[repository-metrics] Cache SKIPPED for key: ${cacheKey}`)
+      console.log(`[repository-metrics:${requestId}] Cache SKIPPED`)
     }
 
     try {
@@ -175,7 +185,10 @@ export async function GET(request: NextRequest) {
       setCachedMetrics(cacheKey, response)
 
       const elapsed = Date.now() - startTime
-      console.log(`[repository-metrics] Completed in ${elapsed}ms`)
+      console.log(`[repository-metrics:${requestId}] Completed in ${elapsed}ms`)
+      decrementActiveRequests()
+      const poolStatusEnd = getPoolStatus()
+      console.log(`[repository-metrics:${requestId}] FINISH - ${poolStatusEnd.activeRequests} active requests remain`)
 
       return NextResponse.json(response)
     } catch (dbErr) {
@@ -195,6 +208,9 @@ export async function GET(request: NextRequest) {
     }
   } catch (error) {
     console.error('[repository-metrics] Error:', error)
+    const elapsed = Date.now() - startTime
+    console.log(`[repository-metrics:${requestId}] ERROR after ${elapsed}ms`)
+    decrementActiveRequests()
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

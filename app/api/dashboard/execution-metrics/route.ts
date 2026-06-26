@@ -1,13 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma, incrementActiveRequests, decrementActiveRequests, getPoolStatus } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
+  const requestId = Math.random().toString(36).substr(2, 9)
+  const startTime = Date.now()
+
   try {
+    incrementActiveRequests()
+    const poolStatus = getPoolStatus()
+    console.log(`[execution-metrics:${requestId}] START - ${poolStatus.activeRequests} active requests - Running 5 concurrent count queries`)
+
     const projectId = request.nextUrl.searchParams.get('projectId')
     const cycleId = request.nextUrl.searchParams.get('cycleId')
     const versionId = request.nextUrl.searchParams.get('versionId')
 
     if (!projectId || !cycleId || !versionId) {
+      decrementActiveRequests()
       return NextResponse.json(
         { error: 'projectId, cycleId, and versionId are required' },
         { status: 400 }
@@ -15,8 +23,9 @@ export async function GET(request: NextRequest) {
     }
 
     // OPTIMIZED: Use count queries instead of fetching all data
-    const startTime = Date.now()
+    console.log(`[execution-metrics:${requestId}] About to run 5 concurrent count queries on testRun table`)
 
+    const queriesStartTime = Date.now()
     const [totalTests, passedTests, failedTests, blockedTests, notExecutedTests] = await Promise.all([
       prisma.testRun.count({
         where: { versionId },
@@ -35,6 +44,9 @@ export async function GET(request: NextRequest) {
       }),
     ])
 
+    const queriesElapsed = Date.now() - queriesStartTime
+    console.log(`[execution-metrics:${requestId}] 5 count queries completed in ${queriesElapsed}ms`)
+
     const executedTests = totalTests - notExecutedTests
     const executionRate = totalTests > 0 ? (executedTests / totalTests) * 100 : 0
     const passRate = (passedTests + failedTests) > 0
@@ -52,11 +64,17 @@ export async function GET(request: NextRequest) {
     }
 
     const elapsed = Date.now() - startTime
-    console.log(`[execution-metrics] Completed in ${elapsed}ms`)
+    console.log(`[execution-metrics:${requestId}] FINISH (${elapsed}ms total)`)
+    decrementActiveRequests()
+    const poolStatusEnd = getPoolStatus()
+    console.log(`[execution-metrics:${requestId}] Pool status: ${poolStatusEnd.activeRequests} active requests remain`)
 
     return NextResponse.json(metrics)
   } catch (error) {
     console.error('[dashboard/execution-metrics] Error:', error)
+    const elapsed = Date.now() - startTime
+    console.log(`[execution-metrics:${requestId}] ERROR after ${elapsed}ms`)
+    decrementActiveRequests()
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

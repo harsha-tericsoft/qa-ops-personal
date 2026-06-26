@@ -4,33 +4,59 @@ declare global {
   var prisma: PrismaClient | undefined
 }
 
+// Instrumentation for connection pool diagnostics
+let activeRequestCount = 0
+const requestLog: { id: string; endpoint: string; start: number; queries: Array<{ query: string; duration: number }> }[] = []
+
 const prismaClientSingleton = () => {
   console.log('[Prisma] Initializing Prisma Client (v6)')
 
   const client = new PrismaClient({
     log: process.env.NODE_ENV === 'development'
-      ? ['error', 'warn']
+      ? ['error', 'warn', 'query']
       : ['error'],
     // Add connection management settings
     errorFormat: 'pretty',
   })
 
-  // Handle connection errors
-  client.$on('error', (e) => {
-    console.error('[Prisma Error]', e)
-  })
-
-  // Enable query performance logging in development (less verbose)
+  // Track all queries for diagnostics
   if (process.env.NODE_ENV === 'development') {
     client.$on('query', (e) => {
-      if (e.duration > 1000) {
-        console.warn(`[Slow SQL] ${e.query.substring(0, 80)}... (${e.duration}ms)`)
+      const elapsed = e.duration
+
+      // Log every query with timing
+      console.log(`[Query] ${elapsed}ms - ${e.query.substring(0, 100)}${e.query.length > 100 ? '...' : ''}`)
+
+      // Alert on slow queries
+      if (elapsed > 1000) {
+        console.warn(`[SLOW QUERY] ${elapsed}ms - ${e.query.substring(0, 80)}...`)
       }
     })
   }
 
+  // Handle connection errors
+  client.$on('error', (e) => {
+    console.error('[Prisma Connection Error]', e)
+    console.error(`[Pool Status] Active requests: ${activeRequestCount}`)
+  })
+
   console.log('[Prisma] Client initialized successfully')
   return client
+}
+
+export function incrementActiveRequests() {
+  activeRequestCount++
+  if (activeRequestCount > 5) {
+    console.warn(`[Pool Warning] ${activeRequestCount} active requests (pool has ~10-20 connections)`)
+  }
+}
+
+export function decrementActiveRequests() {
+  activeRequestCount--
+}
+
+export function getPoolStatus() {
+  return { activeRequests: activeRequestCount }
 }
 
 type PrismaClientType = PrismaClient & { _activePromise?: Promise<void> }
