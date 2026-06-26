@@ -247,45 +247,84 @@ function ExecutionCyclesContent() {
     }
 
     setIsSavingVersion(true)
-    try {
-      const response = await fetch(`/api/execution-cycles/${selectedCycleId}/versions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          buildVersion: buildVersion.trim(),
-          releaseNotes: releaseNotes.trim() || undefined,
-        }),
-      })
 
-      if (response.ok) {
-        const newVersion = await response.json()
-        setBuildVersion('')
-        setReleaseNotes('')
-        // Fetch versions first to ensure new version is in the list
-        const versionsResponse = await fetch(`/api/execution-cycles/${selectedCycleId}/versions`)
-        if (versionsResponse.ok) {
-          const allVersions = await versionsResponse.json()
-          setVersions(Array.isArray(allVersions) ? allVersions : [])
-          // NOW set the selected version so it's found in the updated list
-          setSelectedVersionId(newVersion.id)
+    // Retry logic for transient database connection failures
+    const maxRetries = 3
+    let lastError: any = null
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`[handleCreateVersion] Attempt ${attempt}/${maxRetries}`)
+
+        const response = await fetch(`/api/execution-cycles/${selectedCycleId}/versions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            buildVersion: buildVersion.trim(),
+            releaseNotes: releaseNotes.trim() || undefined,
+          }),
+        })
+
+        if (response.ok) {
+          const newVersion = await response.json()
+          console.log('[handleCreateVersion] Version created successfully')
+
+          setBuildVersion('')
+          setReleaseNotes('')
+          // Fetch versions first to ensure new version is in the list
+          const versionsResponse = await fetch(`/api/execution-cycles/${selectedCycleId}/versions`)
+          if (versionsResponse.ok) {
+            const allVersions = await versionsResponse.json()
+            setVersions(Array.isArray(allVersions) ? allVersions : [])
+            // NOW set the selected version so it's found in the updated list
+            setSelectedVersionId(newVersion.id)
+          } else {
+            // Fallback to old fetch method if direct fetch fails
+            await fetchVersions(selectedCycleId)
+            setSelectedVersionId(newVersion.id)
+          }
+          setLastSavedAt(new Date())
+          showToast('Version created - Active version auto-selected', 'success')
+          setIsSavingVersion(false)
+          return // Success!
+        } else if (response.status >= 500) {
+          // 5xx error - might be transient, retry
+          const errorData = await response.json()
+          lastError = errorData.error || `Server error: ${response.status}`
+          console.log(`[handleCreateVersion] Server error on attempt ${attempt}: ${response.status}`)
+
+          if (attempt < maxRetries) {
+            // Wait before retrying
+            const delayMs = 1000 * attempt // Exponential backoff: 1s, 2s, 3s
+            console.log(`[handleCreateVersion] Retrying in ${delayMs}ms...`)
+            await new Promise(resolve => setTimeout(resolve, delayMs))
+            continue
+          }
         } else {
-          // Fallback to old fetch method if direct fetch fails
-          await fetchVersions(selectedCycleId)
-          setSelectedVersionId(newVersion.id)
+          // Client error - don't retry
+          const errorData = await response.json()
+          showToast(errorData.error || `Failed to create version: ${response.status}`, 'error')
+          setIsSavingVersion(false)
+          return
         }
-        setLastSavedAt(new Date())
-        showToast('Version created - Active version auto-selected', 'success')
+      } catch (error) {
+        lastError = error
+        console.error(`[handleCreateVersion] Network error on attempt ${attempt}:`, error)
 
-      } else {
-        const error = await response.json()
-        showToast(error.error || 'Failed to create version', 'error')
+        if (attempt < maxRetries) {
+          const delayMs = 1000 * attempt
+          console.log(`[handleCreateVersion] Retrying in ${delayMs}ms...`)
+          await new Promise(resolve => setTimeout(resolve, delayMs))
+          continue
+        }
       }
-    } catch (error) {
-      showToast('Error creating version', 'error')
-      console.error('Error creating version:', error)
-    } finally {
-      setIsSavingVersion(false)
     }
+
+    // All retries failed
+    const errorMsg = lastError instanceof Error ? lastError.message : String(lastError)
+    showToast(`Failed to create version after ${maxRetries} attempts: ${errorMsg}`, 'error')
+    console.error('[handleCreateVersion] All retries failed:', lastError)
+    setIsSavingVersion(false)
   }
 
   const handleSaveDraft = async () => {
