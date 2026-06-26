@@ -93,8 +93,18 @@ export function RepositoryTreeSelector({
       const response = await fetch(`/api/test-cases/node-mapping?projectId=${projectId}`)
       if (response.ok) {
         const data = await response.json()
+
+        // DEBUG: Log the exact API response structure
+        console.log('[RepositoryTreeSelector] Raw API response:', data)
+        console.log('[RepositoryTreeSelector] typeof data:', typeof data)
+        console.log('[RepositoryTreeSelector] Array.isArray(data):', Array.isArray(data))
+        console.log('[RepositoryTreeSelector] Object.keys(data):', Object.keys(data))
+
         const fetchedTestCases = data?.data || []
 
+        console.log('[RepositoryTreeSelector] Extracted fetchedTestCases:', fetchedTestCases)
+        console.log('[RepositoryTreeSelector] typeof fetchedTestCases:', typeof fetchedTestCases)
+        console.log('[RepositoryTreeSelector] Array.isArray(fetchedTestCases):', Array.isArray(fetchedTestCases))
         console.log('[RepositoryTreeSelector] Fetched', fetchedTestCases.length, 'test case mappings')
 
         // Store test cases in state for later direct counting
@@ -112,13 +122,15 @@ export function RepositoryTreeSelector({
     return counts
   }
 
-  const countTestsForNode = (nodeId: string, allNodes: any[], testCases: any[]): number => {
+  const countTestsForNode = (nodeId: string, allNodes: any[], testCasesParam: any[]): number => {
     // Get all descendant nodes
     const descendants = getNodeAndDescendants(nodeId, allNodes)
     const descendantIds = descendants.map((n: any) => n.id)
 
+    // Defensive: ensure testCasesParam is an array before filtering
+    const testCasesArray = Array.isArray(testCasesParam) ? testCasesParam : []
     // Count test cases that have a repositoryNodeId in descendants
-    return testCases.filter((tc: any) => descendantIds.includes(tc.repositoryNodeId)).length
+    return testCasesArray.filter((tc: any) => descendantIds.includes(tc.repositoryNodeId)).length
   }
 
   const getNodeAndDescendants = (nodeId: string, allNodes: any[]): any[] => {
@@ -159,7 +171,18 @@ export function RepositoryTreeSelector({
     // DIRECT COUNT: Count test cases that match ANY selected node
     // This is more reliable than depending on pre-calculated testCounts
     const selectedNodeSet = new Set(newSelected)
-    const totalCount = testCases.filter((tc: any) =>
+
+    // DEBUG: Log testCases state before filter
+    console.log('[toggleNodeSelection] testCases state:', testCases)
+    console.log('[toggleNodeSelection] typeof testCases:', typeof testCases)
+    console.log('[toggleNodeSelection] Array.isArray(testCases):', Array.isArray(testCases))
+    if (testCases && typeof testCases === 'object') {
+      console.log('[toggleNodeSelection] Object.keys(testCases):', Object.keys(testCases))
+    }
+
+    // Defensive: ensure testCases is an array before filtering
+    const testCasesArray = Array.isArray(testCases) ? testCases : []
+    const totalCount = testCasesArray.filter((tc: any) =>
       selectedNodeSet.has(tc.repositoryNodeId)
     ).length
 
@@ -186,7 +209,10 @@ export function RepositoryTreeSelector({
     const allNodesFlat = flattenHierarchy(nodes)
     const descendants = getNodeAndDescendants(node.id, allNodesFlat)
     const descendantIds = descendants.map((n: any) => n.id)
-    const testCount = testCases.filter((tc: any) => descendantIds.includes(tc.repositoryNodeId)).length
+
+    // Defensive: ensure testCases is an array before filtering
+    const testCasesArray = Array.isArray(testCases) ? testCases : []
+    const testCount = testCasesArray.filter((tc: any) => descendantIds.includes(tc.repositoryNodeId)).length
 
     return (
       <div key={node.id}>

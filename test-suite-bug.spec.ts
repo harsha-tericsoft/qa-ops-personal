@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test'
 
+// Test project ID from the database - used in other tests
+const TEST_PROJECT_ID = 'cmqttt49c000r7kygg73fmuqv'
+
 test.describe('Bug: Test Suite loses selected test cases after creation', () => {
   test('should persist 21 selected test cases after suite creation', async ({ page, context }) => {
     // Setup: Open DevTools
@@ -16,15 +19,38 @@ test.describe('Bug: Test Suite loses selected test cases after creation', () => 
       }
     })
 
+    // Step 0: Login
+    console.log('\n=== STEP 0: LOGIN ===')
+    await page.goto('http://localhost:3000/auth/login')
+    await page.fill('input[type="email"]', 'test@example.com')
+    await page.fill('input[type="password"]', 'testpassword123')
+    await page.click('button:has-text("Login")')
+    await page.waitForURL('http://localhost:3000/dashboard', { timeout: 10000 }).catch(() => {
+      console.log('Login redirect timed out, continuing anyway...')
+    })
+
     // Step 1: Navigate to Test Suites
     console.log('\n=== STEP 1: Navigate to Test Suites ===')
-    await page.goto('http://localhost:3000/test-suites')
-    await page.waitForLoadState('networkidle')
+    await page.goto('http://localhost:3000/test-suites', { waitUntil: 'networkidle' })
+    await page.waitForTimeout(2000)
 
     // Step 2: Click "Create Test Suite" button
     console.log('\n=== STEP 2: Open Create Suite Modal ===')
-    await page.click('button:has-text("Create Test Suite")')
-    await page.waitForSelector('[class*="modal"]', { timeout: 5000 })
+    const createButton = page.locator('button:has-text("Create Test Suite")').first()
+
+    // Wait for button to be visible (it's only visible if logged in with LEAD role)
+    await createButton.waitFor({ timeout: 5000 }).catch(() => {
+      console.error('Create Test Suite button not found - user may not be logged in or does not have LEAD role')
+      throw new Error('Create Test Suite button not found')
+    })
+
+    await createButton.click()
+
+    // Wait for modal/dialog to appear
+    const modal = page.locator('[role="dialog"]').first()
+    await modal.waitFor({ timeout: 5000 }).catch(() => {
+      console.log('Modal did not appear, looking for alternative modal container...')
+    })
 
     // Step 3: Check suite name input is visible
     const suiteNameInput = page.locator('input[placeholder*="Smoke Suite"]').first()
