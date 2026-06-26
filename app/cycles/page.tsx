@@ -736,16 +736,34 @@ function ExecutionCyclesContent() {
   const selectedCycle = cycles.find((c) => c.id === selectedCycleId)
   const selectedVersion = versions.find((v) => v.id === selectedVersionId)
 
-  // Debug: Log selected cycle and version
+  // Debug: Log selected cycle and version with detailed breakdown
+  console.log('==================== CYCLE RENDER DEBUG ====================')
   console.log('[Cycles Render] selectedCycleId:', selectedCycleId)
   console.log('[Cycles Render] selectedVersionId:', selectedVersionId)
-  console.log('[Cycles Render] selectedCycle:', selectedCycle?.name)
-  console.log('[Cycles Render] selectedVersion:', selectedVersion?.buildVersion)
+  console.log('[Cycles Render] selectedCycle:', selectedCycle?.name, '(ID:', selectedCycle?.id, ')')
+  console.log('[Cycles Render] selectedVersion:', selectedVersion?.buildVersion, '(ID:', selectedVersion?.id, ')')
+
+  // Check all versions and their test counts
+  console.log('[Cycles Render] All versions in state:')
+  versions.forEach((v, idx) => {
+    console.log(`  [${idx}] v${v.versionNumber}: ${v.buildVersion} - testRuns: ${v.testRuns?.length || 0}`)
+  })
+
   console.log('[Cycles Render] selectedVersion.testRuns:', selectedVersion?.testRuns?.length || 0)
   console.log('[Cycles Render] selectedCycle.testRuns:', selectedCycle?.testRuns?.length || 0)
 
   const testRuns = (selectedVersion?.testRuns && selectedVersion.testRuns.length > 0) ? selectedVersion.testRuns : (selectedCycle?.testRuns || [])
   console.log('[Cycles Render] Final testRuns:', testRuns.length)
+  if (testRuns.length > 0) {
+    const statusCounts = {
+      PASS: testRuns.filter(r => r.status === 'PASS').length,
+      FAIL: testRuns.filter(r => r.status === 'FAIL').length,
+      BLOCKED: testRuns.filter(r => r.status === 'BLOCKED').length,
+      NOT_EXECUTED: testRuns.filter(r => r.status === 'NOT_EXECUTED').length,
+    }
+    console.log('[Cycles Render] Status breakdown:', statusCounts)
+  }
+  console.log('===========================================================')
 
   const isVersionCompleted = selectedVersion?.status === 'COMPLETED'
 
@@ -1038,15 +1056,21 @@ function ExecutionCyclesContent() {
           </div>
 
           {/* DEBUG: Show data status */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 text-xs text-blue-900">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 text-xs text-blue-900">
             <strong>Debug Info:</strong>
-            Cycle: {selectedCycle?.name} |
-            Version: {selectedVersion?.buildVersion} |
-            TestRuns: {testRuns.length} |
-            CycleTestRuns: {selectedCycle?.testRuns?.length || 0} |
-            VersionTestRuns: {selectedVersion?.testRuns?.length || 0}
-            <br/>
-            Versions array size: {versions.length} | Cycles array size: {cycles.length}
+            <div className="mt-2">
+              <div>Cycle: {selectedCycle?.name} | Version: {selectedVersion?.buildVersion}</div>
+              <div>TestRuns: {testRuns.length} | CycleTestRuns: {selectedCycle?.testRuns?.length || 0} | VersionTestRuns: {selectedVersion?.testRuns?.length || 0}</div>
+              <div>Cycles: {cycles.length} | Versions: {versions.length}</div>
+              <div className="mt-2 border-t border-blue-300 pt-2">
+                <strong>All Versions Tests:</strong>
+                {versions.map((v) => (
+                  <div key={v.id} className={v.id === selectedVersionId ? 'font-bold bg-blue-100 px-2 py-1 rounded mt-1' : 'mt-1'}>
+                    v{v.versionNumber} ({v.buildVersion}): {v.testRuns?.length || 0} tests
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-4 gap-4 mb-8">
