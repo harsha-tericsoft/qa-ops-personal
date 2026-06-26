@@ -93,11 +93,14 @@ function TestSuitesContent() {
   const fetchAvailableTests = async () => {
     setLoadingTests(true)
     try {
-      const response = await fetch(`/api/test-cases?projectId=${currentProjectId}`)
+      // CRITICAL: Fetch ALL test cases, not just first 100 (default pagination)
+      // User might select test cases beyond the first page in the tree
+      const response = await fetch(`/api/test-cases?projectId=${currentProjectId}&all=true`)
       if (response.ok) {
         const data = await response.json()
         // Handle both array format and pagination format
         const tests = Array.isArray(data) ? data : data?.data || []
+        console.log(`[fetchAvailableTests] Loaded ${tests.length} test cases for matching`)
         setAvailableTests(tests)
       }
     } catch (error) {
