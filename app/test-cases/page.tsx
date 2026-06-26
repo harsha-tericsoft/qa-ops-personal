@@ -216,47 +216,37 @@ function TestCasesContent() {
     }
   }
 
-  const handleSelectAll = (selected: boolean) => {
+  const handleSelectAll = async (selected: boolean) => {
     console.log('[handleSelectAll] Called with selected:', selected)
     if (selected) {
-      // Immediately select all visible tests on current page
-      const newSelected = new Set([...selectedIds, ...testCases.map((tc) => tc.id)])
-      console.log('[handleSelectAll] Selected current page tests, new count:', newSelected.size)
-      setSelectedIds(newSelected)
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('test-cases-selection', JSON.stringify(Array.from(newSelected)))
-        console.log('[SelectAll] Updated sessionStorage with', newSelected.size, 'IDs')
-      }
-
-      // In the background, fetch and select ALL filtered test case IDs
-      const fetchAllIds = async () => {
-        try {
-          const params = new URLSearchParams({
-            projectId: currentProjectId,
-            ...(searchQuery && { search: searchQuery }),
-            ...(selectedTags.length > 0 && { tags: selectedTags.join(',') }),
-            ...(selectedModule && { modules: selectedModule }),
-            ...(selectedType && { types: selectedType }),
-          })
-          const url = `/api/test-cases/all-filtered-ids?${params}`
-          console.log('[handleSelectAll] Background fetch of all IDs...')
-          const response = await fetch(url)
-          if (response.ok) {
-            const data = await response.json()
-            console.log('[handleSelectAll] Got all IDs:', data.ids.length)
-            // Update with all IDs (not just current page)
-            const allSelected = new Set([...selectedIds, ...data.ids])
-            setSelectedIds(allSelected)
-            if (typeof window !== 'undefined') {
-              sessionStorage.setItem('test-cases-selection', JSON.stringify(Array.from(allSelected)))
-              console.log('[SelectAll] Updated with all', allSelected.size, 'IDs')
-            }
+      // Fetch ALL filtered test case IDs first
+      try {
+        const params = new URLSearchParams({
+          projectId: currentProjectId,
+          ...(searchQuery && { search: searchQuery }),
+          ...(selectedTags.length > 0 && { tags: selectedTags.join(',') }),
+          ...(selectedModule && { modules: selectedModule }),
+          ...(selectedType && { types: selectedType }),
+        })
+        const url = `/api/test-cases/all-filtered-ids?${params}`
+        console.log('[handleSelectAll] Fetching all filtered IDs...')
+        const response = await fetch(url)
+        if (response.ok) {
+          const data = await response.json()
+          console.log('[handleSelectAll] Got all IDs:', data.ids.length)
+          // Update with all IDs at once (no flickering)
+          const allSelected = new Set([...selectedIds, ...data.ids])
+          setSelectedIds(allSelected)
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('test-cases-selection', JSON.stringify(Array.from(allSelected)))
+            console.log('[SelectAll] Updated with all', allSelected.size, 'IDs')
           }
-        } catch (err) {
-          console.error('[handleSelectAll] Background fetch failed:', err)
+        } else {
+          console.error('[handleSelectAll] Failed to fetch all IDs, status:', response.status)
         }
+      } catch (err) {
+        console.error('[handleSelectAll] Error fetching all IDs:', err)
       }
-      fetchAllIds()
     } else {
       // Clear all selections
       console.log('[handleSelectAll] Clearing all selections')
