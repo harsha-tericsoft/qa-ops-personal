@@ -12,9 +12,9 @@ interface RepositoryMetrics {
   manualTests: number
   automatedTests: number
   coverage: number
-  draftCycles: number
-  activeCycles: number
-  completedCycles: number
+  draftVersions: number
+  activeVersions: number
+  completedVersions: number
   tags: string[]
   lastSync: { time: string; status: string } | null
 }
@@ -100,7 +100,7 @@ export default function DashboardPage() {
     initialize()
   }, [])
 
-  // Load repository metrics when project changes
+  // Load repository metrics when project/cycle/version changes
   useEffect(() => {
     if (!selectedProjectId) {
       setMetrics(null)
@@ -110,8 +110,13 @@ export default function DashboardPage() {
     const loadMetrics = async () => {
       setMetricsLoading(true)
       try {
-        console.log('[Dashboard] Loading metrics for project:', selectedProjectId)
-        const res = await fetch(`/api/dashboard/repository-metrics?projectId=${selectedProjectId}`)
+        // Build URL with filters
+        let url = `/api/dashboard/repository-metrics?projectId=${selectedProjectId}`
+        if (selectedCycleId) url += `&cycleId=${selectedCycleId}`
+        if (selectedVersionId) url += `&versionId=${selectedVersionId}`
+
+        console.log('[Dashboard] Loading metrics:', { selectedProjectId, selectedCycleId, selectedVersionId })
+        const res = await fetch(url)
         if (!res.ok) {
           console.error('[Dashboard] Metrics API error:', res.status)
           throw new Error(`Metrics error: ${res.status}`)
@@ -120,7 +125,7 @@ export default function DashboardPage() {
         console.log('[Dashboard] Received metrics:', data)
 
         // Check if metrics are all zeros (might indicate database error)
-        const allZero = data.totalTests === 0 && data.draftCycles === 0
+        const allZero = data.totalTests === 0 && data.draftVersions === 0
         if (allZero && !data.lastSync) {
           console.warn('[Dashboard] Metrics are empty - this might indicate an issue loading data')
         }
@@ -136,7 +141,7 @@ export default function DashboardPage() {
     }
 
     loadMetrics()
-  }, [selectedProjectId])
+  }, [selectedProjectId, selectedCycleId, selectedVersionId])
 
   // Load execution cycles when project changes
   useEffect(() => {
@@ -323,16 +328,16 @@ export default function DashboardPage() {
 
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-              <div className="text-sm font-medium text-gray-600">Draft Cycles</div>
-              <div className="text-3xl font-bold text-gray-900 mt-2">{metrics.draftCycles}</div>
+              <div className="text-sm font-medium text-gray-600">Draft Versions</div>
+              <div className="text-3xl font-bold text-gray-900 mt-2">{metrics.draftVersions}</div>
             </div>
             <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-              <div className="text-sm font-medium text-gray-600">Active Cycles</div>
-              <div className="text-3xl font-bold text-blue-600 mt-2">{metrics.activeCycles}</div>
+              <div className="text-sm font-medium text-gray-600">Active Versions</div>
+              <div className="text-3xl font-bold text-blue-600 mt-2">{metrics.activeVersions}</div>
             </div>
             <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-              <div className="text-sm font-medium text-gray-600">Completed Cycles</div>
-              <div className="text-3xl font-bold text-green-600 mt-2">{metrics.completedCycles}</div>
+              <div className="text-sm font-medium text-gray-600">Completed Versions</div>
+              <div className="text-3xl font-bold text-green-600 mt-2">{metrics.completedVersions}</div>
             </div>
           </div>
 
