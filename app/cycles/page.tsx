@@ -181,8 +181,23 @@ function ExecutionCyclesContent() {
 
         setVersions(data)
         if (data.length > 0 && !selectedVersionId) {
-          console.log('[fetchVersions] Auto-selecting first version:', data[0].id)
-          setSelectedVersionId(data[0].id)
+          const firstVersionId = data[0].id
+          console.log('[fetchVersions] Auto-selecting first version:', firstVersionId)
+          setSelectedVersionId(firstVersionId)
+
+          // Fetch testRuns for first version since it doesn't have them initially
+          try {
+            console.log('[fetchVersions] Fetching testRuns for auto-selected version')
+            const testRunsResponse = await fetch(`/api/execution-cycles/${cycleId}/versions/${firstVersionId}`)
+            if (testRunsResponse.ok) {
+              const versionWithTestRuns = await testRunsResponse.json()
+              console.log('[fetchVersions] Got testRuns, updating first version')
+              // Update versions to include testRuns for first version
+              setVersions(data.map((v, idx) => idx === 0 ? versionWithTestRuns : v))
+            }
+          } catch (error) {
+            console.error('[fetchVersions] Error fetching testRuns for first version:', error)
+          }
         }
       } else {
         console.error('[fetchVersions] API error:', response.status)
