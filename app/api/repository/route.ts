@@ -18,6 +18,23 @@ function setCachedRepository(projectId: string, data: any) {
   repositoryCache.set(projectId, { data, timestamp: Date.now() })
 }
 
+// Helper to get only top-level nodes (pagination alternative)
+async function getRepositoryNodesPaginated(repositoryId: string, page = 0, pageSize = 1000) {
+  return await prisma.repositoryNode.findMany({
+    where: { repositoryId },
+    orderBy: [{ depth: 'asc' }, { order: 'asc' }],
+    select: {
+      id: true,
+      name: true,
+      type: true,
+      parentId: true,
+      depth: true,
+    },
+    skip: page * pageSize,
+    take: pageSize,
+  })
+}
+
 // GET /api/repository - Get repository hierarchy (flat list of all nodes)
 export async function GET(req: NextRequest) {
   const projectId = req.nextUrl.searchParams.get('projectId')
@@ -50,20 +67,24 @@ export async function GET(req: NextRequest) {
     }
 
     // Query 2: Fetch ALL nodes for this repository (needed for client-side tree building)
-    // RepositoryTree component builds complete hierarchy client-side without lazy loading
+    // Using pagination to avoid memory/timeout issues with large datasets
     console.log('[api/repository] Fetching nodes for repository:', repo.id)
 
-    const allNodes = await prisma.repositoryNode.findMany({
-      where: { repositoryId: repo.id },
-      orderBy: [{ depth: 'asc' }, { order: 'asc' }],
-      select: {
-        id: true,
-        name: true,
-        type: true,
-        parentId: true,
-        depth: true,
-      },
-    })
+    const allNodes: any[] = []
+    let page = 0
+    const pageSize = 1000
+    let hasMore = true
+
+    while (hasMore) {
+      const pageNodes = await getRepositoryNodesPaginated(repo.id, page, pageSize)
+      if (pageNodes.length === 0) {
+        hasMore = false
+      } else {
+        allNodes.push(...pageNodes)
+        page++
+        console.log(`[api/repository] Fetched page ${page}: ${pageNodes.length} nodes`)
+      }
+    }
 
     const elapsed = Date.now() - startTime
     console.log(`[api/repository] Found ${allNodes.length} nodes in ${elapsed}ms`)
