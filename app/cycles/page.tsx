@@ -132,18 +132,27 @@ function ExecutionCyclesContent() {
     }
   }, [selectedCycleId])
 
-  const fetchCycles = async (useOptimized = true) => {
+  const fetchCycles = async (useOptimized = false) => {
     setLoading(true)
     try {
-      // Use optimized query by default for dropdowns (no testRuns data)
+      // IMPORTANT: For cycles page, we need FULL data with testRuns!
+      // Only use skipTestRuns=true for dashboard dropdown optimization
+      // The cycles page needs testRuns to display test cases
       const optimizedParam = useOptimized ? '&skipTestRuns=true' : ''
+      console.log('[fetchCycles] Fetching with skipTestRuns:', useOptimized)
       const response = await fetch(`/api/execution-cycles?projectId=${currentProjectId}${optimizedParam}`)
       if (response.ok) {
         const data = await response.json()
+        console.log('[fetchCycles] Received', Array.isArray(data) ? data.length : 0, 'cycles')
+        if (Array.isArray(data) && data.length > 0) {
+          console.log('[fetchCycles] First cycle testRuns count:', data[0].testRuns?.length || 0)
+        }
         setCycles(Array.isArray(data) ? data : [])
+      } else {
+        console.error('[fetchCycles] API error:', response.status)
       }
     } catch (error) {
-      console.error('Error fetching cycles:', error)
+      console.error('[fetchCycles] Error fetching cycles:', error)
       setCycles([])
     } finally {
       setLoading(false)
