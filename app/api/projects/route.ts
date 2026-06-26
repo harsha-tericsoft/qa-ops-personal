@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 // GET /api/projects
 export async function GET(req: NextRequest) {
   try {
+    console.log('[GET /api/projects] Request received')
     const projects = await prisma.project.findMany({
       orderBy: {
         createdAt: 'desc',
@@ -17,11 +18,26 @@ export async function GET(req: NextRequest) {
       },
     })
 
+    console.log(`[GET /api/projects] Successfully fetched ${projects.length} projects`)
     return NextResponse.json(projects)
   } catch (error) {
-    console.error('Error fetching projects:', error)
-    const msg = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.json({ error: msg }, { status: 500 })
+    const errorMsg = error instanceof Error ? error.message : String(error)
+    console.error('[GET /api/projects] Error:', errorMsg)
+
+    // Check if it's a connection error
+    if (errorMsg.includes('Can\'t reach database') || errorMsg.includes('ECONNREFUSED') || errorMsg.includes('connection')) {
+      return NextResponse.json({
+        error: 'Database connection failed. Please ensure Supabase is accessible and try again.',
+        details: 'Unable to connect to the database server. This might be a temporary issue.',
+        code: 'DB_CONNECTION_ERROR'
+      }, { status: 503 })
+    }
+
+    return NextResponse.json({
+      error: 'Failed to fetch projects',
+      details: errorMsg,
+      code: 'UNKNOWN_ERROR'
+    }, { status: 500 })
   }
 }
 

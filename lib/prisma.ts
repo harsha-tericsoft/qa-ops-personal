@@ -9,14 +9,23 @@ const prismaClientSingleton = () => {
 
   const client = new PrismaClient({
     log: process.env.NODE_ENV === 'development'
-      ? ['error', 'warn', 'query']
+      ? ['error', 'warn']
       : ['error'],
+    // Add connection management settings
+    errorFormat: 'pretty',
   })
 
-  // Enable query performance logging in development
+  // Handle connection errors
+  client.$on('error', (e) => {
+    console.error('[Prisma Error]', e)
+  })
+
+  // Enable query performance logging in development (less verbose)
   if (process.env.NODE_ENV === 'development') {
     client.$on('query', (e) => {
-      console.log(`[SQL] ${e.query} (${e.duration}ms)`)
+      if (e.duration > 1000) {
+        console.warn(`[Slow SQL] ${e.query.substring(0, 80)}... (${e.duration}ms)`)
+      }
     })
   }
 
@@ -33,3 +42,15 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 export const prisma = prismaInstance
+
+// Health check function
+export async function checkDatabaseConnection(): Promise<boolean> {
+  try {
+    await prisma.$queryRaw`SELECT 1`
+    console.log('[Database] Connection successful')
+    return true
+  } catch (error) {
+    console.error('[Database] Connection failed:', error instanceof Error ? error.message : String(error))
+    return false
+  }
+}

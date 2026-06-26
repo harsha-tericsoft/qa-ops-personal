@@ -62,17 +62,37 @@ export default function DashboardPage() {
   useEffect(() => {
     const initialize = async () => {
       try {
+        console.log('[Dashboard] Fetching projects...')
         const res = await fetch('/api/projects')
-        if (!res.ok) throw new Error(`API error: ${res.status}`)
+
+        if (!res.ok) {
+          const errorData = await res.json()
+          console.error('[Dashboard] API error:', errorData)
+
+          // Handle specific error codes
+          if (errorData.code === 'DB_CONNECTION_ERROR') {
+            throw new Error('Database connection failed. Please check your Supabase connection and try again.')
+          }
+
+          throw new Error(errorData.error || `API error: ${res.status}`)
+        }
+
         const data = await res.json()
+        console.log('[Dashboard] Successfully fetched projects:', data.length)
         setProjects(data || [])
+
         // Auto-select first project
         if (data && data.length > 0) {
           const firstProjectId = data[0].id
+          console.log('[Dashboard] Auto-selecting first project:', data[0].name)
           setSelectedProjectId(firstProjectId)
+        } else {
+          throw new Error('No projects found. Please create a project first.')
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load projects')
+        const errorMsg = err instanceof Error ? err.message : 'Failed to load projects'
+        console.error('[Dashboard] Initialization error:', errorMsg)
+        setError(errorMsg)
       } finally {
         setIsReady(true)
       }
