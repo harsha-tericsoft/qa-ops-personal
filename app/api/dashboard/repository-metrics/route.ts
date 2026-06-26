@@ -71,9 +71,19 @@ export async function GET(request: NextRequest) {
       } else {
         // LEVEL 1: Count versions across ALL cycles in project
         console.log('[repository-metrics] Level 1: Project only')
-        draftWhere = { status: 'DRAFT' }
-        activeWhere = { status: 'IN_PROGRESS' }
-        completedWhere = { status: 'COMPLETED' }
+        // Filter versions by cycles that belong to this project
+        draftWhere = {
+          cycle: { projectId },
+          status: 'DRAFT'
+        }
+        activeWhere = {
+          cycle: { projectId },
+          status: 'IN_PROGRESS'
+        }
+        completedWhere = {
+          cycle: { projectId },
+          status: 'COMPLETED'
+        }
       }
 
       // OPTIMIZED: Run all queries in parallel
