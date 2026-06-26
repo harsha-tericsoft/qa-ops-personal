@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-// Simple in-memory cache for metrics (5 minute TTL)
+// Simple in-memory cache for metrics
+// Reduced TTL to 30 seconds since versions change frequently
 const metricsCache = new Map<string, { data: any; timestamp: number }>()
-const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+const CACHE_TTL = 30 * 1000 // 30 seconds (was 5 minutes - too long!)
 
 function getCachedMetrics(projectId: string) {
   const cached = metricsCache.get(projectId)
@@ -35,9 +36,13 @@ export async function GET(request: NextRequest) {
     if (!skipCache) {
       const cached = getCachedMetrics(cacheKey)
       if (cached) {
-        console.log(`[repository-metrics] Cache HIT for ${cacheKey}`)
+        console.log(`[repository-metrics] Cache HIT (30s TTL) for key: ${cacheKey}`)
         return NextResponse.json(cached)
+      } else {
+        console.log(`[repository-metrics] Cache MISS for key: ${cacheKey}`)
       }
+    } else {
+      console.log(`[repository-metrics] Cache SKIPPED for key: ${cacheKey}`)
     }
 
     try {
@@ -71,17 +76,25 @@ export async function GET(request: NextRequest) {
       } else {
         // LEVEL 1: Count versions across ALL cycles in project
         console.log('[repository-metrics] Level 1: Project only')
-        // Filter versions by cycles that belong to this project
+        // For Level 1, we need to find all cycle IDs for this project first
+        // Then count versions in those cycles
+        const cycleIds = await prisma.executionCycle.findMany({
+          where: { projectId },
+          select: { id: true },
+        })
+        const cycleIdList = cycleIds.map(c => c.id)
+
+        // Now use these cycle IDs to filter versions
         draftWhere = {
-          cycle: { projectId },
+          cycleId: { in: cycleIdList },
           status: 'DRAFT'
         }
         activeWhere = {
-          cycle: { projectId },
+          cycleId: { in: cycleIdList },
           status: 'IN_PROGRESS'
         }
         completedWhere = {
-          cycle: { projectId },
+          cycleId: { in: cycleIdList },
           status: 'COMPLETED'
         }
       }
