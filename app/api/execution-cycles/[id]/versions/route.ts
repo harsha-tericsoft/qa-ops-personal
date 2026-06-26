@@ -93,31 +93,32 @@ export async function POST(
 
     const nextVersionNumber = (lastVersion?.versionNumber || 0) + 1
 
-    console.log(`[execution-cycles/versions POST] Cycle found: ${cycle.name}, sourceSuiteId: ${cycle.sourceSuiteId}`)
+    console.log(`[execution-cycles/versions POST] Cycle found: ${cycle.name}`)
 
-    // Get all test cases from the cycle (via the source suite)
+    // Get test cases from the cycle's first version (simpler than sourceSuiteId)
+    // This ensures new versions have the same test cases as existing versions
     let testCaseIds: string[] = []
 
-    if (cycle.sourceSuiteId) {
-      console.log(`[execution-cycles/versions POST] Fetching test cases from suite ${cycle.sourceSuiteId}`)
+    console.log(`[execution-cycles/versions POST] Fetching test cases from first version of cycle`)
 
-      const suite = await prisma.testSuite.findUnique({
-        where: { id: cycle.sourceSuiteId },
-        select: { testCases: { select: { id: true, testCaseId: true } } }
-      })
-
-      if (suite?.testCases) {
-        // testCases might have testCaseId field or id field
-        testCaseIds = suite.testCases.map(tc => tc.testCaseId || tc.id)
-        console.log(`[execution-cycles/versions POST] Found ${testCaseIds.length} test cases from suite`)
-        if (testCaseIds.length > 0) {
-          console.log(`[execution-cycles/versions POST] First 3 test case IDs: ${testCaseIds.slice(0, 3).join(', ')}`)
+    const firstVersion = await prisma.executionVersion.findFirst({
+      where: { cycleId },
+      orderBy: { versionNumber: 'asc' },
+      select: {
+        testRuns: {
+          select: { testCaseId: true }
         }
-      } else {
-        console.warn(`[execution-cycles/versions POST] Suite not found or has no test cases`)
+      }
+    })
+
+    if (firstVersion?.testRuns && firstVersion.testRuns.length > 0) {
+      testCaseIds = firstVersion.testRuns.map(tr => tr.testCaseId)
+      console.log(`[execution-cycles/versions POST] Found ${testCaseIds.length} test cases from first version`)
+      if (testCaseIds.length > 0) {
+        console.log(`[execution-cycles/versions POST] First 3 test case IDs: ${testCaseIds.slice(0, 3).join(', ')}`)
       }
     } else {
-      console.warn(`[execution-cycles/versions POST] Cycle has no sourceSuiteId!`)
+      console.warn(`[execution-cycles/versions POST] First version has no testRuns - cannot copy test cases`)
     }
 
     // Create new version with DRAFT status
