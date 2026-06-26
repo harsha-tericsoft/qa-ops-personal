@@ -88,7 +88,9 @@ export function RepositoryTreeSelector({
     try {
       const response = await fetch(`/api/test-cases?projectId=${projectId}`)
       if (response.ok) {
-        const testCases = await response.json()
+        const data = await response.json()
+        // API returns {data: [...], pagination: {...}}
+        const testCases = Array.isArray(data) ? data : data?.data || []
 
         // Count test cases for each node and its descendants
         nodes.forEach((node: any) => {
