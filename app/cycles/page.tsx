@@ -245,6 +245,18 @@ function ExecutionCyclesContent() {
       if (response.ok) {
         const versionWithData = await response.json()
         console.log('[refetchSelectedVersion] Updated version with fresh data')
+
+        // Preserve original testRun order by sorting new testRuns to match old order
+        const oldVersion = versions.find(v => v.id === versionId)
+        if (oldVersion?.testRuns && versionWithData.testRuns) {
+          const oldOrderMap = new Map(oldVersion.testRuns.map((run, idx) => [run.id, idx]))
+          versionWithData.testRuns.sort((a, b) => {
+            const oldIdxA = oldOrderMap.get(a.id) ?? Number.MAX_VALUE
+            const oldIdxB = oldOrderMap.get(b.id) ?? Number.MAX_VALUE
+            return oldIdxA - oldIdxB
+          })
+        }
+
         // Update just this version in the versions array
         setVersions(versions.map(v => v.id === versionId ? versionWithData : v))
       }
@@ -388,6 +400,8 @@ function ExecutionCyclesContent() {
 
       if (response.ok) {
         await fetchVersions(selectedCycleId!)
+        // Fetch testRuns for selected version to show updated data
+        await refetchSelectedVersion(selectedVersionId)
         setLastSavedAt(new Date())
         showToast('All changes saved', 'success')
       }
@@ -412,6 +426,8 @@ function ExecutionCyclesContent() {
 
       if (response.ok) {
         await fetchVersions(selectedCycleId!)
+        // Fetch testRuns for selected version to show updated data
+        await refetchSelectedVersion(selectedVersionId)
         setLastSavedAt(new Date())
         showToast('Execution completed - All changes saved', 'success')
       }
