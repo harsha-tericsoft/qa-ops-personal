@@ -250,7 +250,7 @@ function ExecutionCyclesContent() {
         const oldVersion = versions.find(v => v.id === versionId)
         if (oldVersion?.testRuns && versionWithData.testRuns) {
           const oldOrderMap = new Map(oldVersion.testRuns.map((run, idx) => [run.id, idx]))
-          versionWithData.testRuns.sort((a, b) => {
+          versionWithData.testRuns.sort((a: TestRun, b: TestRun) => {
             const oldIdxA = oldOrderMap.get(a.id) ?? Number.MAX_VALUE
             const oldIdxB = oldOrderMap.get(b.id) ?? Number.MAX_VALUE
             return oldIdxA - oldIdxB

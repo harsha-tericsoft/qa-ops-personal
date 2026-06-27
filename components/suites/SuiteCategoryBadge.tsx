@@ -1,4 +1,4 @@
-import { SuiteCategory } from '@/app/generated/prisma'
+import { SuiteCategory } from '@prisma/client'
 
 interface SuiteCategoryBadgeProps {
   category: SuiteCategory

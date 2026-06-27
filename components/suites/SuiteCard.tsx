@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { TestSuite } from '@/app/generated/prisma'
+import { TestSuite } from '@prisma/client'
 import { SuiteCategoryBadge } from './SuiteCategoryBadge'
 import { formatDate } from '@/lib/utils/formatters'
 

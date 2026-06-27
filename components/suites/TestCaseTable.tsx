@@ -1,6 +1,6 @@
 'use client'
 
-import { TestCase } from '@/app/generated/prisma'
+import { TestCase } from '@prisma/client'
 
 interface TestCaseTableProps {
   testCases: { testCase: TestCase; order: number }[]

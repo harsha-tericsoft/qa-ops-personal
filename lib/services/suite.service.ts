@@ -1,4 +1,4 @@
-import { SuiteCategory } from '@/app/generated/prisma'
+import { SuiteCategory } from '@prisma/client'
 import { selectBySuite } from './test-selector.service'
 import { createCycle } from './execution.service'
 import { prisma } from '@/lib/prisma'
