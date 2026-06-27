@@ -189,7 +189,7 @@ async function performSync() {
 }
 
 /**
- * Scheduled sync endpoint - called every 5 minutes via Vercel Crons
+ * Scheduled sync endpoint - called every 5 minutes via GitHub Actions
  */
 export async function POST(request: NextRequest) {
   console.log('[scheduled-sync] Cron triggered at', new Date().toISOString())
@@ -219,7 +219,7 @@ export async function GET() {
 
     return NextResponse.json({
       status: 'healthy',
-      scheduler: 'Vercel Crons - every 5 minutes',
+      scheduler: 'GitHub Actions - every 5 minutes',
       syncMethod: 'roam-cli with spawn()',
       lastSyncAt: lastSync?.createdAt || null,
       lastSyncDuration: lastSync?.durationMs || null,

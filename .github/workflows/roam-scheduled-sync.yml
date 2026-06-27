@@ -1,0 +1,72 @@
+name: Roam Scheduled Sync
+
+on:
+  schedule:
+    # Run every 5 minutes
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    name: Trigger Roam Sync
+
+    steps:
+      - name: Trigger scheduled sync
+        env:
+          SYNC_URL: ${{ secrets.ROAM_SYNC_URL }}
+          SYNC_SECRET: ${{ secrets.ROAM_SYNC_SECRET }}
+        run: |
+          if [ -z "$SYNC_URL" ]; then
+            echo "ERROR: ROAM_SYNC_URL secret not configured"
+            exit 1
+          fi
+
+          echo "Triggering Roam sync at $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+          # Call the sync endpoint with retry logic
+          max_attempts=3
+          attempt=1
+          success=false
+
+          while [ $attempt -le $max_attempts ] && [ "$success" = "false" ]; do
+            echo "Attempt $attempt of $max_attempts..."
+
+            # Build curl headers
+            headers="-H 'Content-Type: application/json' -H 'User-Agent: GitHub-Actions-Roam-Sync'"
+
+            if [ -n "$SYNC_SECRET" ]; then
+              headers="$headers -H 'X-Sync-Secret: $SYNC_SECRET'"
+            fi
+
+            # Make the request
+            response=$(curl -s -w "\n%{http_code}" -X POST $headers "$SYNC_URL")
+            http_code=$(echo "$response" | tail -n1)
+            body=$(echo "$response" | sed '$d')
+
+            echo "Response Code: $http_code"
+            echo "Response Body: $body"
+
+            if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+              echo "✅ Sync triggered successfully (HTTP $http_code)"
+              success=true
+            else
+              echo "⚠️  Sync failed with HTTP $http_code"
+              attempt=$((attempt + 1))
+
+              if [ $attempt -le $max_attempts ]; then
+                echo "Retrying in 5 seconds..."
+                sleep 5
+              fi
+            fi
+          done
+
+          if [ "$success" = "false" ]; then
+            echo "❌ Failed to trigger sync after $max_attempts attempts"
+            exit 1
+          fi
+
+      - name: Log sync status
+        if: always()
+        run: |
+          echo "Roam scheduled sync workflow completed at $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
