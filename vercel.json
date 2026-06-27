@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/roam/scheduled-sync",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}

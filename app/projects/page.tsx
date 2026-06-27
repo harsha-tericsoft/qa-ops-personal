@@ -41,17 +41,17 @@ function ProjectsContent() {
   return (
     <div className="p-8">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Projects</h1>
-        <p className="text-gray-600 mb-8">Manage and organize your testing projects</p>
+        <h1 className="text-3xl font-bold text-white mb-2">Projects</h1>
+        <p className="text-white mb-8">Manage and organize your testing projects</p>
 
         <div className="grid md:grid-cols-3 gap-8">
           <div className="md:col-span-1">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Create New Project</h2>
+            <h2 className="text-lg font-bold text-white mb-4">Create New Project</h2>
             <ProjectForm onSuccess={handleProjectCreated} />
           </div>
 
           <div className="md:col-span-2">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Your Projects</h2>
+            <h2 className="text-lg font-bold text-white mb-4">Your Projects</h2>
             <ProjectList key={refreshKey} />
           </div>
         </div>

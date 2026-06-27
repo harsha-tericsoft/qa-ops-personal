@@ -24,3 +24,17 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Fix for native select elements: ensure readable text in dropdown menus */
+select,
+select option {
+  color: #000000;
+  background-color: #ffffff;
+}
+
+/* Ensure selected option in dropdown is readable */
+select option:checked {
+  background: linear-gradient(#2563eb, #2563eb);
+  background-color: #2563eb;
+  color: #ffffff;
+}

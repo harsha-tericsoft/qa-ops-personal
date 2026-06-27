@@ -13,21 +13,9 @@ interface TreeNode {
 
 interface RepositoryTreeProps {
   projectId: string
-  parentId?: string | null
-  search?: string
-  selectedTags?: string[]
-  nodeType?: string | null
-  isAutomated?: string | null
 }
 
-export function RepositoryTree({
-  projectId,
-  parentId = null,
-  search = '',
-  selectedTags = [],
-  nodeType = null,
-  isAutomated = null,
-}: RepositoryTreeProps) {
+export function RepositoryTree({ projectId }: RepositoryTreeProps) {
   const [nodes, setNodes] = useState<TreeNode[]>([])
   const [allNodesMap, setAllNodesMap] = useState<Record<string, TreeNode>>({})
   const [loading, setLoading] = useState(true)
@@ -167,7 +155,7 @@ export function RepositoryTree({
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
         <p className="text-gray-600">
-          {search ? 'No test cases found matching your search' : 'No test cases imported yet'}
+          No test cases imported yet
         </p>
       </div>
     )

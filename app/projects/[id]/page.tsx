@@ -136,9 +136,9 @@ function ProjectDetailsContent() {
             >
               ← Back to Projects
             </button>
-            <h1 className="text-3xl font-bold text-gray-900">{project.name}</h1>
+            <h1 className="text-3xl font-bold text-white">{project.name}</h1>
             {project.description && (
-              <p className="text-gray-600 mt-2">{project.description}</p>
+              <p className="text-white mt-2">{project.description}</p>
             )}
           </div>
 
@@ -160,8 +160,8 @@ function ProjectDetailsContent() {
 
         {/* Roam Configuration & Sync - Phase 1A */}
         <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Roam Integration</h2>
-          <p className="text-gray-600 mb-6">Connect to Roam Desktop and synchronize your test repository</p>
+          <h2 className="text-2xl font-bold text-white mb-2">Roam Integration</h2>
+          <p className="text-white mb-6">Connect to Roam Desktop and synchronize your test repository</p>
 
           <div className="grid md:grid-cols-3 gap-6">
             {/* Configuration */}
@@ -184,7 +184,7 @@ function ProjectDetailsContent() {
 
         {/* Repository Sync */}
         <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Repository Synchronization</h2>
+          <h2 className="text-2xl font-bold text-white mb-6">Repository Synchronization</h2>
 
           <div className="grid md:grid-cols-2 gap-6">
             {/* Initial Sync */}
@@ -217,7 +217,7 @@ function ProjectDetailsContent() {
 
         {/* Repository Visualization */}
         <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Repository Structure</h2>
+          <h2 className="text-2xl font-bold text-white mb-6">Repository Structure</h2>
           <RepositoryVisualization
             projectId={projectId}
             refreshTrigger={syncRefresh}

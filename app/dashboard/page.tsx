@@ -240,8 +240,8 @@ export default function DashboardPage() {
   return (
     <main className="p-6 space-y-8">
       <div>
-        <h1 className="text-4xl font-bold text-gray-900">QA Execution Dashboard</h1>
-        <p className="text-gray-600 mt-1">Enterprise test execution and analytics</p>
+        <h1 className="text-4xl font-bold text-white">QA Execution Dashboard</h1>
+        <p className="text-white mt-1">Enterprise test execution and analytics</p>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">

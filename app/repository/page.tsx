@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { RepositoryTree } from '@/components/repository/RepositoryTree'
-import { RepositoryFilters } from '@/components/repository/RepositoryFilters'
 import { RepositoryMetrics } from '@/components/repository/RepositoryMetrics'
 
 interface Project {
@@ -16,10 +15,6 @@ function RepositoryContent() {
   const { user } = useAuth()
   const [projects, setProjects] = useState<Project[]>([])
   const [currentProjectId, setCurrentProjectId] = useState('default-project')
-  const [search, setSearch] = useState('')
-  const [selectedTags, setSelectedTags] = useState<string[]>([])
-  const [selectedNodeType, setSelectedNodeType] = useState<string | null>(null)
-  const [selectedAutomated, setSelectedAutomated] = useState<string | null>(null)
   const [loadingProjects, setLoadingProjects] = useState(true)
 
   useEffect(() => {
@@ -45,10 +40,6 @@ function RepositoryContent() {
 
   const handleProjectChange = (projectId: string) => {
     setCurrentProjectId(projectId)
-    setSearch('')
-    setSelectedTags([])
-    setSelectedNodeType(null)
-    setSelectedAutomated(null)
   }
 
   return (
@@ -56,8 +47,8 @@ function RepositoryContent() {
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Repository</h1>
-            <p className="text-gray-600">View test cases imported from Roam Research</p>
+            <h1 className="text-3xl font-bold text-white mb-2">Repository</h1>
+            <p className="text-white">View test cases imported from Roam Research</p>
           </div>
         </div>
 
@@ -84,25 +75,10 @@ function RepositoryContent() {
         {/* Metrics */}
         <RepositoryMetrics projectId={currentProjectId} />
 
-        {/* Filters */}
-        <RepositoryFilters
-          projectId={currentProjectId}
-          onSearchChange={setSearch}
-          onTagsChange={setSelectedTags}
-          onNodeTypeChange={setSelectedNodeType}
-          onAutomatedChange={setSelectedAutomated}
-        />
-
         {/* Tree View */}
         <div>
           <h2 className="text-lg font-bold text-gray-900 mb-4">Test Hierarchy</h2>
-          <RepositoryTree
-            projectId={currentProjectId}
-            search={search}
-            selectedTags={selectedTags}
-            nodeType={selectedNodeType}
-            isAutomated={selectedAutomated}
-          />
+          <RepositoryTree projectId={currentProjectId} />
         </div>
 
         {/* Help Section */}
@@ -111,10 +87,9 @@ function RepositoryContent() {
             <h3 className="font-bold text-blue-900 mb-2">📋 About the Repository</h3>
             <ul className="text-blue-800 text-sm space-y-1">
               <li>• View test cases organized in a hierarchy (as imported from Roam)</li>
-              <li>• Search by name or description</li>
-              <li>• Filter by tags to find specific test cases</li>
               <li>• Test cases are read-only (managed in Roam Research)</li>
-              <li>• Organize selected tests into Test Suites for execution</li>
+              <li>• Explore the full test structure by expanding folders</li>
+              <li>• Use the Test Cases module for advanced filtering and suite creation</li>
             </ul>
           </div>
 

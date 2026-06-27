@@ -999,8 +999,8 @@ function ExecutionCyclesContent() {
             </div>
           </div>
 
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{selectedCycle.name}</h1>
-          {selectedCycle.description && <p className="text-gray-600 mb-4">{selectedCycle.description}</p>}
+          <h1 className="text-3xl font-bold text-white mb-2">{selectedCycle.name}</h1>
+          {selectedCycle.description && <p className="text-white mb-4">{selectedCycle.description}</p>}
 
           {/* Active Version Indicator */}
           {selectedVersion && (
@@ -1454,8 +1454,8 @@ function ExecutionCyclesContent() {
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Execution Cycles</h1>
-            <p className="text-gray-600">Track and manage test execution runs</p>
+            <h1 className="text-3xl font-bold text-white mb-2">Execution Cycles</h1>
+            <p className="text-white">Track and manage test execution runs</p>
           </div>
           {user?.role === 'LEAD' && projects.length > 0 && (
             <button

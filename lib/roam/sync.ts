@@ -229,6 +229,7 @@ export async function importMarkdownNodes(
             console.log(`\n[DEBUG-UPDATE] Node ${debugUpdatesPrinted}: uid=${node.uid.substring(0, 8)}`)
             console.log(`  nameEqual: ${nameEqual}, tagsEqual: ${tagsEqual}, slugEqual: ${slugEqual}`)
             console.log(`  DB name: ${existing.name} → Parsed: ${node.text}`)
+            console.log(`  DB tags: ${JSON.stringify(existing.tags)} → Parsed tags: ${JSON.stringify(node.tags)}`)
           }
           nodesToUpdate.push({
             id: existing.id,

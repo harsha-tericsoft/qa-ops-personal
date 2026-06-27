@@ -11,12 +11,15 @@ export class TestCaseExtractor {
    * Test cases: nodes starting with "Test::", tagged with #Manual/#Automated, or using BDD patterns (When/Then/Given)
    */
   static isTestCaseNode(text: string, tags: string[]): boolean {
+    // Strip markdown formatting for pattern matching
+    const cleanText = text.replace(/^\*+\s*/, '').trim()
+
     // Direct test case markers
-    if (text.startsWith('Test::') || text.startsWith('Test:')) return true
+    if (cleanText.startsWith('Test::') || cleanText.startsWith('Test:')) return true
 
     // BDD test case patterns (When, Then, Given)
     // These are valid test case statements even without "Test::" prefix
-    if (text.includes('When ') || text.includes('Then ') || text.includes('Given ')) {
+    if (cleanText.includes('When ') || cleanText.includes('Then ') || cleanText.includes('Given ')) {
       return true
     }
 
@@ -91,6 +94,12 @@ export class TestCaseExtractor {
         if (node.tags?.includes('Critical')) priority = 'CRITICAL'
         else if (node.tags?.includes('High')) priority = 'HIGH'
         else if (node.tags?.includes('Low')) priority = 'LOW'
+
+        // Log test case creation with tags
+        if (node.tags && node.tags.length > 0) {
+          console.log(`[TestCaseExtractor] Creating NEW test case with tags: "${node.name.substring(0, 60)}"`)
+          console.log(`  - tags: ${JSON.stringify(node.tags)}`)
+        }
 
         nodesToCreate.push({
           projectId,

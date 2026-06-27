@@ -12,8 +12,8 @@ function RoamContent() {
   return (
     <div className="p-8">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Roam Integration</h1>
-        <p className="text-gray-600 mb-8">Import test cases from Roam Research</p>
+        <h1 className="text-3xl font-bold text-white mb-2">Roam Integration</h1>
+        <p className="text-white mb-8">Import test cases from Roam Research</p>
 
         <div className="grid md:grid-cols-2 gap-8 mb-12">
           {/* Method 1: Import File */}

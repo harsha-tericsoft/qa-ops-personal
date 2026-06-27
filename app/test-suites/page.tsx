@@ -274,8 +274,8 @@ function TestSuitesContent() {
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Test Suites</h1>
-            <p className="text-gray-600">Organize test cases into reusable collections</p>
+            <h1 className="text-3xl font-bold text-white mb-2">Test Suites</h1>
+            <p className="text-white">Organize test cases into reusable collections</p>
           </div>
           {user?.role === 'LEAD' && projects.length > 0 && (
             <button
