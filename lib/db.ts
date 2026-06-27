@@ -4,9 +4,12 @@ let pool: Pool | null = null
 
 function getPool(): Pool {
   if (!pool) {
-    const connectionString = process.env.DATABASE_URL
+    // Use DIRECT_URL (direct PostgreSQL) instead of DATABASE_URL (PgBouncer)
+    // PgBouncer in transaction mode causes queries to hang
+    // Direct connection is more reliable for raw queries
+    const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL
     if (!connectionString) {
-      throw new Error('DATABASE_URL environment variable is required')
+      throw new Error('DIRECT_URL or DATABASE_URL environment variable is required')
     }
 
     pool = new Pool({
