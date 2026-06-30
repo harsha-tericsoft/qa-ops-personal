@@ -192,6 +192,7 @@ export async function POST(req: NextRequest) {
           message: `Connected to Roam graph "${config.graphName}"`,
           graphName: config.graphName,
           repositoryRootPage: config.repositoryRootPage || null,
+          _source: 'CLI',
         })
       } else {
         console.log(`[TEST_CONNECTION:${requestId}] Test returned false`)
