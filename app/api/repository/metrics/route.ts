@@ -13,15 +13,26 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // Run all counts in parallel for performance
-    const [totalTestCases, totalNodes, totalTags, roamConfig] = await Promise.all([
-      prisma.testCase.count({
+    // Get all roam test cases to count unique tags
+    const allRoamTests = await prisma.roamTestCase.findMany({
+      where: { projectId },
+      select: { tags: true },
+    })
+
+    // Count unique tags
+    const uniqueTags = new Set<string>()
+    for (const test of allRoamTests) {
+      if (test.tags && Array.isArray(test.tags)) {
+        test.tags.forEach(tag => uniqueTags.add(tag))
+      }
+    }
+
+    // Run other counts in parallel for performance
+    const [totalTestCases, totalNodes, roamConfig] = await Promise.all([
+      prisma.roamTestCase.count({
         where: { projectId },
       }),
       prisma.repositoryNode.count({
-        where: { projectId },
-      }),
-      prisma.tag.count({
         where: { projectId },
       }),
       prisma.roamConfig.findUnique({
@@ -35,6 +46,8 @@ export async function GET(req: NextRequest) {
         },
       }),
     ])
+
+    const totalTags = uniqueTags.size
 
     return NextResponse.json({
       totalTestCases: totalTestCases || 0,
