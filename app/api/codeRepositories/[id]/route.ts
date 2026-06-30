@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { codeRepositoryService } from '@/src/services/codeRepositories'
-import { RepositoryPurpose } from '@prisma/client'
 
 // GET /api/codeRepositories/:id
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -36,7 +35,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const updateData: any = {}
     if (branch !== undefined) updateData.branch = branch
     if (description !== undefined) updateData.description = description
-    if (repositoryPurpose !== undefined) updateData.repositoryPurpose = repositoryPurpose as RepositoryPurpose
+    if (repositoryPurpose !== undefined) updateData.repositoryPurpose = repositoryPurpose
     if (tags !== undefined) updateData.tags = tags
     if (isActive !== undefined) updateData.isActive = isActive
 

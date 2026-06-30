@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { ExecutionStatus } from '@prisma/client'
+
 
 type RouteParams = { params: Promise<{ id: string; versionId: string }> }
 
@@ -44,10 +44,10 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     }
 
     const updateData: {
-      status: ExecutionStatus
+      status: string
       completedAt?: Date
     } = {
-      status: status as ExecutionStatus,
+      status,
     }
 
     // Set completedAt when marking as COMPLETED
@@ -58,7 +58,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
     // Update version
     const version = await prisma.executionVersion.update({
       where: { id: versionId },
-      data: updateData,
+      data: updateData as any,
       include: {
         testRuns: {
           include: {

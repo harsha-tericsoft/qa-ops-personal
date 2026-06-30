@@ -32,9 +32,9 @@ export async function GET(request: NextRequest) {
     }
 
     let totalExecutionTests = 0
-    testRunMetrics.forEach((metric) => {
+    testRunMetrics.forEach((metric: any) => {
       if (metric.status in cycleMetrics) {
-        cycleMetrics[metric.status] = metric._count
+        cycleMetrics[metric.status as keyof typeof cycleMetrics] = metric._count
         totalExecutionTests += metric._count
       }
     })
@@ -55,9 +55,9 @@ export async function GET(request: NextRequest) {
     }
 
     let totalTests = 0
-    statusCounts.forEach((sc) => {
+    statusCounts.forEach((sc: any) => {
       if (sc.status in roamMetrics) {
-        roamMetrics[sc.status] = sc._count
+        roamMetrics[sc.status as keyof typeof roamMetrics] = sc._count
         totalTests += sc._count
       }
     })

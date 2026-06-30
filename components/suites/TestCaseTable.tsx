@@ -1,9 +1,8 @@
 'use client'
 
-import { TestCase } from '@prisma/client'
 
 interface TestCaseTableProps {
-  testCases: { testCase: TestCase; order: number }[]
+  testCases: { testCase: any; order: number }[]
   onRemove?: (testCaseId: string) => void
 }
 

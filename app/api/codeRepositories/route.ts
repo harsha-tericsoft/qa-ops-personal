@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { codeRepositoryService } from '@/src/services/codeRepositories'
-import { RepositoryType, RepositoryPurpose } from '@prisma/client'
 
 // GET /api/codeRepositories?projectId=...&status=...&type=...
 export async function GET(req: NextRequest) {
@@ -75,8 +74,8 @@ export async function POST(req: NextRequest) {
       projectId,
       repositoryName,
       repositoryUrl,
-      repositoryType: repositoryType as RepositoryType,
-      repositoryPurpose: repositoryPurpose as RepositoryPurpose,
+      repositoryType,
+      repositoryPurpose,
       branch: branch || 'main',
       description,
       tags: tags || [],

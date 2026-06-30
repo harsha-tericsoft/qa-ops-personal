@@ -115,7 +115,7 @@ export async function POST(
     })
 
     if (firstVersion?.testRuns && firstVersion.testRuns.length > 0) {
-      testCaseIds = firstVersion.testRuns.map(tr => tr.testCaseId)
+      testCaseIds = firstVersion.testRuns.map((tr: any) => tr.testCaseId)
       console.log(`[execution-cycles/versions POST] Found ${testCaseIds.length} test cases from first version`)
       if (testCaseIds.length > 0) {
         console.log(`[execution-cycles/versions POST] First 3 test case IDs: ${testCaseIds.slice(0, 3).join(', ')}`)

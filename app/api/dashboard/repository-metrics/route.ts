@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
           where: { projectId },
           select: { id: true },
         })
-        const cycleIdList = cycleIds.map(c => c.id)
+        const cycleIdList = cycleIds.map((c: { id: string }) => c.id)
 
         // Now use these cycle IDs to filter versions
         draftWhere = {
@@ -168,7 +168,7 @@ export async function GET(request: NextRequest) {
         draftVersions,
         activeVersions,
         completedVersions,
-        tags: tags.map(t => t.name),
+        tags: tags.map((t: { name: string }) => t.name),
         lastSync: lastSync ? {
           time: lastSync.createdAt,
           status: lastSync.status,

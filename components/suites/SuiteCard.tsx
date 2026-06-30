@@ -1,12 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { TestSuite } from '@prisma/client'
 import { SuiteCategoryBadge } from './SuiteCategoryBadge'
 import { formatDate } from '@/lib/utils/formatters'
 
 interface SuiteCardProps {
-  suite: TestSuite & {
+  suite: any & {
     testCases: { testCase: { id: string } }[]
     usedInCycles: { createdAt: Date }[]
   }

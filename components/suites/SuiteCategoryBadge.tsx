@@ -1,10 +1,9 @@
-import { SuiteCategory } from '@prisma/client'
 
 interface SuiteCategoryBadgeProps {
-  category: SuiteCategory
+  category: string
 }
 
-const categoryColors: Record<SuiteCategory, string> = {
+const categoryColors: Record<string, string> = {
   SMOKE: 'bg-blue-100 text-blue-800',
   REGRESSION: 'bg-purple-100 text-purple-800',
   SPRINT: 'bg-orange-100 text-orange-800',
@@ -12,7 +11,7 @@ const categoryColors: Record<SuiteCategory, string> = {
   CUSTOM: 'bg-gray-100 text-gray-800',
 }
 
-const categoryLabels: Record<SuiteCategory, string> = {
+const categoryLabels: Record<string, string> = {
   SMOKE: 'Smoke',
   REGRESSION: 'Regression',
   SPRINT: 'Sprint',

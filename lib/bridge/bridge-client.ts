@@ -1,0 +1,271 @@
+/**
+ * Bridge Client
+ * HTTP client for communicating with local Desktop Connector bridges
+ */
+
+import { BridgeResponse } from '@/lib/types/bridge'
+
+interface RequestOptions {
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE'
+  body?: Record<string, unknown>
+  timeout?: number
+  retries?: number
+}
+
+interface RequestConfig {
+  endpoint: string // e.g., "http://localhost:7890"
+  token: string // Bridge authentication token
+  userId: string // For request headers
+  requestId?: string // Unique request ID for tracing
+}
+
+/**
+ * Make a request to the bridge
+ */
+async function makeRequest<T = unknown>(
+  config: RequestConfig,
+  path: string,
+  options: RequestOptions
+): Promise<BridgeResponse<T>> {
+  const {
+    endpoint,
+    token,
+    userId,
+    requestId = generateRequestId(),
+  } = config
+  const { method, body, timeout = 60000, retries = 1 } = options
+
+  const url = `${endpoint}${path}`
+
+  const headers = {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json',
+    'X-User-Id': userId,
+    'X-Request-Id': requestId,
+  }
+
+  let lastError: Error | null = null
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), timeout)
+
+      const response = await fetch(url, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          return {
+            success: false,
+            error: 'Bridge authentication failed',
+            code: 'BRIDGE_AUTH_FAILED',
+            requestId,
+          }
+        }
+
+        if (response.status === 500) {
+          // Server error, could retry
+          if (attempt < retries) {
+            lastError = new Error(`Bridge returned ${response.status}`)
+            await delay(500 * (attempt + 1)) // Exponential backoff
+            continue
+          }
+
+          return {
+            success: false,
+            error: 'Bridge server error',
+            code: 'BRIDGE_SERVER_ERROR',
+            requestId,
+          }
+        }
+
+        const errorText = await response.text()
+        return {
+          success: false,
+          error: errorText || `Bridge returned ${response.status}`,
+          code: `BRIDGE_HTTP_${response.status}`,
+          requestId,
+        }
+      }
+
+      const data = await response.json()
+      return {
+        success: data.success || true,
+        data: data.data || data,
+        requestId,
+      }
+    } catch (error) {
+      lastError = error as Error
+
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        // Network error
+        if (attempt < retries) {
+          await delay(500 * (attempt + 1))
+          continue
+        }
+
+        return {
+          success: false,
+          error: 'Could not reach bridge',
+          code: 'BRIDGE_UNREACHABLE',
+          requestId,
+        }
+      }
+
+      if (error instanceof Error && error.name === 'AbortError') {
+        // Timeout
+        if (attempt < retries) {
+          await delay(500 * (attempt + 1))
+          continue
+        }
+
+        return {
+          success: false,
+          error: 'Bridge request timeout',
+          code: 'BRIDGE_TIMEOUT',
+          requestId,
+        }
+      }
+
+      // Unexpected error
+      return {
+        success: false,
+        error: lastError?.message || 'Unknown error',
+        code: 'BRIDGE_ERROR',
+        requestId,
+      }
+    }
+  }
+
+  // All retries exhausted
+  return {
+    success: false,
+    error: lastError?.message || 'Bridge request failed',
+    code: 'BRIDGE_EXHAUSTED_RETRIES',
+    requestId,
+  }
+}
+
+/**
+ * Test connection to bridge
+ */
+export async function testBridgeConnection(
+  config: RequestConfig
+): Promise<BridgeResponse> {
+  return makeRequest(config, '/api/roam/test-connection', {
+    method: 'POST',
+  })
+}
+
+/**
+ * Sync test cases via bridge
+ */
+export async function syncTestCases(
+  config: RequestConfig,
+  projectId: string,
+  syncType: 'initial' | 'refresh'
+): Promise<BridgeResponse> {
+  return makeRequest(config, '/api/roam/sync', {
+    method: 'POST',
+    body: { projectId, syncType },
+  })
+}
+
+/**
+ * Search pages/blocks via bridge
+ */
+export async function searchBridge(
+  config: RequestConfig,
+  query: string,
+  limit?: number
+): Promise<BridgeResponse> {
+  return makeRequest(config, '/api/roam/search', {
+    method: 'POST',
+    body: { query, limit },
+  })
+}
+
+/**
+ * Fetch a specific page via bridge
+ */
+export async function fetchPageFromBridge(
+  config: RequestConfig,
+  pageTitle: string
+): Promise<BridgeResponse> {
+  return makeRequest(config, `/api/roam/pages/${encodeURIComponent(pageTitle)}`, {
+    method: 'GET',
+  })
+}
+
+/**
+ * Export data from bridge
+ */
+export async function exportFromBridge(
+  config: RequestConfig,
+  projectId: string
+): Promise<BridgeResponse> {
+  return makeRequest(config, '/api/roam/export', {
+    method: 'POST',
+    body: { projectId },
+    timeout: 120000, // 2 minute timeout for export
+  })
+}
+
+/**
+ * Import data via bridge
+ */
+export async function importToBridge(
+  config: RequestConfig,
+  projectId: string,
+  data: unknown
+): Promise<BridgeResponse> {
+  return makeRequest(config, '/api/roam/import', {
+    method: 'POST',
+    body: { projectId, data },
+  })
+}
+
+/**
+ * Get bridge health status
+ */
+export async function getBridgeHealthStatus(
+  config: RequestConfig
+): Promise<BridgeResponse> {
+  return makeRequest(config, '/api/health', {
+    method: 'GET',
+    timeout: 10000, // Quick timeout for health check
+  })
+}
+
+/**
+ * Helper: Generate unique request ID
+ */
+function generateRequestId(): string {
+  return `req_${Date.now()}_${Math.random().toString(36).substring(7)}`
+}
+
+/**
+ * Helper: Delay for exponential backoff
+ */
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+/**
+ * Parse bridge response and extract actual data
+ */
+export function parseBridgeResponse<T = unknown>(
+  response: BridgeResponse<T>
+): T | null {
+  if (response.success && response.data) {
+    return response.data as T
+  }
+  return null
+}
