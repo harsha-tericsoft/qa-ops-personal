@@ -1,0 +1,33 @@
+{
+  "name": "qa-ops-desktop-connector",
+  "version": "0.1.0",
+  "description": "Desktop Connector for QA Ops - Bridges local Roam graphs to cloud QA Ops application",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "ts-node src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "setup": "ts-node src/cli/setup.ts",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "qa-ops",
+    "roam",
+    "desktop-connector",
+    "bridge",
+    "local-graph"
+  ],
+  "author": "QA Ops Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.10.6",
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2"
+  }
+}
