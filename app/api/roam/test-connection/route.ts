@@ -3,6 +3,8 @@ import { RoamClient } from '@/lib/roam/client'
 import { RoamCliService } from '@/lib/roam/cli-service'
 import { decryptApiKey } from '@/lib/roam/crypto'
 import { prisma } from '@/lib/prisma'
+import { shouldUseBridge, getBridgeFeatureFlag, logRoutingDecision } from '@/lib/bridge/routing'
+import { testBridgeConnection } from '@/lib/bridge/bridge-client'
 
 // POST /api/roam/test-connection
 // Tests connection to Roam Desktop using provided or saved configuration
@@ -30,6 +32,52 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       )
     }
+
+    // BRIDGE ROUTING LOGIC (NEW - Parallel path)
+    const userId = extractUserIdFromRequest(req) // TODO: Get from actual auth
+    const featureFlagEnabled = getBridgeFeatureFlag()
+    const routingDecision = await shouldUseBridge(userId, featureFlagEnabled)
+    logRoutingDecision(requestId, routingDecision, 'TEST_CONNECTION')
+
+    // If bridge available: try it first
+    if (routingDecision.useBridge) {
+      console.log(`[TEST_CONNECTION:${requestId}] Attempting bridge connection`)
+
+      try {
+        const bridgeConfig = {
+          endpoint: routingDecision.bridgeEndpoint!,
+          token: routingDecision.bridgeToken!,
+          userId,
+          requestId,
+        }
+
+        const bridgeResponse = await testBridgeConnection(bridgeConfig)
+
+        if (bridgeResponse.success) {
+          console.log(`[TEST_CONNECTION:${requestId}] Bridge connection test successful`)
+          return NextResponse.json({
+            success: true,
+            message: 'Connected via bridge',
+            graphName: (bridgeResponse.data as any)?.graphName,
+            _source: 'BRIDGE',
+          })
+        } else {
+          console.warn(
+            `[TEST_CONNECTION:${requestId}] Bridge connection test failed: ${bridgeResponse.error}`
+          )
+          // Fall through to CLI fallback
+        }
+      } catch (bridgeError) {
+        console.warn(
+          `[TEST_CONNECTION:${requestId}] Bridge request failed, falling back to CLI:`,
+          bridgeError instanceof Error ? bridgeError.message : bridgeError
+        )
+        // Fall through to CLI fallback
+      }
+    }
+
+    // CLI FALLBACK (EXISTING - All original code below is unchanged)
+    console.log(`[TEST_CONNECTION:${requestId}] Using CLI fallback for test connection`)
 
     let config = {
       graphName: graphName || '',
@@ -201,4 +249,13 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
+}
+
+/**
+ * Extract user ID from request (placeholder)
+ * TODO: Get from actual authentication system
+ */
+function extractUserIdFromRequest(req: NextRequest): string {
+  // Placeholder - will be replaced with actual auth
+  return 'user_placeholder'
 }
