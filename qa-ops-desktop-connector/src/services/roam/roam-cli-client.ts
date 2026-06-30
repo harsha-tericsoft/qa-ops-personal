@@ -54,8 +54,10 @@ export class RoamCliClient {
         const error = execError as any
         const errorMsg = error.message || ''
         const stderr = error.stderr || ''
+        const exitCode = error.code || 'unknown'
 
-        logger.error(`[testConnection] Command failed: ${errorMsg}`)
+        logger.error(`[testConnection] Command failed with exit code ${exitCode}: ${errorMsg}`)
+        if (stderr) logger.error(`[testConnection] stderr: ${stderr.substring(0, 500)}`)
 
         // CLI not installed
         if (errorMsg.includes('not found') || errorMsg.includes('ENOENT') || errorMsg.includes('permission denied')) {
