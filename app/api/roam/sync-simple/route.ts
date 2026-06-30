@@ -28,7 +28,13 @@ export async function POST(req: NextRequest) {
           requestId,
         };
 
-        const bridgeResponse = await syncTestCases(bridgeConfig, projectId, 'refresh');
+        const bridgeResponse = await syncTestCases(
+          bridgeConfig,
+          projectId,
+          'refresh',
+          config.graphName,
+          config.apiToken
+        );
 
         if (bridgeResponse.success) {
           return NextResponse.json({

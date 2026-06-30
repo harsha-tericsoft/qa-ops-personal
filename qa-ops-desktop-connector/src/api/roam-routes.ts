@@ -173,7 +173,9 @@ export function createRoamRouter(): Router {
    * Request body:
    * {
    *   "projectId": "project_id",
-   *   "syncType": "initial" or "refresh"
+   *   "syncType": "initial" or "refresh",
+   *   "graphName": "Roam graph name",
+   *   "apiToken": "roam-graph-local-token-xxxxx"
    * }
    *
    * The endpoint validates Roam accessibility and returns sync readiness.
@@ -183,7 +185,7 @@ export function createRoamRouter(): Router {
     const startTime = Date.now()
 
     try {
-      const { projectId, syncType } = req.body
+      const { projectId, syncType, graphName, apiToken } = req.body
 
       // Validate required fields
       if (!projectId || typeof projectId !== 'string') {
@@ -208,26 +210,33 @@ export function createRoamRouter(): Router {
         return
       }
 
-      logger.info(`[sync] Processing ${syncType} sync for projectId: ${projectId}`)
-
-      // Get graphName and apiToken from config
-      const config = configManager.getConfig()
-
-      if (!config || !config.graphName || !config.apiToken) {
-        logger.error('[sync] Configuration not available')
+      if (!graphName || typeof graphName !== 'string') {
+        logger.warn('[sync] Missing or invalid graphName')
         const duration = Date.now() - startTime
-        logger.request('POST', '/api/roam/sync', 503, duration)
-        res.status(503).json({
+        logger.request('POST', '/api/roam/sync', 400, duration)
+        res.status(400).json({
           success: false,
-          error: 'Roam configuration not available',
-          details: 'Desktop Connector is not properly configured',
+          error: 'graphName is required and must be a string',
         })
         return
       }
 
+      if (!apiToken || typeof apiToken !== 'string') {
+        logger.warn('[sync] Missing or invalid apiToken')
+        const duration = Date.now() - startTime
+        logger.request('POST', '/api/roam/sync', 400, duration)
+        res.status(400).json({
+          success: false,
+          error: 'apiToken is required and must be a string',
+        })
+        return
+      }
+
+      logger.info(`[sync] Processing ${syncType} sync for projectId: ${projectId}`)
+
       // Desktop Connector's role: validate Roam is accessible and acknowledge sync
       logger.info(`[sync] Validating Roam accessibility for ${syncType}`)
-      const service = new RoamBridgeService(config.graphName, config.apiToken)
+      const service = new RoamBridgeService(graphName, apiToken)
       const testResult = await service.testConnection()
 
       if (!testResult.success) {

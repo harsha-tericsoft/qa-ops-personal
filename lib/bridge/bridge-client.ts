@@ -188,11 +188,13 @@ export async function testBridgeConnection(
 export async function syncTestCases(
   config: RequestConfig,
   projectId: string,
-  syncType: 'initial' | 'refresh'
+  syncType: 'initial' | 'refresh',
+  graphName: string,
+  apiToken: string
 ): Promise<BridgeResponse> {
   return makeRequest(config, '/api/roam/sync', {
     method: 'POST',
-    body: { projectId, syncType },
+    body: { projectId, syncType, graphName, apiToken },
   })
 }
 

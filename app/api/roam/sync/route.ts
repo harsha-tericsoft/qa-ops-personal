@@ -38,26 +38,45 @@ export async function POST(req: NextRequest) {
       )
 
       try {
-        const bridgeConfig = {
-          endpoint: routingDecision.bridgeEndpoint!,
-          token: routingDecision.bridgeToken!,
-          userId,
-          requestId,
-        }
+        // Load Roam configuration for credentials
+        const { prisma } = await import('@/lib/prisma')
+        const roamConfig = await prisma.roamConfig.findUnique({
+          where: { projectId },
+        })
 
-        const bridgeResponse = await syncTestCases(bridgeConfig, projectId, syncType)
-
-        if (bridgeResponse.success) {
-          console.log(`[ROAM_SYNC:${requestId}] Bridge sync successful`)
-          return NextResponse.json({
-            ...bridgeResponse,
-            _source: 'BRIDGE',
-          })
-        } else {
+        if (!roamConfig || !roamConfig.graphName || !roamConfig.apiToken) {
           console.warn(
-            `[ROAM_SYNC:${requestId}] Bridge sync failed: ${bridgeResponse.error}`
+            `[ROAM_SYNC:${requestId}] Roam config not found or incomplete, falling back to CLI`
           )
           // Fall through to CLI fallback
+        } else {
+          const bridgeConfig = {
+            endpoint: routingDecision.bridgeEndpoint!,
+            token: routingDecision.bridgeToken!,
+            userId,
+            requestId,
+          }
+
+          const bridgeResponse = await syncTestCases(
+            bridgeConfig,
+            projectId,
+            syncType,
+            roamConfig.graphName,
+            roamConfig.apiToken
+          )
+
+          if (bridgeResponse.success) {
+            console.log(`[ROAM_SYNC:${requestId}] Bridge sync successful`)
+            return NextResponse.json({
+              ...bridgeResponse,
+              _source: 'BRIDGE',
+            })
+          } else {
+            console.warn(
+              `[ROAM_SYNC:${requestId}] Bridge sync failed: ${bridgeResponse.error}`
+            )
+            // Fall through to CLI fallback
+          }
         }
       } catch (bridgeError) {
         console.warn(
