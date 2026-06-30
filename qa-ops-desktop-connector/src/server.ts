@@ -19,6 +19,7 @@ export class Server {
   private app: Express
   private config: ServerConfig
   private httpServer: any = null
+  private requestsCount: number = 0
 
   constructor(config: ServerConfig) {
     this.config = config
@@ -28,14 +29,19 @@ export class Server {
     this.setupErrorHandling()
   }
 
+  getRequestsCount(): number {
+    return this.requestsCount
+  }
+
   private setupMiddleware(): void {
     // JSON parsing middleware
     this.app.use(express.json())
     this.app.use(express.urlencoded({ extended: true }))
 
-    // Request logging middleware
+    // Request logging middleware with metrics
     this.app.use((req: Request, res: Response, next: NextFunction) => {
       const start = Date.now()
+      this.requestsCount++
 
       res.on('finish', () => {
         const duration = Date.now() - start
