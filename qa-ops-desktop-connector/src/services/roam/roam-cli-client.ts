@@ -8,6 +8,7 @@ import { exec } from 'child_process'
 import { promisify } from 'util'
 import { createLogger } from '../../logging/logger'
 import { Block, Page, SearchResult } from './types'
+import { MarkdownRoamParser, RoamMarkdownBlock } from './markdown-parser'
 
 const execAsync = promisify(exec)
 const logger = createLogger('roam-cli')
@@ -177,17 +178,58 @@ export class RoamCliClient {
       const duration = Date.now() - startTime
       logger.info(`[fetchPageByTitle] Success (${duration}ms)`)
 
+      // TRACE 1: Complete raw stdout (not truncated)
+      logger.info(`\n[TRACE 1] Complete raw stdout from 'roam get-page':`)
+      logger.info(stdout)
+      logger.info(`[TRACE 1] Total stdout length: ${stdout.length} characters`)
+
       const page = JSON.parse(stdout)
+
+      // TRACE 2: After JSON.parse()
+      logger.info(`\n[TRACE 2] After JSON.parse()`)
+      logger.info(`  page.uid: ${page?.uid}`)
+      logger.info(`  page.markdown exists: ${!!page?.markdown}`)
+      logger.info(`  page.markdown length: ${page?.markdown?.length || 0}`)
 
       if (!page || !page.uid) {
         return null
       }
 
-      return {
-        uid: page.uid || '',
-        title: page.title || title,
-        children: this.convertBlocksToTree(page.children || []),
+      // TRACE 3: Parse markdown to tree
+      logger.info(`\n[TRACE 3] Parsing markdown to tree`)
+      const parsedTree = MarkdownRoamParser.parseMarkdown(page.markdown || '', title, page.uid)
+
+      if (!parsedTree) {
+        logger.warn('[TRACE 3] Markdown parser returned null')
+        return null
       }
+
+      logger.info(`  Parsed tree children count: ${parsedTree.children.length}`)
+
+      // TRACE 4: Convert RoamMarkdownBlock to Block structure
+      logger.info(`\n[TRACE 4] Converting to Block structure`)
+      const children = parsedTree.children.map((block) => this.convertMarkdownBlockToBlock(block))
+      logger.info(`  Converted children count: ${children.length}`)
+
+      const result = {
+        uid: page.uid || '',
+        title: title,
+        children: children,
+      }
+
+      // STAGE 2: Final summary
+      const countNodes = (node: any): number => {
+        return 1 + (node.children ? node.children.reduce((sum: number, child: any) => sum + countNodes(child), 0) : 0)
+      }
+      const totalNodesInResult = countNodes(result)
+
+      logger.info(`\n[STAGE 2] Roam CLI fetchPageByTitle() output`)
+      logger.info(`  Root UID: ${result.uid}`)
+      logger.info(`  Root Title: ${result.title}`)
+      logger.info(`  Root direct children: ${result.children.length}`)
+      logger.info(`  Total recursive nodes: ${totalNodesInResult}`)
+
+      return result
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error)
       logger.error(`[fetchPageByTitle] Error: ${errorMsg}`)
@@ -245,6 +287,18 @@ export class RoamCliClient {
       uid: block.uid || '',
       string: block.string || block.title || '',
       children: block.children ? this.convertBlocksToTree(block.children) : undefined,
+    }
+  }
+
+  /**
+   * Convert RoamMarkdownBlock to Block structure
+   * Used when parsing markdown from roam get-page command
+   */
+  private convertMarkdownBlockToBlock(block: RoamMarkdownBlock): Block {
+    return {
+      uid: block.uid,
+      string: block.text,
+      children: block.children.length > 0 ? block.children.map((child) => this.convertMarkdownBlockToBlock(child)) : undefined,
     }
   }
 
