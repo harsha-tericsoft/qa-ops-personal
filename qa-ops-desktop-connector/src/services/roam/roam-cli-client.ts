@@ -230,12 +230,21 @@ export class RoamCliClient {
 
   /**
    * Convert single block to tree structure
+   * Matches QA Ops behavior: string || title (fallback for edge cases)
    */
   private convertBlockToTree(block: any): Block {
     return {
       uid: block.uid || '',
-      string: block.string || '',
+      string: block.string || block.title || '',
       children: block.children ? this.convertBlocksToTree(block.children) : undefined,
     }
+  }
+
+  /**
+   * Cleanup: No persistent connection to close
+   * Provided for API consistency with RoamCliService
+   */
+  async close(): Promise<void> {
+    return Promise.resolve()
   }
 }
