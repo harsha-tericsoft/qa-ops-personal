@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
           requestId,
         }
 
-        const bridgeResponse = await testBridgeConnection(bridgeConfig)
+        const bridgeResponse = await testBridgeConnection(bridgeConfig, graphName, apiToken)
 
         if (bridgeResponse.success) {
           console.log(`[TEST_CONNECTION:${requestId}] Bridge connection test successful`)

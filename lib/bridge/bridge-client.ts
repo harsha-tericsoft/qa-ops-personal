@@ -172,10 +172,13 @@ async function makeRequest<T = unknown>(
  * Test connection to bridge
  */
 export async function testBridgeConnection(
-  config: RequestConfig
+  config: RequestConfig,
+  graphName: string,
+  apiToken: string
 ): Promise<BridgeResponse> {
   return makeRequest(config, '/api/roam/test-connection', {
     method: 'POST',
+    body: { graphName, apiToken },
   })
 }
 
@@ -198,12 +201,14 @@ export async function syncTestCases(
  */
 export async function searchBridge(
   config: RequestConfig,
+  graphName: string,
+  apiToken: string,
   query: string,
   limit?: number
 ): Promise<BridgeResponse> {
   return makeRequest(config, '/api/roam/search', {
     method: 'POST',
-    body: { query, limit },
+    body: { graphName, apiToken, query, limit },
   })
 }
 

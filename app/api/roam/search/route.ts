@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
           requestId,
         }
 
-        const bridgeResponse = await searchBridge(bridgeConfig, query)
+        const bridgeResponse = await searchBridge(bridgeConfig, graphName, apiToken, query)
         const duration = Date.now() - startTime
 
         if (bridgeResponse.success) {
