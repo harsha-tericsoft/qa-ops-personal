@@ -33,7 +33,8 @@ export async function POST(req: NextRequest) {
           projectId,
           'refresh',
           config.graphName,
-          config.apiToken
+          config.apiToken,
+          config.repositoryRootPage || 'Project_Kinergy'
         );
 
         if (bridgeResponse.success) {

@@ -168,24 +168,25 @@ export function createRoamRouter(): Router {
 
   /**
    * POST /api/roam/sync
-   * Sync test cases from Roam graph
+   * Fetch Roam repository tree for syncing
    *
    * Request body:
    * {
    *   "projectId": "project_id",
    *   "syncType": "initial" or "refresh",
    *   "graphName": "Roam graph name",
-   *   "apiToken": "roam-graph-local-token-xxxxx"
+   *   "apiToken": "roam-graph-local-token-xxxxx",
+   *   "repositoryRootPage": "Root page title (e.g., 'Project_Kinergy')"
    * }
    *
-   * The endpoint validates Roam accessibility and returns sync readiness.
-   * Actual sync logic is performed by QA Ops.
+   * Desktop Connector fetches the repository tree and returns it to QA Ops.
+   * QA Ops handles parsing, flattening, and importing the data.
    */
   router.post('/sync', async (req: Request, res: Response): Promise<void> => {
     const startTime = Date.now()
 
     try {
-      const { projectId, syncType, graphName, apiToken } = req.body
+      const { projectId, syncType, graphName, apiToken, repositoryRootPage } = req.body
 
       // Validate required fields
       if (!projectId || typeof projectId !== 'string') {
@@ -232,36 +233,46 @@ export function createRoamRouter(): Router {
         return
       }
 
-      logger.info(`[sync] Processing ${syncType} sync for projectId: ${projectId}`)
-
-      // Desktop Connector's role: validate Roam is accessible and acknowledge sync
-      logger.info(`[sync] Validating Roam accessibility for ${syncType}`)
-      const service = new RoamBridgeService(graphName, apiToken)
-      const testResult = await service.testConnection()
-
-      if (!testResult.success) {
-        logger.warn(`[sync] Roam not accessible: ${testResult.message}`)
+      if (!repositoryRootPage || typeof repositoryRootPage !== 'string') {
+        logger.warn('[sync] Missing or invalid repositoryRootPage')
         const duration = Date.now() - startTime
-        logger.request('POST', '/api/roam/sync', 503, duration)
-        res.status(503).json({
+        logger.request('POST', '/api/roam/sync', 400, duration)
+        res.status(400).json({
           success: false,
-          error: 'Roam not accessible',
-          details: testResult.message,
+          error: 'repositoryRootPage is required and must be a string',
         })
         return
       }
 
-      // Sync validation successful - QA Ops will handle the actual sync logic
-      logger.info(`[sync] Roam accessible, sync can proceed`)
+      logger.info(`[sync] Processing ${syncType} sync for projectId: ${projectId}`)
+
+      // Fetch repository tree from Roam
+      logger.info(`[sync] Fetching repository tree from ${repositoryRootPage}`)
+      const service = new RoamBridgeService(graphName, apiToken)
+      const pageResult = await service.getPage(repositoryRootPage)
+
+      if (!pageResult.success || !pageResult.page) {
+        logger.warn(`[sync] Failed to fetch repository root page: ${pageResult.error}`)
+        const duration = Date.now() - startTime
+        logger.request('POST', '/api/roam/sync', 503, duration)
+        res.status(503).json({
+          success: false,
+          error: 'Failed to fetch repository root page',
+          details: pageResult.error,
+        })
+        return
+      }
+
+      // Successfully fetched tree - return to QA Ops for processing
+      logger.info(`[sync] Repository tree fetched successfully`)
       const duration = Date.now() - startTime
       logger.request('POST', '/api/roam/sync', 200, duration)
 
-      // Return response matching QA Ops expectations
+      // Return tree to QA Ops
       res.status(200).json({
         success: true,
-        nodesAdded: 0,
-        nodesUpdated: 0,
-        message: `${syncType} sync ready`,
+        tree: pageResult.page,
+        message: `${syncType} sync tree fetched`,
         timestamp: new Date().toISOString(),
       })
     } catch (error) {
@@ -273,7 +284,7 @@ export function createRoamRouter(): Router {
 
       res.status(500).json({
         success: false,
-        error: 'Sync validation failed',
+        error: 'Sync tree fetch failed',
         details: errorMsg,
         timestamp: new Date().toISOString(),
       })

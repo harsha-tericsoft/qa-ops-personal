@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { initialSync, refreshSync } from '@/lib/roam/sync'
+import { initialSync, refreshSync, importMarkdownNodes } from '@/lib/roam/sync'
 import { shouldUseBridge, getBridgeFeatureFlag, logRoutingDecision } from '@/lib/bridge/routing'
 import { syncTestCases } from '@/lib/bridge/bridge-client'
+import { MarkdownRoamParser, type RoamMarkdownBlock } from '@/lib/roam/markdown-parser'
+import { TestCaseExtractor } from '@/lib/roam/test-case-extractor'
+import { prisma } from '@/lib/prisma'
 
 // POST /api/roam/sync
 export async function POST(req: NextRequest) {
@@ -38,13 +41,12 @@ export async function POST(req: NextRequest) {
       )
 
       try {
-        // Load Roam configuration for credentials
-        const { prisma } = await import('@/lib/prisma')
+        // Load Roam configuration for credentials and repository root
         const roamConfig = await prisma.roamConfig.findUnique({
           where: { projectId },
         })
 
-        if (!roamConfig || !roamConfig.graphName || !roamConfig.apiToken) {
+        if (!roamConfig || !roamConfig.graphName || !roamConfig.apiToken || !roamConfig.repositoryRootPage) {
           console.warn(
             `[ROAM_SYNC:${requestId}] Roam config not found or incomplete, falling back to CLI`
           )
@@ -62,18 +64,71 @@ export async function POST(req: NextRequest) {
             projectId,
             syncType,
             roamConfig.graphName,
-            roamConfig.apiToken
+            roamConfig.apiToken,
+            roamConfig.repositoryRootPage
           )
 
-          if (bridgeResponse.success) {
-            console.log(`[ROAM_SYNC:${requestId}] Bridge sync successful`)
-            return NextResponse.json({
-              ...bridgeResponse,
-              _source: 'BRIDGE',
-            })
+          if (bridgeResponse.success && (bridgeResponse.data as any)?.tree) {
+            console.log(`[ROAM_SYNC:${requestId}] Bridge tree fetched, processing import`)
+
+            // Bridge returned tree - convert and import
+            try {
+              // Get or create repository
+              let repository = await prisma.repository.findFirst({
+                where: { projectId },
+              })
+
+              if (!repository) {
+                repository = await prisma.repository.create({
+                  data: {
+                    projectId,
+                    name: `${roamConfig.graphName} Repository`,
+                    description: `Synchronized from Roam graph: ${roamConfig.graphName}`,
+                  },
+                })
+              }
+
+              // Convert bridge tree to RoamMarkdownBlock format
+              const tree = convertBridgeTreeToMarkdownBlock((bridgeResponse.data as any).tree)
+
+              // Flatten and import using existing QA Ops logic
+              const nodes = MarkdownRoamParser.flattenTree(tree)
+              const importResult = await importMarkdownNodes(nodes, repository.id, projectId)
+
+              // Extract test cases
+              const testCaseResult = await TestCaseExtractor.extractTestCases(repository.id, projectId)
+
+              // Update repository sync status
+              await prisma.repository.update({
+                where: { id: repository.id },
+                data: {
+                  lastSyncAt: new Date(),
+                  lastSyncStatus: 'success',
+                  lastSyncError: null,
+                  totalTestCount: testCaseResult.created,
+                },
+              })
+
+              console.log(`[ROAM_SYNC:${requestId}] Bridge import complete: ${testCaseResult.created} test cases`)
+
+              return NextResponse.json({
+                success: true,
+                nodesAdded: importResult.added,
+                nodesUpdated: importResult.updated,
+                message: `${syncType} sync completed: ${testCaseResult.created} test cases imported from Roam`,
+                syncLogId: repository.id,
+                _source: 'BRIDGE',
+              })
+            } catch (importError) {
+              console.error(
+                `[ROAM_SYNC:${requestId}] Bridge import failed:`,
+                importError instanceof Error ? importError.message : importError
+              )
+              // Fall through to CLI fallback
+            }
           } else {
             console.warn(
-              `[ROAM_SYNC:${requestId}] Bridge sync failed: ${bridgeResponse.error}`
+              `[ROAM_SYNC:${requestId}] Bridge sync failed or no tree returned: ${bridgeResponse.error}`
             )
             // Fall through to CLI fallback
           }
@@ -113,6 +168,29 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
   }
+}
+
+/**
+ * Convert Desktop Connector Block/Page tree to QA Ops RoamMarkdownBlock format
+ * Maps: Block.string -> text, Block.uid -> uid, Block.children -> children
+ */
+function convertBridgeTreeToMarkdownBlock(page: any): RoamMarkdownBlock {
+  const convertBlock = (block: any, depth: number = 0, order: number = 0): RoamMarkdownBlock => {
+    return {
+      uid: block.uid || '',
+      text: block.string || block.title || '',
+      depth,
+      order,
+      children: (block.children || []).map((child: any, idx: number) =>
+        convertBlock(child, depth + 1, idx)
+      ),
+      tags: [],
+      isTestCase: false,
+      isFolder: (block.children && block.children.length > 0) || false,
+    }
+  }
+
+  return convertBlock(page, 0, 0)
 }
 
 /**

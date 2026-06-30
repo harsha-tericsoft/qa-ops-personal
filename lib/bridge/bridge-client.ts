@@ -190,11 +190,12 @@ export async function syncTestCases(
   projectId: string,
   syncType: 'initial' | 'refresh',
   graphName: string,
-  apiToken: string
+  apiToken: string,
+  repositoryRootPage: string
 ): Promise<BridgeResponse> {
   return makeRequest(config, '/api/roam/sync', {
     method: 'POST',
-    body: { projectId, syncType, graphName, apiToken },
+    body: { projectId, syncType, graphName, apiToken, repositoryRootPage },
   })
 }
 
