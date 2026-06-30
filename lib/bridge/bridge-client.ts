@@ -44,10 +44,16 @@ async function makeRequest<T = unknown>(
     'X-Request-Id': requestId,
   }
 
+  console.log(`[BridgeClient] Request: ${method} ${path} | Endpoint: ${endpoint} | Timeout: ${timeout}ms`)
+
   let lastError: Error | null = null
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
+      if (attempt > 0) {
+        console.log(`[BridgeClient] Retry attempt ${attempt + 1}/${retries + 1}`)
+      }
+
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), timeout)
 
@@ -96,6 +102,7 @@ async function makeRequest<T = unknown>(
       }
 
       const data = await response.json()
+      console.log(`[BridgeClient] Success: ${method} ${path} | Status: ${response.status}`)
       return {
         success: data.success || true,
         data: data.data || data,
@@ -103,17 +110,21 @@ async function makeRequest<T = unknown>(
       }
     } catch (error) {
       lastError = error as Error
+      const errorMsg = error instanceof Error ? error.message : String(error)
 
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        // Network error
+        // Network error (connection refused, host unreachable, etc.)
+        console.warn(`[BridgeClient] Network error: ${errorMsg}`)
         if (attempt < retries) {
+          console.log(`[BridgeClient] Retrying after network error...`)
           await delay(500 * (attempt + 1))
           continue
         }
 
+        console.error(`[BridgeClient] Network error after ${attempt + 1} attempts, falling back to CLI`)
         return {
           success: false,
-          error: 'Could not reach bridge',
+          error: 'Could not reach bridge (network error)',
           code: 'BRIDGE_UNREACHABLE',
           requestId,
         }
@@ -121,20 +132,24 @@ async function makeRequest<T = unknown>(
 
       if (error instanceof Error && error.name === 'AbortError') {
         // Timeout
+        console.warn(`[BridgeClient] Request timeout after ${timeout}ms`)
         if (attempt < retries) {
+          console.log(`[BridgeClient] Retrying after timeout...`)
           await delay(500 * (attempt + 1))
           continue
         }
 
+        console.error(`[BridgeClient] Timeout after ${attempt + 1} attempts, falling back to CLI`)
         return {
           success: false,
-          error: 'Bridge request timeout',
+          error: `Bridge request timeout (${timeout}ms)`,
           code: 'BRIDGE_TIMEOUT',
           requestId,
         }
       }
 
       // Unexpected error
+      console.error(`[BridgeClient] Unexpected error: ${errorMsg}`)
       return {
         success: false,
         error: lastError?.message || 'Unknown error',

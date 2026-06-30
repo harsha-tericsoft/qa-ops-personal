@@ -30,9 +30,11 @@ export async function POST(req: NextRequest) {
     const routingDecision = await shouldUseBridge(userId, featureFlagEnabled)
     logRoutingDecision(requestId, routingDecision, 'SEARCH')
 
+    const startTime = Date.now()
+
     // If bridge available: try it first
     if (routingDecision.useBridge) {
-      console.log(`[ROAM_SEARCH:${requestId}] Attempting bridge search`)
+      console.log(`[ROAM_SEARCH:${requestId}] ⭐ Attempting bridge search (query: "${query || '(empty)'}") | Endpoint: ${routingDecision.bridgeEndpoint}`)
 
       try {
         const bridgeConfig = {
@@ -43,32 +45,39 @@ export async function POST(req: NextRequest) {
         }
 
         const bridgeResponse = await searchBridge(bridgeConfig, query)
+        const duration = Date.now() - startTime
 
         if (bridgeResponse.success) {
-          console.log(`[ROAM_SEARCH:${requestId}] Bridge search successful`)
+          const resultCount = Array.isArray(bridgeResponse.data) ? bridgeResponse.data.length : 0
+          console.log(`[ROAM_SEARCH:${requestId}] ✅ Bridge search succeeded | Results: ${resultCount} | Duration: ${duration}ms`)
+
           return NextResponse.json({
             success: true,
             results: bridgeResponse.data || [],
             _source: 'BRIDGE',
+            _duration_ms: duration,
             timestamp: new Date().toISOString(),
           })
         } else {
+          const errorCode = bridgeResponse.code || 'UNKNOWN'
           console.warn(
-            `[ROAM_SEARCH:${requestId}] Bridge search failed: ${bridgeResponse.error}`
+            `[ROAM_SEARCH:${requestId}] ⚠️ Bridge search failed | Error: ${bridgeResponse.error} | Code: ${errorCode} | Falling back to CLI`
           )
           // Fall through to CLI fallback
         }
       } catch (bridgeError) {
+        const duration = Date.now() - startTime
+        const errorMsg = bridgeError instanceof Error ? bridgeError.message : String(bridgeError)
         console.warn(
-          `[ROAM_SEARCH:${requestId}] Bridge request failed, falling back to CLI:`,
-          bridgeError instanceof Error ? bridgeError.message : bridgeError
+          `[ROAM_SEARCH:${requestId}] ⚠️ Bridge request exception after ${duration}ms | Error: ${errorMsg} | Falling back to CLI`
         )
         // Fall through to CLI fallback
       }
     }
 
     // CLI FALLBACK (EXISTING - unchanged)
-    console.log(`[ROAM_SEARCH:${requestId}] Using CLI fallback for search`)
+    const cliStartTime = Date.now()
+    console.log(`[ROAM_SEARCH:${requestId}] 📋 Using CLI fallback for search | Reason: ${routingDecision.reason}`)
 
     let config = {
       graphName: graphName || '',
@@ -116,13 +125,12 @@ export async function POST(req: NextRequest) {
       }
 
       const cliService = new RoamCliService(config.graphName, decryptedToken)
-      console.log(`[ROAM_SEARCH:${requestId}] RoamCliService created`)
+      console.log(`[ROAM_SEARCH:${requestId}] RoamCliService created for graph: ${config.graphName}`)
 
-      const startTime = Date.now()
       const results = await cliService.search(query)
-      const duration = Date.now() - startTime
+      const cliDuration = Date.now() - cliStartTime
 
-      console.log(`[ROAM_SEARCH:${requestId}] CLI search completed in ${duration}ms, found ${results.length} results`)
+      console.log(`[ROAM_SEARCH:${requestId}] ✅ CLI search succeeded | Results: ${results.length} | Duration: ${cliDuration}ms`)
 
       // Log successful operation
       try {
@@ -131,7 +139,7 @@ export async function POST(req: NextRequest) {
             projectId,
             action: 'SEARCH',
             status: 'SUCCESS',
-            durationMs: duration,
+            durationMs: cliDuration,
           },
         })
       } catch (logError) {
@@ -142,6 +150,8 @@ export async function POST(req: NextRequest) {
         success: true,
         results: results || [],
         _source: 'CLI',
+        _duration_ms: cliDuration,
+        _fallback_reason: routingDecision.reason,
         timestamp: new Date().toISOString(),
       })
     } catch (error) {

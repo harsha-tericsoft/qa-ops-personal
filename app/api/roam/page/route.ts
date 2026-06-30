@@ -40,9 +40,11 @@ export async function GET(req: NextRequest) {
     const routingDecision = await shouldUseBridge(userId, featureFlagEnabled)
     logRoutingDecision(requestId, routingDecision, 'GET_PAGE')
 
+    const startTime = Date.now()
+
     // If bridge available: try it first
     if (routingDecision.useBridge) {
-      console.log(`[ROAM_PAGE:${requestId}] Attempting bridge page fetch`)
+      console.log(`[ROAM_PAGE:${requestId}] ⭐ Attempting bridge page fetch | Title: "${pageTitle}" | Endpoint: ${routingDecision.bridgeEndpoint}`)
 
       try {
         const bridgeConfig = {
@@ -53,32 +55,37 @@ export async function GET(req: NextRequest) {
         }
 
         const bridgeResponse = await fetchPageFromBridge(bridgeConfig, pageTitle)
+        const duration = Date.now() - startTime
 
         if (bridgeResponse.success) {
-          console.log(`[ROAM_PAGE:${requestId}] Bridge page fetch successful`)
+          console.log(`[ROAM_PAGE:${requestId}] ✅ Bridge page fetch succeeded | Duration: ${duration}ms`)
           return NextResponse.json({
             success: true,
             page: bridgeResponse.data || null,
             _source: 'BRIDGE',
+            _duration_ms: duration,
             timestamp: new Date().toISOString(),
           })
         } else {
+          const errorCode = bridgeResponse.code || 'UNKNOWN'
           console.warn(
-            `[ROAM_PAGE:${requestId}] Bridge page fetch failed: ${bridgeResponse.error}`
+            `[ROAM_PAGE:${requestId}] ⚠️ Bridge page fetch failed | Error: ${bridgeResponse.error} | Code: ${errorCode} | Falling back to CLI`
           )
           // Fall through to CLI fallback
         }
       } catch (bridgeError) {
+        const duration = Date.now() - startTime
+        const errorMsg = bridgeError instanceof Error ? bridgeError.message : String(bridgeError)
         console.warn(
-          `[ROAM_PAGE:${requestId}] Bridge request failed, falling back to CLI:`,
-          bridgeError instanceof Error ? bridgeError.message : bridgeError
+          `[ROAM_PAGE:${requestId}] ⚠️ Bridge request exception after ${duration}ms | Error: ${errorMsg} | Falling back to CLI`
         )
         // Fall through to CLI fallback
       }
     }
 
     // CLI FALLBACK (EXISTING - unchanged)
-    console.log(`[ROAM_PAGE:${requestId}] Using CLI fallback for page fetch`)
+    const cliStartTime = Date.now()
+    console.log(`[ROAM_PAGE:${requestId}] 📋 Using CLI fallback for page fetch | Reason: ${routingDecision.reason}`)
 
     let config = {
       graphName: graphName || '',
@@ -126,20 +133,23 @@ export async function GET(req: NextRequest) {
       }
 
       const cliService = new RoamCliService(config.graphName, decryptedToken)
-      console.log(`[ROAM_PAGE:${requestId}] RoamCliService created`)
+      console.log(`[ROAM_PAGE:${requestId}] RoamCliService created for graph: ${config.graphName}`)
 
-      const startTime = Date.now()
       const page = await cliService.fetchPageByTitle(pageTitle)
-      const duration = Date.now() - startTime
+      const cliDuration = Date.now() - cliStartTime
 
-      console.log(`[ROAM_PAGE:${requestId}] CLI page fetch completed in ${duration}ms`)
+      console.log(`[ROAM_PAGE:${requestId}] ✅ CLI page fetch succeeded | Duration: ${cliDuration}ms`)
 
       if (!page) {
+        console.warn(`[ROAM_PAGE:${requestId}] ⚠️ Page not found: "${pageTitle}"`)
         return NextResponse.json(
           {
             success: false,
             error: 'Page not found',
             details: `No page found with title "${pageTitle}"`,
+            _source: 'CLI',
+            _duration_ms: cliDuration,
+            _fallback_reason: routingDecision.reason,
           },
           { status: 404 }
         )
@@ -152,7 +162,7 @@ export async function GET(req: NextRequest) {
             projectId,
             action: 'FETCH_PAGE',
             status: 'SUCCESS',
-            durationMs: duration,
+            durationMs: cliDuration,
           },
         })
       } catch (logError) {
@@ -163,6 +173,8 @@ export async function GET(req: NextRequest) {
         success: true,
         page: page,
         _source: 'CLI',
+        _duration_ms: cliDuration,
+        _fallback_reason: routingDecision.reason,
         timestamp: new Date().toISOString(),
       })
     } catch (error) {
