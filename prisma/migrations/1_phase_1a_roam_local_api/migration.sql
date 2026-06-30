@@ -3,9 +3,8 @@
 -- 1. Update RoamConfig table for Local API support
 ALTER TABLE "RoamConfig"
   DROP COLUMN IF EXISTS "graphUrl",
-  ADD COLUMN "apiEndpoint" VARCHAR DEFAULT 'http://localhost:8000',
-  ADD COLUMN "lastSyncError" TEXT,
-  RENAME COLUMN "apiKey" TO "apiToken";
+  ADD COLUMN IF NOT EXISTS "apiEndpoint" VARCHAR DEFAULT 'http://localhost:8000',
+  ADD COLUMN IF NOT EXISTS "lastSyncError" TEXT;
 
 -- 2. Update Repository table with sync tracking
 ALTER TABLE "Repository"

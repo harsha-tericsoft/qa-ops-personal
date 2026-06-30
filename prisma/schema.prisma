@@ -111,15 +111,30 @@ enum AnalysisStatus {
   error
 }
 
+enum BridgeTokenStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+enum BridgeSessionStatus {
+  CONNECTED
+  OFFLINE
+  DEGRADED
+}
+
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String
-  role      UserRole @default(QA_ENGINEER)
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String              @id @default(cuid())
+  email           String              @unique
+  password        String
+  name            String
+  role            UserRole            @default(QA_ENGINEER)
+  active          Boolean             @default(true)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  bridgeTokens    BridgeToken[]
+  bridgeSessions  BridgeSession[]
+  bridgeLogs      BridgeLog[]
 }
 
 model Project {
@@ -490,3 +505,67 @@ model TagTestCase {
 
   @@id([tagId, testCaseId])
 }
+
+// Desktop Connector (Bridge) Models
+model BridgeToken {
+  id                String              @id @default(cuid())
+  userId            String
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bridgeId          String              @unique
+  token             String              @unique
+  graphName         String
+  status            BridgeTokenStatus   @default(ACTIVE)
+  expiresAt         DateTime
+  createdAt         DateTime            @default(now())
+  lastUsedAt        DateTime?
+  refreshToken      String?
+  bridgeSessions    BridgeSession[]
+
+  @@index([userId])
+  @@index([bridgeId])
+  @@index([expiresAt])
+  @@index([status])
+}
+
+model BridgeSession {
+  id                String                @id @default(cuid())
+  userId            String
+  user              User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bridgeTokenId     String
+  bridgeToken       BridgeToken           @relation(fields: [bridgeTokenId], references: [id], onDelete: Cascade)
+  endpoint          String                // "http://localhost:7890"
+  status            BridgeSessionStatus   @default(CONNECTED)
+  lastHealthCheckAt DateTime?
+  lastHealthCheckStatus String?
+  expiresAt         DateTime
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  bridgeLogs        BridgeLog[]
+
+  @@index([userId])
+  @@index([bridgeTokenId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model BridgeLog {
+  id                String        @id @default(cuid())
+  userId            String
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bridgeSessionId   String?
+  bridgeSession     BridgeSession? @relation(fields: [bridgeSessionId], references: [id], onDelete: SetNull)
+  bridgeId          String
+  action            String        // "TEST_CONNECTION", "SYNC", "SEARCH", etc.
+  status            String        // "SUCCESS", "FAILED"
+  requestId         String?
+  durationMs        Int?
+  error             String?
+  createdAt         DateTime      @default(now())
+
+  @@index([userId])
+  @@index([bridgeId])
+  @@index([action])
+  @@index([status])
+  @@index([createdAt])
+}
+
