@@ -1,15 +1,20 @@
 /**
  * API Routes for Desktop Connector
- * Health check and version endpoints
+ * Health check, version, and Roam CLI integration endpoints
  */
 
 import { Router, Request, Response } from 'express'
 import { createLogger } from '../logging/logger'
+import { createRoamRouter } from './roam-routes'
 
 const logger = createLogger('routes')
 
 export function createRouter(): Router {
   const router = Router()
+
+  // Register Roam routes
+  const roamRouter = createRoamRouter()
+  router.use('/api/roam', roamRouter)
 
   /**
    * GET /health
@@ -90,6 +95,9 @@ export function createRouter(): Router {
         endpoints: {
           health: 'GET /health',
           version: 'GET /version',
+          'roam.test-connection': 'POST /api/roam/test-connection',
+          'roam.search': 'POST /api/roam/search',
+          'roam.page': 'GET /api/roam/page/:title',
         },
         timestamp: new Date().toISOString(),
       }
