@@ -6,6 +6,7 @@
 import { Router, Request, Response } from 'express'
 import { createLogger } from '../logging/logger'
 import { createRoamRouter } from './roam-routes'
+import { createAuthRouter } from './auth-routes'
 
 const logger = createLogger('routes')
 
@@ -15,6 +16,10 @@ export function createRouter(): Router {
   // Register Roam routes
   const roamRouter = createRoamRouter()
   router.use('/api/roam', roamRouter)
+
+  // Register Auth routes (bridge communication)
+  const authRouter = createAuthRouter()
+  router.use('/api', authRouter)
 
   /**
    * GET /health

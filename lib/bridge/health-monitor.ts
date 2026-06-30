@@ -260,3 +260,102 @@ export async function cleanupExpiredBridges(): Promise<{
     }
   }
 }
+
+// Health check job state
+let healthCheckJob: NodeJS.Timeout | null = null
+const failureCountMap = new Map<string, number>()
+
+/**
+ * Start periodic health check job
+ */
+export function startHealthCheckJob(intervalMs: number = 30000): void {
+  if (healthCheckJob) {
+    console.warn('[HealthCheckJob] Job already running')
+    return
+  }
+
+  console.log(`[HealthCheckJob] Starting health check job (interval: ${intervalMs}ms)`)
+
+  healthCheckJob = setInterval(async () => {
+    try {
+      const sessions = await prisma.bridgeSession.findMany({
+        where: {
+          expiresAt: { gt: new Date() },
+        },
+        include: { bridgeToken: true },
+      })
+
+      for (const session of sessions) {
+        await performHealthCheck(session)
+      }
+    } catch (error) {
+      console.error('[HealthCheckJob] Error in health check cycle:', error)
+    }
+  }, intervalMs)
+}
+
+/**
+ * Stop health check job
+ */
+export function stopHealthCheckJob(): void {
+  if (healthCheckJob) {
+    clearInterval(healthCheckJob)
+    healthCheckJob = null
+    failureCountMap.clear()
+    console.log('[HealthCheckJob] Stopped health check job')
+  }
+}
+
+/**
+ * Perform health check for a single bridge session
+ */
+async function performHealthCheck(session: any): Promise<void> {
+  const sessionId = session.id
+  const bridgeId = session.bridgeToken?.bridgeId
+
+  if (!bridgeId) {
+    console.warn(`[HealthCheck] Session ${sessionId} has no bridge ID`)
+    return
+  }
+
+  try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10s timeout
+
+    const response = await fetch(`${session.endpoint}/api/health`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${session.bridgeToken?.token}`,
+      },
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeoutId)
+
+    if (response.ok) {
+      // Success - mark connected and clear failure count
+      failureCountMap.delete(sessionId)
+      await markBridgeConnected(bridgeId, 'Health check successful')
+    } else {
+      // HTTP error - mark degraded
+      const failureCount = (failureCountMap.get(sessionId) || 0) + 1
+      failureCountMap.set(sessionId, failureCount)
+
+      if (failureCount >= 3) {
+        await markBridgeOffline(bridgeId, `Health check failed (${response.status})`)
+      } else {
+        await markBridgeDegraded(bridgeId, `Health check returned ${response.status}`)
+      }
+    }
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : String(error)
+    const failureCount = (failureCountMap.get(sessionId) || 0) + 1
+    failureCountMap.set(sessionId, failureCount)
+
+    if (failureCount >= 3) {
+      await markBridgeOffline(bridgeId, `Health check failed: ${errorMsg}`)
+    } else {
+      await markBridgeDegraded(bridgeId, `Health check error: ${errorMsg}`)
+    }
+  }
+}

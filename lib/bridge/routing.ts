@@ -92,11 +92,10 @@ export async function shouldUseBridge(
 
 /**
  * Feature flag: whether to enable bridge routing
- * Currently hardcoded to false for MVP - will be made configurable
+ * Reads from environment variable (default: disabled for safety)
  */
 export function getBridgeFeatureFlag(): boolean {
-  // TODO: Replace with actual feature flag from environment or database
-  return false // Disabled by default during rollout
+  return process.env.ENABLE_BRIDGE_ROUTING === 'true'
 }
 
 /**
