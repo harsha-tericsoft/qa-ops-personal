@@ -29,7 +29,8 @@ export class RoamCliClient {
     try {
       const command = `roam search --graph "${this.graphName}" --query=""`
 
-      logger.info(`[testConnection] Executing: ${command}`)
+      const startTime = Date.now()
+      logger.info(`[testConnection] Executing CLI command: ${command}`)
 
       try {
         const { stdout, stderr } = await execAsync(command, {
@@ -40,7 +41,8 @@ export class RoamCliClient {
           },
         })
 
-        logger.info('[testConnection] Success')
+        const duration = Date.now() - startTime
+        logger.info(`[testConnection] Success (${duration}ms)`)
         if (stderr) logger.info(`[testConnection] stderr: ${stderr.substring(0, 200)}`)
 
         return {
@@ -115,8 +117,9 @@ export class RoamCliClient {
   async search(query: string): Promise<SearchResult[]> {
     try {
       const command = `roam search --graph "${this.graphName}" --query="${query}"`
+      const startTime = Date.now()
 
-      logger.info(`[search] Executing: roam search --graph "${this.graphName}" --query="<query>"`)
+      logger.info(`[search] Executing CLI command: ${command.substring(0, 100)}...`)
 
       const { stdout } = await execAsync(command, {
         timeout: 30000,
@@ -126,7 +129,8 @@ export class RoamCliClient {
         },
       })
 
-      logger.info('[search] Success')
+      const duration = Date.now() - startTime
+      logger.info(`[search] Success (${duration}ms)`)
 
       // Parse JSON output
       const results = JSON.parse(stdout)
@@ -156,8 +160,9 @@ export class RoamCliClient {
   async fetchPageByTitle(title: string): Promise<Page | null> {
     try {
       const command = `roam get-page --graph "${this.graphName}" --title="${title}"`
+      const startTime = Date.now()
 
-      logger.info(`[fetchPageByTitle] Executing: roam get-page --graph "${this.graphName}" --title="<title>"`)
+      logger.info(`[fetchPageByTitle] Executing CLI command: ${command.substring(0, 100)}...`)
 
       const { stdout } = await execAsync(command, {
         timeout: 30000,
@@ -167,7 +172,8 @@ export class RoamCliClient {
         },
       })
 
-      logger.info('[fetchPageByTitle] Success')
+      const duration = Date.now() - startTime
+      logger.info(`[fetchPageByTitle] Success (${duration}ms)`)
 
       const page = JSON.parse(stdout)
 
