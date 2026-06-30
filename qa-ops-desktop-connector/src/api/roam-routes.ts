@@ -6,6 +6,7 @@
 import { Router, Request, Response } from 'express'
 import { createLogger } from '../logging/logger'
 import { RoamBridgeService } from '../services/roam/bridge-service'
+import { configManager } from '../config/manager'
 
 const logger = createLogger('roam-api')
 
@@ -159,6 +160,111 @@ export function createRoamRouter(): Router {
       res.status(500).json({
         success: false,
         error: 'Search failed',
+        details: errorMsg,
+        timestamp: new Date().toISOString(),
+      })
+    }
+  })
+
+  /**
+   * POST /api/roam/sync
+   * Sync test cases from Roam graph
+   *
+   * Request body:
+   * {
+   *   "projectId": "project_id",
+   *   "syncType": "initial" or "refresh"
+   * }
+   *
+   * The endpoint validates Roam accessibility and returns sync readiness.
+   * Actual sync logic is performed by QA Ops.
+   */
+  router.post('/sync', async (req: Request, res: Response): Promise<void> => {
+    const startTime = Date.now()
+
+    try {
+      const { projectId, syncType } = req.body
+
+      // Validate required fields
+      if (!projectId || typeof projectId !== 'string') {
+        logger.warn('[sync] Missing or invalid projectId')
+        const duration = Date.now() - startTime
+        logger.request('POST', '/api/roam/sync', 400, duration)
+        res.status(400).json({
+          success: false,
+          error: 'projectId is required and must be a string',
+        })
+        return
+      }
+
+      if (!syncType || !['initial', 'refresh'].includes(syncType)) {
+        logger.warn('[sync] Missing or invalid syncType')
+        const duration = Date.now() - startTime
+        logger.request('POST', '/api/roam/sync', 400, duration)
+        res.status(400).json({
+          success: false,
+          error: 'syncType is required and must be "initial" or "refresh"',
+        })
+        return
+      }
+
+      logger.info(`[sync] Processing ${syncType} sync for projectId: ${projectId}`)
+
+      // Get graphName and apiToken from config
+      const config = configManager.getConfig()
+
+      if (!config || !config.graphName || !config.apiToken) {
+        logger.error('[sync] Configuration not available')
+        const duration = Date.now() - startTime
+        logger.request('POST', '/api/roam/sync', 503, duration)
+        res.status(503).json({
+          success: false,
+          error: 'Roam configuration not available',
+          details: 'Desktop Connector is not properly configured',
+        })
+        return
+      }
+
+      // Desktop Connector's role: validate Roam is accessible and acknowledge sync
+      logger.info(`[sync] Validating Roam accessibility for ${syncType}`)
+      const service = new RoamBridgeService(config.graphName, config.apiToken)
+      const testResult = await service.testConnection()
+
+      if (!testResult.success) {
+        logger.warn(`[sync] Roam not accessible: ${testResult.message}`)
+        const duration = Date.now() - startTime
+        logger.request('POST', '/api/roam/sync', 503, duration)
+        res.status(503).json({
+          success: false,
+          error: 'Roam not accessible',
+          details: testResult.message,
+        })
+        return
+      }
+
+      // Sync validation successful - QA Ops will handle the actual sync logic
+      logger.info(`[sync] Roam accessible, sync can proceed`)
+      const duration = Date.now() - startTime
+      logger.request('POST', '/api/roam/sync', 200, duration)
+
+      // Return response matching QA Ops expectations
+      res.status(200).json({
+        success: true,
+        nodesAdded: 0,
+        nodesUpdated: 0,
+        message: `${syncType} sync ready`,
+        timestamp: new Date().toISOString(),
+      })
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error)
+      logger.error(`[sync] Error: ${errorMsg}`)
+
+      const duration = Date.now() - startTime
+      logger.request('POST', '/api/roam/sync', 500, duration)
+
+      res.status(500).json({
+        success: false,
+        error: 'Sync validation failed',
         details: errorMsg,
         timestamp: new Date().toISOString(),
       })
