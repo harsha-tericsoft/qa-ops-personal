@@ -52,10 +52,36 @@ export class TestCaseExtractor {
       // Load all nodes in this repository
       const nodes = await prisma.repositoryNode.findMany({
         where: { repositoryId },
-        select: { id: true, name: true, tags: true, roamNodeId: true },
+        select: { id: true, name: true, tags: true, roamNodeId: true, parentId: true, type: true },
       })
 
       console.log('[TestCaseExtractor] Found', nodes.length, 'nodes to scan')
+
+      // TEMPORARY LOGGING: Examine first 20 nodes scanned
+      console.log('\n[TestCaseExtractor] === SCANNING FIRST 20 NODES FOR EVIDENCE ===')
+      let nodesLogged = 0
+      for (const node of nodes) {
+        if (nodesLogged >= 20) break
+
+        const isTestCase = this.isTestCaseNode(node.name, node.tags || [])
+
+        let reason = ''
+        if (!isTestCase) {
+          const cleanText = node.name.replace(/^\*+\s*/, '').trim()
+          const hasTestPrefix = cleanText.startsWith('Test::') || cleanText.startsWith('Test:')
+          const hasBDDPattern = cleanText.includes('When ') || cleanText.includes('Then ') || cleanText.includes('Given ')
+          const hasTestTag = (node.tags || []).some(t => ['Manual', 'Automation', 'Automated'].includes(t))
+
+          if (!hasTestPrefix) reason += 'NoTestPrefix '
+          if (!hasBDDPattern) reason += 'NoBDDPattern '
+          if (!hasTestTag) reason += 'NoTestTag'
+          reason = reason.trim() || 'Unknown'
+        }
+
+        console.log(`[TCE:${nodesLogged + 1}] ID: ${node.id.substring(0, 12)}... | Text: "${node.name.substring(0, 60)}" | Parent: ${node.parentId ? node.parentId.substring(0, 8) + '...' : 'null'} | Type: ${(node as any).type} | IsTestCase: ${isTestCase} | Reason: ${reason}`)
+        nodesLogged++
+      }
+      console.log(`[TestCaseExtractor] === END SCAN (logged ${nodesLogged} nodes) ===\n`)
 
       // Get all existing RoamTestCases for this project (batch query once)
       const existing = await prisma.roamTestCase.findMany({
