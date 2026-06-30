@@ -123,13 +123,13 @@ export function createRoamRouter(): Router {
         return
       }
 
-      if (!query || typeof query !== 'string') {
+      if (typeof query !== 'string') {
         logger.warn('[search] Missing or invalid query')
         const duration = Date.now() - startTime
         logger.request('POST', '/api/roam/search', 400, duration)
         res.status(400).json({
           success: false,
-          error: 'query is required and must be a string',
+          error: 'query must be a string',
         })
         return
       }

@@ -38,18 +38,11 @@ export class RoamBridgeService {
 
   /**
    * Search the Roam graph
+   * Matches QA Ops: allows empty queries (returns recently edited/viewed)
    */
   async search(query: string): Promise<{ success: boolean; results?: SearchResult[]; error?: string }> {
     try {
-      if (!query || query.trim() === '') {
-        logger.warn('[search] Empty query provided')
-        return {
-          success: false,
-          error: 'Search query cannot be empty',
-        }
-      }
-
-      logger.info(`[search] Starting search for: "${query}"`)
+      logger.info(`[search] Starting search for: "${query || '(empty query - recent items)'}"`)
       const results = await this.client.search(query)
       logger.info(`[search] Found ${results.length} results`)
 
