@@ -176,15 +176,18 @@ export async function POST(req: NextRequest) {
  */
 function convertBridgeTreeToMarkdownBlock(page: any): RoamMarkdownBlock {
   const convertBlock = (block: any, depth: number = 0, order: number = 0): RoamMarkdownBlock => {
+    const text = block.string || block.title || ''
+    const tags = (text.match(/#(\w+)/g) || []).map((tag) => tag.substring(1))
+
     return {
       uid: block.uid || '',
-      text: block.string || block.title || '',
+      text,
       depth,
       order,
       children: (block.children || []).map((child: any, idx: number) =>
         convertBlock(child, depth + 1, idx)
       ),
-      tags: [],
+      tags,
       isTestCase: false,
       isFolder: (block.children && block.children.length > 0) || false,
     }
