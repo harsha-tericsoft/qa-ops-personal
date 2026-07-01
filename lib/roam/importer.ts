@@ -38,6 +38,7 @@ async function importPage(
 ): Promise<string> {
   const slug = slugify(page.title)
   const nodePath = parentPath === '/' ? `/${page.uid}` : `${parentPath}/${page.uid}`
+  const tags = (page.title.match(/#(\w+)/g) || []).map((tag) => tag.substring(1))
 
   try {
     let nodeId: string
@@ -56,7 +57,7 @@ async function importPage(
       if (existing.name !== page.title) {
         await prisma.repositoryNode.update({
           where: { id: existing.id },
-          data: { name: page.title, slug, updatedAt: new Date(), syncedAt: new Date() },
+          data: { name: page.title, slug, tags, updatedAt: new Date(), syncedAt: new Date() },
         })
         result.updated++
       } else {
@@ -76,6 +77,7 @@ async function importPage(
           parentId,
           roamNodeId: page.uid,
           roamPageId: page.uid,
+          tags,
           syncedAt: new Date(),
         },
       })
@@ -108,6 +110,7 @@ async function importBlock(
 ): Promise<string> {
   const slug = slugify(block.string.substring(0, 50))
   const blockPath = parentPath === '/' ? `/${block.uid}` : `${parentPath}/${block.uid}`
+  const tags = (block.string.match(/#(\w+)/g) || []).map((tag) => tag.substring(1))
 
   try {
     let nodeId: string
@@ -125,7 +128,7 @@ async function importBlock(
       if (existing.name !== block.string) {
         await prisma.repositoryNode.update({
           where: { id: existing.id },
-          data: { name: block.string, slug, updatedAt: new Date(), syncedAt: new Date() },
+          data: { name: block.string, slug, tags, updatedAt: new Date(), syncedAt: new Date() },
         })
         result.updated++
       } else {
@@ -144,6 +147,7 @@ async function importBlock(
           parentId,
           roamNodeId: block.uid,
           type: 'FILE',
+          tags,
           syncedAt: new Date(),
         },
       })
