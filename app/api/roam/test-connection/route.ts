@@ -11,6 +11,21 @@ import { testBridgeConnection } from '@/lib/bridge/bridge-client'
 // Accepts either form values or saved config
 export async function POST(req: NextRequest) {
   const requestId = Math.random().toString(36).substring(7)
+  const execEnv = {
+    platform: process.platform,
+    nodeEnv: process.env.NODE_ENV,
+    vercelEnv: process.env.VERCEL_ENV,
+    vercelUrl: process.env.VERCEL_URL,
+    hostname: require('os').hostname(),
+  }
+
+  console.log(`[TEST_CONNECTION:${requestId}] ===== EXECUTION ENVIRONMENT DIAGNOSTIC =====`)
+  console.log(`[TEST_CONNECTION:${requestId}] Execution Platform: ${execEnv.platform}`)
+  console.log(`[TEST_CONNECTION:${requestId}] Node Environment: ${execEnv.nodeEnv}`)
+  console.log(`[TEST_CONNECTION:${requestId}] Vercel Environment: ${execEnv.vercelEnv || 'NOT_SET'}`)
+  console.log(`[TEST_CONNECTION:${requestId}] Vercel URL: ${execEnv.vercelUrl || 'NOT_SET'}`)
+  console.log(`[TEST_CONNECTION:${requestId}] Hostname: ${execEnv.hostname}`)
+  console.log(`[TEST_CONNECTION:${requestId}] ==========================================`)
   console.log(`[TEST_CONNECTION:${requestId}] Request received`)
 
   try {
@@ -41,7 +56,13 @@ export async function POST(req: NextRequest) {
 
     // If bridge available: try it first
     if (routingDecision.useBridge) {
-      console.log(`[TEST_CONNECTION:${requestId}] Attempting bridge connection`)
+      console.log(`[TEST_CONNECTION:${requestId}] ===== BRIDGE ATTEMPT =====`)
+      console.log(`[TEST_CONNECTION:${requestId}] Bridge ID: ${routingDecision.bridgeId}`)
+      console.log(`[TEST_CONNECTION:${requestId}] Bridge Endpoint: ${routingDecision.bridgeEndpoint}`)
+      console.log(`[TEST_CONNECTION:${requestId}] Bridge Token: ${routingDecision.bridgeToken?.substring(0, 20)}...`)
+      console.log(`[TEST_CONNECTION:${requestId}] Making HTTP request FROM: ${execEnv.hostname} (${execEnv.platform})`)
+      console.log(`[TEST_CONNECTION:${requestId}] Making HTTP request TO: ${routingDecision.bridgeEndpoint}/api/roam/test-connection`)
+      console.log(`[TEST_CONNECTION:${requestId}] ========================`)
 
       try {
         const bridgeConfig = {
@@ -51,7 +72,9 @@ export async function POST(req: NextRequest) {
           requestId,
         }
 
+        console.log(`[TEST_CONNECTION:${requestId}] Calling testBridgeConnection()...`)
         const bridgeResponse = await testBridgeConnection(bridgeConfig, graphName, apiToken)
+        console.log(`[TEST_CONNECTION:${requestId}] Bridge response received: success=${bridgeResponse.success}, error=${bridgeResponse.error}`)
 
         if (bridgeResponse.success) {
           console.log(`[TEST_CONNECTION:${requestId}] Bridge connection test successful`)
@@ -65,19 +88,24 @@ export async function POST(req: NextRequest) {
           console.warn(
             `[TEST_CONNECTION:${requestId}] Bridge connection test failed: ${bridgeResponse.error}`
           )
+          console.log(`[TEST_CONNECTION:${requestId}] Falling back to CLI...`)
           // Fall through to CLI fallback
         }
       } catch (bridgeError) {
         console.warn(
-          `[TEST_CONNECTION:${requestId}] Bridge request failed, falling back to CLI:`,
+          `[TEST_CONNECTION:${requestId}] Bridge request exception, falling back to CLI:`,
           bridgeError instanceof Error ? bridgeError.message : bridgeError
         )
         // Fall through to CLI fallback
       }
+    } else {
+      console.log(`[TEST_CONNECTION:${requestId}] Bridge NOT available, using CLI directly`)
     }
 
     // CLI FALLBACK (EXISTING - All original code below is unchanged)
+    console.log(`[TEST_CONNECTION:${requestId}] ===== CLI FALLBACK PATH =====`)
     console.log(`[TEST_CONNECTION:${requestId}] Using CLI fallback for test connection`)
+    console.log(`[TEST_CONNECTION:${requestId}] Execution Environment: ${execEnv.hostname} (${execEnv.platform})`)
 
     let config = {
       graphName: graphName || '',
@@ -131,7 +159,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Create client with token
+    console.log(`[TEST_CONNECTION:${requestId}] ===== ROAM CLI SERVICE =====`)
     console.log(`[TEST_CONNECTION:${requestId}] Creating RoamCliService with graphName: ${config.graphName}`)
+    console.log(`[TEST_CONNECTION:${requestId}] Hostname: ${execEnv.hostname}`)
+    console.log(`[TEST_CONNECTION:${requestId}] Platform: ${execEnv.platform}`)
+    console.log(`[TEST_CONNECTION:${requestId}] Node Env: ${execEnv.nodeEnv}`)
+    console.log(`[TEST_CONNECTION:${requestId}] Vercel Env: ${execEnv.vercelEnv || 'NOT_SET'}`)
+
     let cliService: any
     let decryptedToken: string
 
@@ -156,10 +190,11 @@ export async function POST(req: NextRequest) {
     const startTime = Date.now()
 
     try {
+      console.log(`[TEST_CONNECTION:${requestId}] ===== CLI EXECUTION =====`)
       console.log(`[TEST_CONNECTION:${requestId}] Calling cliService.testConnection()`)
       const result = await cliService.testConnection()
       const success = result.success
-      console.log(`[TEST_CONNECTION:${requestId}] testConnection() returned:`, success)
+      console.log(`[TEST_CONNECTION:${requestId}] testConnection() returned:`, { success, message: result.message, details: result.details })
 
       const duration = Date.now() - startTime
 

@@ -44,6 +44,17 @@ async function makeRequest<T = unknown>(
     'X-Request-Id': requestId,
   }
 
+  console.log(`[BridgeClient] ===== HTTP REQUEST DIAGNOSTIC =====`)
+  console.log(`[BridgeClient] Method: ${method}`)
+  console.log(`[BridgeClient] Full URL: ${url}`)
+  console.log(`[BridgeClient] Endpoint: ${endpoint}`)
+  console.log(`[BridgeClient] Path: ${path}`)
+  console.log(`[BridgeClient] Timeout: ${timeout}ms`)
+  console.log(`[BridgeClient] Retries: ${retries}`)
+  console.log(`[BridgeClient] Headers: Authorization=${headers.Authorization.substring(0, 20)}..., Content-Type=${headers['Content-Type']}, X-User-Id=${headers['X-User-Id']}, X-Request-Id=${headers['X-Request-Id']}`)
+  console.log(`[BridgeClient] Body: ${body ? JSON.stringify(body).substring(0, 100) : 'none'}`)
+  console.log(`[BridgeClient] ======================================`)
+
   console.log(`[BridgeClient] Request: ${method} ${path} | Endpoint: ${endpoint} | Timeout: ${timeout}ms`)
 
   let lastError: Error | null = null
@@ -54,9 +65,11 @@ async function makeRequest<T = unknown>(
         console.log(`[BridgeClient] Retry attempt ${attempt + 1}/${retries + 1}`)
       }
 
+      console.log(`[BridgeClient] Attempt ${attempt + 1}: Initiating fetch()...`)
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), timeout)
 
+      console.log(`[BridgeClient] Attempt ${attempt + 1}: Sending ${method} request to ${url}`)
       const response = await fetch(url, {
         method,
         headers,
@@ -65,6 +78,7 @@ async function makeRequest<T = unknown>(
       })
 
       clearTimeout(timeoutId)
+      console.log(`[BridgeClient] Attempt ${attempt + 1}: Response received, status=${response.status}`)
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -112,9 +126,16 @@ async function makeRequest<T = unknown>(
       lastError = error as Error
       const errorMsg = error instanceof Error ? error.message : String(error)
 
+      console.error(`[BridgeClient] ===== CATCH BLOCK ERROR =====`)
+      console.error(`[BridgeClient] Error Type: ${error?.constructor?.name}`)
+      console.error(`[BridgeClient] Error Message: ${errorMsg}`)
+      console.error(`[BridgeClient] Error Stack: ${error instanceof Error ? error.stack : 'N/A'}`)
+      console.error(`[BridgeClient] Full Error: ${JSON.stringify(error)}`)
+      console.error(`[BridgeClient] ==============================`)
+
       if (error instanceof TypeError && error.message.includes('fetch')) {
         // Network error (connection refused, host unreachable, etc.)
-        console.warn(`[BridgeClient] Network error: ${errorMsg}`)
+        console.warn(`[BridgeClient] Detected network error in fetch: ${errorMsg}`)
         if (attempt < retries) {
           console.log(`[BridgeClient] Retrying after network error...`)
           await delay(500 * (attempt + 1))
