@@ -46,10 +46,15 @@ export async function POST(req: NextRequest) {
     console.log(`  repositoryRootPage (from body): ${repositoryRootPage || '(not provided)'}`)
 
     if (!projectId) {
-      return NextResponse.json(
-        { success: false, error: 'projectId required' },
-        { status: 400 }
-      )
+      finalResponse = { success: false, error: 'projectId required' }
+      console.error(`[TEST_CONNECTION:${requestId}] ================ FINAL RESPONSE =================`)
+      console.error(`[TEST_CONNECTION:${requestId}] requestId: ${requestId}`)
+      console.error(`[TEST_CONNECTION:${requestId}] routingDecision.useBridge: NOT_CHECKED (early validation)`)
+      console.error(`[TEST_CONNECTION:${requestId}] bridgeResponse: NULL`)
+      console.error(`[TEST_CONNECTION:${requestId}] cliResponse: NULL`)
+      console.error(`[TEST_CONNECTION:${requestId}] finalResponse: ${JSON.stringify(finalResponse, null, 2)}`)
+      console.error(`[TEST_CONNECTION:${requestId}] ================================================`)
+      return NextResponse.json(finalResponse, { status: 400 })
     }
 
     // BRIDGE ROUTING LOGIC (NEW - Parallel path)
