@@ -44,7 +44,22 @@ async function makeRequest<T = unknown>(
     'X-Request-Id': requestId,
   }
 
-  console.log(`[BridgeClient] ===== HTTP REQUEST DIAGNOSTIC =====`)
+  // DIAGNOSTIC: Execution environment
+  const execEnv = {
+    platform: process.platform,
+    nodeEnv: process.env.NODE_ENV,
+    vercelEnv: process.env.VERCEL_ENV,
+    vercelUrl: process.env.VERCEL_URL,
+    hostname: require('os').hostname(),
+  }
+
+  console.log(`[BridgeClient] ===== HTTP REQUEST DIAGNOSTIC (PROD CHECK) =====`)
+  console.log(`[BridgeClient] Exec Platform: ${execEnv.platform}`)
+  console.log(`[BridgeClient] Node Env: ${execEnv.nodeEnv}`)
+  console.log(`[BridgeClient] Vercel Env: ${execEnv.vercelEnv || 'NOT_SET'}`)
+  console.log(`[BridgeClient] Vercel URL: ${execEnv.vercelUrl || 'NOT_SET'}`)
+  console.log(`[BridgeClient] Hostname: ${execEnv.hostname}`)
+  console.log(`[BridgeClient] ===== REQUEST DETAILS =====`)
   console.log(`[BridgeClient] Method: ${method}`)
   console.log(`[BridgeClient] Full URL: ${url}`)
   console.log(`[BridgeClient] Endpoint: ${endpoint}`)
