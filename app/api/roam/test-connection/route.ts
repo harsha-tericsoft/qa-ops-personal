@@ -60,6 +60,12 @@ export async function POST(req: NextRequest) {
     // BRIDGE ROUTING LOGIC (NEW - Parallel path)
     const userId = extractUserIdFromRequest(req) // TODO: Get from actual auth
     const featureFlagEnabled = getBridgeFeatureFlag()
+    console.log(`[TEST_CONNECTION:${requestId}] ===== FEATURE FLAG DEBUG =====`)
+    console.log(`[TEST_CONNECTION:${requestId}] process.env.ENABLE_BRIDGE_ROUTING = ${JSON.stringify(process.env.ENABLE_BRIDGE_ROUTING)}`)
+    console.log(`[TEST_CONNECTION:${requestId}] featureFlagEnabled (from getBridgeFeatureFlag()) = ${featureFlagEnabled}`)
+    console.log(`[TEST_CONNECTION:${requestId}] typeof process.env.ENABLE_BRIDGE_ROUTING = ${typeof process.env.ENABLE_BRIDGE_ROUTING}`)
+    console.log(`[TEST_CONNECTION:${requestId}] typeof featureFlagEnabled = ${typeof featureFlagEnabled}`)
+    console.log(`[TEST_CONNECTION:${requestId}] =============================`)
     const routingDecision = await shouldUseBridge(userId, featureFlagEnabled)
     logRoutingDecision(requestId, routingDecision, 'TEST_CONNECTION')
 
