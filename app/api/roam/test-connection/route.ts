@@ -11,6 +11,10 @@ import { testBridgeConnection } from '@/lib/bridge/bridge-client'
 // Accepts either form values or saved config
 export async function POST(req: NextRequest) {
   const requestId = Math.random().toString(36).substring(7)
+  let bridgeResponse: any = null
+  let cliResponse: any = null
+  let finalResponse: any = null
+
   const execEnv = {
     platform: process.platform,
     nodeEnv: process.env.NODE_ENV,
@@ -60,10 +64,6 @@ export async function POST(req: NextRequest) {
     console.log(`[TEST_CONNECTION:${requestId}] bridgeEndpoint: ${routingDecision.bridgeEndpoint || 'NOT_SET'}`)
     console.log(`[TEST_CONNECTION:${requestId}] reason: ${routingDecision.reason}`)
     console.log(`[TEST_CONNECTION:${requestId}] ====================================`)
-
-    let bridgeResponse: any = null
-    let cliResponse: any = null
-    let finalResponse: any = null
 
     // If bridge available: try it first
     if (routingDecision.useBridge) {
