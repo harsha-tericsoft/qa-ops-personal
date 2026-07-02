@@ -47,19 +47,29 @@ export async function shouldUseBridge(
   userId: string,
   featureFlagEnabled: boolean = false
 ): Promise<RoutingDecision> {
+  const envValue = process.env.ENABLE_BRIDGE_ROUTING
+  console.log(`[ROUTING_DIAGNOSTIC] ENABLE_BRIDGE_ROUTING env value: ${JSON.stringify(envValue)}`)
+  console.log(`[ROUTING_DIAGNOSTIC] featureFlagEnabled parameter: ${featureFlagEnabled}`)
+  console.log(`[ROUTING_DIAGNOSTIC] userId: ${userId}`)
+
   // Step 1: Feature flag must be enabled
   if (!featureFlagEnabled) {
-    logRoutingStep('Feature flag disabled', 'SKIP')
-    return {
+    console.log(`[ROUTING_DIAGNOSTIC] STEP 1 FAILED: Feature flag disabled (featureFlagEnabled=${featureFlagEnabled})`)
+    const decision: RoutingDecision = {
       useBridge: false,
       reason: 'Feature flag disabled - using CLI',
     }
+    console.log(`[ROUTING_DIAGNOSTIC] RETURNING: ${JSON.stringify(decision)}`)
+    logRoutingStep('Feature flag disabled', 'SKIP')
+    return decision
   }
 
+  console.log(`[ROUTING_DIAGNOSTIC] STEP 1 PASSED: Feature flag enabled`)
   logRoutingStep('Feature flag enabled', 'CONTINUE')
 
   try {
     // Step 2: Find active bridge session for user
+    console.log(`[ROUTING_DIAGNOSTIC] STEP 2: Searching for active bridge session for userId=${userId}`)
     const session = await prisma.bridgeSession.findFirst({
       where: {
         userId,
@@ -70,66 +80,120 @@ export async function shouldUseBridge(
       },
     })
 
+    const sessionFound = !!session
+    console.log(`[ROUTING_DIAGNOSTIC] STEP 2 RESULT: Active bridge session found: ${sessionFound}`)
+    if (session) {
+      console.log(`[ROUTING_DIAGNOSTIC]   Session ID: ${session.id}`)
+      console.log(`[ROUTING_DIAGNOSTIC]   Session Status: ${session.status}`)
+      console.log(`[ROUTING_DIAGNOSTIC]   Session Expires At: ${session.expiresAt.toISOString()}`)
+    }
+
     if (!session) {
-      logRoutingStep('No bridge session found for user', 'FALLBACK')
-      return {
+      console.log(`[ROUTING_DIAGNOSTIC] STEP 2 FAILED: No bridge session found`)
+      const decision: RoutingDecision = {
         useBridge: false,
         reason: 'No bridge session found - using CLI',
       }
+      console.log(`[ROUTING_DIAGNOSTIC] RETURNING: ${JSON.stringify(decision)}`)
+      logRoutingStep('No bridge session found for user', 'FALLBACK')
+      return decision
     }
 
     logRoutingStep(`Bridge session found: ${session.id}`, 'CONTINUE')
 
     // Step 3: Check session status
-    if (session.status === BridgeSessionStatusEnum.OFFLINE) {
-      logRoutingStep(`Bridge session offline: ${session.status}`, 'FALLBACK')
-      return {
+    const sessionOffline = session.status === BridgeSessionStatusEnum.OFFLINE
+    console.log(`[ROUTING_DIAGNOSTIC] STEP 3: Checking session status`)
+    console.log(`[ROUTING_DIAGNOSTIC]   Current status: ${session.status}`)
+    console.log(`[ROUTING_DIAGNOSTIC]   Is OFFLINE: ${sessionOffline}`)
+
+    if (sessionOffline) {
+      console.log(`[ROUTING_DIAGNOSTIC] STEP 3 FAILED: Bridge session offline`)
+      const decision: RoutingDecision = {
         useBridge: false,
         reason: 'Bridge session offline - using CLI',
       }
+      console.log(`[ROUTING_DIAGNOSTIC] RETURNING: ${JSON.stringify(decision)}`)
+      logRoutingStep(`Bridge session offline: ${session.status}`, 'FALLBACK')
+      return decision
     }
 
+    console.log(`[ROUTING_DIAGNOSTIC] STEP 3 PASSED: Session status is not OFFLINE`)
     logRoutingStep(`Bridge session status: ${session.status}`, 'CONTINUE')
 
     // Step 4: Check token validity
+    const tokenFound = !!session.bridgeToken
+    console.log(`[ROUTING_DIAGNOSTIC] STEP 4: Checking bridge token`)
+    console.log(`[ROUTING_DIAGNOSTIC]   Token found: ${tokenFound}`)
+    if (session.bridgeToken) {
+      console.log(`[ROUTING_DIAGNOSTIC]   Token Status: ${session.bridgeToken.status}`)
+      console.log(`[ROUTING_DIAGNOSTIC]   Token Expires At: ${session.bridgeToken.expiresAt.toISOString()}`)
+    }
+
     if (session.bridgeToken.status !== 'ACTIVE') {
-      logRoutingStep(`Bridge token not active: ${session.bridgeToken.status}`, 'FALLBACK')
-      return {
+      console.log(`[ROUTING_DIAGNOSTIC] STEP 4 FAILED: Bridge token not active (status=${session.bridgeToken.status})`)
+      const decision: RoutingDecision = {
         useBridge: false,
         reason: 'Bridge token not active - using CLI',
       }
+      console.log(`[ROUTING_DIAGNOSTIC] RETURNING: ${JSON.stringify(decision)}`)
+      logRoutingStep(`Bridge token not active: ${session.bridgeToken.status}`, 'FALLBACK')
+      return decision
     }
 
+    console.log(`[ROUTING_DIAGNOSTIC] STEP 4A PASSED: Token status is ACTIVE`)
     logRoutingStep(`Bridge token status: ${session.bridgeToken.status}`, 'CONTINUE')
 
-    if (session.bridgeToken.expiresAt < new Date()) {
-      logRoutingStep('Bridge token expired', 'FALLBACK')
-      return {
+    const tokenExpired = session.bridgeToken.expiresAt < new Date()
+    console.log(`[ROUTING_DIAGNOSTIC] STEP 4B: Checking token expiration`)
+    console.log(`[ROUTING_DIAGNOSTIC]   Token expired: ${tokenExpired}`)
+    console.log(`[ROUTING_DIAGNOSTIC]   Now: ${new Date().toISOString()}`)
+    console.log(`[ROUTING_DIAGNOSTIC]   Expires: ${session.bridgeToken.expiresAt.toISOString()}`)
+
+    if (tokenExpired) {
+      console.log(`[ROUTING_DIAGNOSTIC] STEP 4B FAILED: Bridge token expired`)
+      const decision: RoutingDecision = {
         useBridge: false,
         reason: 'Bridge token expired - using CLI',
       }
+      console.log(`[ROUTING_DIAGNOSTIC] RETURNING: ${JSON.stringify(decision)}`)
+      logRoutingStep('Bridge token expired', 'FALLBACK')
+      return decision
     }
 
+    console.log(`[ROUTING_DIAGNOSTIC] STEP 4B PASSED: Token is not expired`)
     logRoutingStep('Bridge token valid', 'CONTINUE')
 
     // Step 5: All checks passed - use bridge with configured endpoint
     const endpoint = getBridgeEndpoint()
+    console.log(`[ROUTING_DIAGNOSTIC] STEP 5: All checks passed`)
+    console.log(`[ROUTING_DIAGNOSTIC]   Configured endpoint: ${endpoint}`)
+    console.log(`[ROUTING_DIAGNOSTIC]   Bridge ID: ${session.bridgeToken.bridgeId}`)
+
     logRoutingStep(`All checks passed, using bridge endpoint: ${endpoint}`, 'BRIDGE')
 
-    return {
+    const decision: RoutingDecision = {
       useBridge: true,
       bridgeId: session.bridgeToken.bridgeId,
       bridgeEndpoint: endpoint, // Use configured endpoint
       bridgeToken: session.bridgeToken.token,
       reason: 'Bridge available and healthy',
     }
+    console.log(`[ROUTING_DIAGNOSTIC] RETURNING: ${JSON.stringify(decision)}`)
+    return decision
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error)
+    console.log(`[ROUTING_DIAGNOSTIC] EXCEPTION CAUGHT: ${errorMsg}`)
+    if (error instanceof Error) {
+      console.log(`[ROUTING_DIAGNOSTIC] Stack: ${error.stack}`)
+    }
     logRoutingStep(`Error during routing check: ${errorMsg}`, 'FALLBACK')
-    return {
+    const decision: RoutingDecision = {
       useBridge: false,
       reason: `Routing check error (${errorMsg}) - using CLI`,
     }
+    console.log(`[ROUTING_DIAGNOSTIC] RETURNING: ${JSON.stringify(decision)}`)
+    return decision
   }
 }
 
