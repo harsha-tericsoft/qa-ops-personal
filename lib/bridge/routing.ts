@@ -236,7 +236,15 @@ export async function shouldUseBridge(
  * Reads from environment variable (default: disabled for safety)
  */
 export function getBridgeFeatureFlag(): boolean {
-  return process.env.ENABLE_BRIDGE_ROUTING === 'true'
+  console.log("===== getBridgeFeatureFlag =====")
+  console.log("process.env.ENABLE_BRIDGE_ROUTING =", process.env.ENABLE_BRIDGE_ROUTING)
+  console.log("typeof =", typeof process.env.ENABLE_BRIDGE_ROUTING)
+  const comparison = process.env.ENABLE_BRIDGE_ROUTING === 'true'
+  console.log("comparison (=== 'true') =", comparison)
+  const result = comparison
+  console.log("returned =", result)
+  console.log("================================")
+  return result
 }
 
 /**
