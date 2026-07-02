@@ -85,11 +85,13 @@ export async function POST(req: NextRequest) {
 
         console.log(`[TEST_CONNECTION:${requestId}] Calling testBridgeConnection()...`)
         bridgeResponse = await testBridgeConnection(bridgeConfig, graphName, apiToken)
-        console.log(`[TEST_CONNECTION:${requestId}] Bridge response received:`)
+        console.log(`[TEST_CONNECTION:${requestId}] ===== BRIDGE RESPONSE RECEIVED =====`)
+        console.log(`[TEST_CONNECTION:${requestId}] Complete object:`)
+        console.log(JSON.stringify(bridgeResponse, null, 2))
         console.log(`[TEST_CONNECTION:${requestId}]   success: ${bridgeResponse.success}`)
         console.log(`[TEST_CONNECTION:${requestId}]   error: ${bridgeResponse.error || 'NONE'}`)
         console.log(`[TEST_CONNECTION:${requestId}]   code: ${bridgeResponse.code || 'NONE'}`)
-        console.log(`[TEST_CONNECTION:${requestId}]   full object: ${JSON.stringify(bridgeResponse)}`)
+        console.log(`[TEST_CONNECTION:${requestId}] ====================================`)
 
         if (bridgeResponse.success) {
           console.log(`[TEST_CONNECTION:${requestId}] Bridge connection test successful`)
@@ -99,13 +101,24 @@ export async function POST(req: NextRequest) {
             graphName: (bridgeResponse.data as any)?.graphName,
             _source: 'BRIDGE',
           }
-          console.log(`[TEST_CONNECTION:${requestId}] RETURNING BRIDGE SUCCESS: ${JSON.stringify(finalResponse)}`)
+          console.log(`[TEST_CONNECTION:${requestId}] ================ FINAL RESPONSE =================`)
+          console.log(`[TEST_CONNECTION:${requestId}] requestId: ${requestId}`)
+          console.log(`[TEST_CONNECTION:${requestId}] routingDecision.useBridge: ${routingDecision.useBridge}`)
+          console.log(`[TEST_CONNECTION:${requestId}] routingDecision.reason: ${routingDecision.reason}`)
+          console.log(`[TEST_CONNECTION:${requestId}] bridgeResponse: ${JSON.stringify(bridgeResponse, null, 2)}`)
+          console.log(`[TEST_CONNECTION:${requestId}] cliResponse: ${cliResponse === null ? 'NULL (not executed)' : JSON.stringify(cliResponse, null, 2)}`)
+          console.log(`[TEST_CONNECTION:${requestId}] finalResponse: ${JSON.stringify(finalResponse, null, 2)}`)
+          console.log(`[TEST_CONNECTION:${requestId}] ================================================`)
           return NextResponse.json(finalResponse)
         } else {
+          console.warn(`[TEST_CONNECTION:${requestId}] ===== BRIDGE FALLBACK =====`)
           console.warn(
             `[TEST_CONNECTION:${requestId}] Bridge connection test failed: ${bridgeResponse.error}`
           )
-          console.log(`[TEST_CONNECTION:${requestId}] Falling back to CLI...`)
+          console.warn(`[TEST_CONNECTION:${requestId}] Bridge response success=false, entire object:`)
+          console.warn(JSON.stringify(bridgeResponse, null, 2))
+          console.warn(`[TEST_CONNECTION:${requestId}] Falling back to CLI...`)
+          console.warn(`[TEST_CONNECTION:${requestId}] ===========================`)
           // Fall through to CLI fallback
         }
       } catch (bridgeError) {
@@ -161,7 +174,14 @@ export async function POST(req: NextRequest) {
         error: 'Graph Name required',
         details: 'Enter the Roam graph name to test connection',
       }
-      console.log(`[TEST_CONNECTION:${requestId}] RETURNING ERROR (no graphName): ${JSON.stringify(finalResponse)}`)
+      console.error(`[TEST_CONNECTION:${requestId}] ================ FINAL RESPONSE =================`)
+      console.error(`[TEST_CONNECTION:${requestId}] requestId: ${requestId}`)
+      console.error(`[TEST_CONNECTION:${requestId}] routingDecision.useBridge: ${routingDecision.useBridge}`)
+      console.error(`[TEST_CONNECTION:${requestId}] routingDecision.reason: ${routingDecision.reason}`)
+      console.error(`[TEST_CONNECTION:${requestId}] bridgeResponse: NULL (validation failed)`)
+      console.error(`[TEST_CONNECTION:${requestId}] cliResponse: NULL (validation failed)`)
+      console.error(`[TEST_CONNECTION:${requestId}] finalResponse: ${JSON.stringify(finalResponse, null, 2)}`)
+      console.error(`[TEST_CONNECTION:${requestId}] ================================================`)
       return NextResponse.json(finalResponse, { status: 400 })
     }
 
@@ -171,7 +191,14 @@ export async function POST(req: NextRequest) {
         error: 'API Token required',
         details: 'Enter your local API token to test connection',
       }
-      console.log(`[TEST_CONNECTION:${requestId}] RETURNING ERROR (no apiToken): ${JSON.stringify(finalResponse)}`)
+      console.error(`[TEST_CONNECTION:${requestId}] ================ FINAL RESPONSE =================`)
+      console.error(`[TEST_CONNECTION:${requestId}] requestId: ${requestId}`)
+      console.error(`[TEST_CONNECTION:${requestId}] routingDecision.useBridge: ${routingDecision.useBridge}`)
+      console.error(`[TEST_CONNECTION:${requestId}] routingDecision.reason: ${routingDecision.reason}`)
+      console.error(`[TEST_CONNECTION:${requestId}] bridgeResponse: NULL (validation failed)`)
+      console.error(`[TEST_CONNECTION:${requestId}] cliResponse: NULL (validation failed)`)
+      console.error(`[TEST_CONNECTION:${requestId}] finalResponse: ${JSON.stringify(finalResponse, null, 2)}`)
+      console.error(`[TEST_CONNECTION:${requestId}] ================================================`)
       return NextResponse.json(finalResponse, { status: 400 })
     }
 
@@ -250,11 +277,21 @@ export async function POST(req: NextRequest) {
           repositoryRootPage: config.repositoryRootPage || null,
           _source: 'CLI',
         }
-        console.log(`[TEST_CONNECTION:${requestId}] RETURNING CLI SUCCESS: ${JSON.stringify(finalResponse)}`)
+        console.log(`[TEST_CONNECTION:${requestId}] ================ FINAL RESPONSE =================`)
+        console.log(`[TEST_CONNECTION:${requestId}] requestId: ${requestId}`)
+        console.log(`[TEST_CONNECTION:${requestId}] routingDecision.useBridge: ${routingDecision.useBridge}`)
+        console.log(`[TEST_CONNECTION:${requestId}] routingDecision.reason: ${routingDecision.reason}`)
+        console.log(`[TEST_CONNECTION:${requestId}] bridgeResponse: ${bridgeResponse === null ? 'NULL (not attempted)' : JSON.stringify(bridgeResponse, null, 2)}`)
+        console.log(`[TEST_CONNECTION:${requestId}] cliResponse: ${JSON.stringify(cliResponse, null, 2)}`)
+        console.log(`[TEST_CONNECTION:${requestId}] finalResponse: ${JSON.stringify(finalResponse, null, 2)}`)
+        console.log(`[TEST_CONNECTION:${requestId}] ================================================`)
         return NextResponse.json(finalResponse)
       } else {
-        console.log(`[TEST_CONNECTION:${requestId}] Test returned false (success=${success})`)
-        console.log(`[TEST_CONNECTION:${requestId}] cliResponse object: ${JSON.stringify(cliResponse)}`)
+        console.error(`[TEST_CONNECTION:${requestId}] ===== CLI FAILED =====`)
+        console.error(`[TEST_CONNECTION:${requestId}] Test returned false (success=${success})`)
+        console.error(`[TEST_CONNECTION:${requestId}] cliResponse complete object:`)
+        console.error(JSON.stringify(cliResponse, null, 2))
+        console.error(`[TEST_CONNECTION:${requestId}] =======================`)
         throw new Error('Connection test failed - received false from CLI')
       }
     } catch (error) {
@@ -290,7 +327,14 @@ export async function POST(req: NextRequest) {
         error: errorMsg,
         details: 'Check server logs for full error details',
       }
-      console.error(`[TEST_CONNECTION:${requestId}] RETURNING ERROR RESPONSE: ${JSON.stringify(finalResponse)}`)
+      console.error(`[TEST_CONNECTION:${requestId}] ================ FINAL RESPONSE =================`)
+      console.error(`[TEST_CONNECTION:${requestId}] requestId: ${requestId}`)
+      console.error(`[TEST_CONNECTION:${requestId}] routingDecision.useBridge: ${routingDecision.useBridge}`)
+      console.error(`[TEST_CONNECTION:${requestId}] routingDecision.reason: ${routingDecision.reason}`)
+      console.error(`[TEST_CONNECTION:${requestId}] bridgeResponse: ${bridgeResponse === null ? 'NULL' : JSON.stringify(bridgeResponse, null, 2)}`)
+      console.error(`[TEST_CONNECTION:${requestId}] cliResponse: ${cliResponse === null ? 'NULL' : JSON.stringify(cliResponse, null, 2)}`)
+      console.error(`[TEST_CONNECTION:${requestId}] finalResponse: ${JSON.stringify(finalResponse, null, 2)}`)
+      console.error(`[TEST_CONNECTION:${requestId}] ================================================`)
       return NextResponse.json(finalResponse, { status: 500 })
     }
   } catch (error) {
@@ -306,7 +350,14 @@ export async function POST(req: NextRequest) {
       error: errorMsg,
       details: 'Check server logs for full error details',
     }
-    console.error(`[TEST_CONNECTION] RETURNING FATAL ERROR RESPONSE: ${JSON.stringify(finalResponse)}`)
+    console.error(`[TEST_CONNECTION:OUTER_CATCH] ================ FINAL RESPONSE =================`)
+    console.error(`[TEST_CONNECTION:OUTER_CATCH] requestId: ${requestId}`)
+    console.error(`[TEST_CONNECTION:OUTER_CATCH] routingDecision.useBridge: UNKNOWN (exception before routing)`)
+    console.error(`[TEST_CONNECTION:OUTER_CATCH] routingDecision.reason: UNKNOWN`)
+    console.error(`[TEST_CONNECTION:OUTER_CATCH] bridgeResponse: ${JSON.stringify(bridgeResponse)}`)
+    console.error(`[TEST_CONNECTION:OUTER_CATCH] cliResponse: ${JSON.stringify(cliResponse)}`)
+    console.error(`[TEST_CONNECTION:OUTER_CATCH] finalResponse: ${JSON.stringify(finalResponse, null, 2)}`)
+    console.error(`[TEST_CONNECTION:OUTER_CATCH] ================================================`)
     return NextResponse.json(finalResponse, { status: 500 })
   }
 }
